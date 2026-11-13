@@ -4,3 +4,4 @@ __pycache__/
 dist/
 engine/target/
 node_modules/
+tests/desktop/.build/

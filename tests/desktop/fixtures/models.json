@@ -1,0 +1,22 @@
+{
+ "ok": true,
+ "models": [
+  {
+   "id": "toy",
+   "kind": "stock",
+   "name": "Toy roster",
+   "version": "0.0.0-testkit",
+   "constraints": 3,
+   "levels": {
+    "hard": 2,
+    "medium": 0,
+    "soft": 1
+   },
+   "demos": [
+    "WEEK"
+   ],
+   "weights": true,
+   "datasets": 1
+  }
+ ]
+}

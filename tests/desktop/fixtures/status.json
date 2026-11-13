@@ -1,0 +1,15 @@
+{
+ "ok": true,
+ "engine": {
+  "installed": true,
+  "path": "engine/target/release/workbench-testkit",
+  "version": "0.0.0-testkit",
+  "expected_version": "0.1.0",
+  "models": [
+   "toy"
+  ]
+ },
+ "queued": 0,
+ "solving": 0,
+ "parallel_solves": 2
+}

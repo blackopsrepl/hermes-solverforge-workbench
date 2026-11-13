@@ -169,7 +169,8 @@ class Workbench:
                 "source": model.get("source"), "demos": description.get("demos", []),
                 "weights": description.get("weights", False),
                 "constraints": description.get("constraints", []),
-                "profiles": [self.profile_view(p) for p in self.store.profiles(model_id)]}
+                "profiles": [self.profile_view(p) for p in self.store.profiles(model_id)],
+                "default_profile": (self.profile_record(model_id, None) or {}).get("id")}
 
     # ---- datasets -----------------------------------------------------------
 

@@ -1,0 +1,120 @@
+{
+ "ok": true,
+ "run": {
+  "id": "21bf98d8de39",
+  "dataset_id": "67d9c6095a1f",
+  "model_id": "toy",
+  "kind": "evaluate",
+  "status": "completed",
+  "priority": 5,
+  "profile_id": "toy-standard",
+  "initial_score": "-6hard/0soft",
+  "score": "-6hard/0soft",
+  "feasible": 0,
+  "created_at": "2026-11-13T11:53:55.161+00:00",
+  "started_at": null,
+  "finished_at": "2026-11-13T11:53:55.171+00:00",
+  "error": null,
+  "config": {
+   "weights": {},
+   "params": {},
+   "solve": {
+    "seconds": 60,
+    "unimproved_seconds": 20
+   }
+  },
+  "overrides": {},
+  "kpis": [
+   {
+    "id": "assigned",
+    "label": "Assigned shifts",
+    "unit": "shifts",
+    "value": 0.0
+   }
+  ],
+  "issues": [],
+  "telemetry": null,
+  "points": [],
+  "analysis": [
+   {
+    "level": "hard",
+    "match_count": 6,
+    "matches": [
+     {
+      "entities": [
+       {
+        "text": "Shift { id: 0, day: 0, pinned: false, nurse_idx: None }",
+        "type": "Shift"
+       }
+      ],
+      "score": "-1hard/0soft"
+     },
+     {
+      "entities": [
+       {
+        "text": "Shift { id: 1, day: 0, pinned: false, nurse_idx: None }",
+        "type": "Shift"
+       }
+      ],
+      "score": "-1hard/0soft"
+     },
+     {
+      "entities": [
+       {
+        "text": "Shift { id: 2, day: 1, pinned: false, nurse_idx: None }",
+        "type": "Shift"
+       }
+      ],
+      "score": "-1hard/0soft"
+     },
+     {
+      "entities": [
+       {
+        "text": "Shift { id: 3, day: 1, pinned: false, nurse_idx: None }",
+        "type": "Shift"
+       }
+      ],
+      "score": "-1hard/0soft"
+     },
+     {
+      "entities": [
+       {
+        "text": "Shift { id: 4, day: 2, pinned: false, nurse_idx: None }",
+        "type": "Shift"
+       }
+      ],
+      "score": "-1hard/0soft"
+     },
+     {
+      "entities": [
+       {
+        "text": "Shift { id: 5, day: 2, pinned: false, nurse_idx: None }",
+        "type": "Shift"
+       }
+      ],
+      "score": "-1hard/0soft"
+     }
+    ],
+    "name": "Unassigned shift",
+    "score": "-6hard/0soft",
+    "weight": 1
+   },
+   {
+    "level": "hard",
+    "match_count": 0,
+    "matches": [],
+    "name": "Two shifts on one day",
+    "score": "0hard/0soft",
+    "weight": 1
+   },
+   {
+    "level": "soft",
+    "match_count": 0,
+    "matches": [],
+    "name": "Shift for the first nurse",
+    "score": "0hard/0soft",
+    "weight": 1
+   }
+  ]
+ }
+}

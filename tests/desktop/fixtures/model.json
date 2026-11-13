@@ -1,0 +1,68 @@
+{
+ "ok": true,
+ "model": {
+  "id": "toy",
+  "kind": "stock",
+  "name": "Toy roster",
+  "version": "0.0.0-testkit",
+  "source": null,
+  "demos": [
+   "WEEK"
+  ],
+  "weights": true,
+  "constraints": [
+   {
+    "description": "Every shift needs a nurse.",
+    "group": "Coverage",
+    "level": "hard",
+    "name": "Unassigned shift"
+   },
+   {
+    "description": null,
+    "group": null,
+    "level": "hard",
+    "name": "Two shifts on one day"
+   },
+   {
+    "description": null,
+    "group": null,
+    "level": "soft",
+    "name": "Shift for the first nurse"
+   }
+  ],
+  "profiles": [
+   {
+    "id": "toy-standard",
+    "model_id": "toy",
+    "name": "Standard",
+    "description": "The model's own weights and solve settings.",
+    "weights": {},
+    "params": {},
+    "solve": {
+     "seconds": 60,
+     "unimproved_seconds": 20
+    },
+    "is_default": 0,
+    "read_only": 1,
+    "revision": 1,
+    "updated_at": "2026-11-13T11:53:55.137+00:00"
+   },
+   {
+    "id": "1f4282f17e7b",
+    "model_id": "toy",
+    "name": "Lenient",
+    "description": "",
+    "weights": {
+     "Unassigned shift": 0
+    },
+    "params": {},
+    "solve": {},
+    "is_default": 0,
+    "read_only": 0,
+    "revision": 1,
+    "updated_at": "2026-11-13T11:53:55.154+00:00"
+   }
+  ],
+  "default_profile": "toy-standard"
+ }
+}

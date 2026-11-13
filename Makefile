@@ -26,7 +26,7 @@ TARGETS        := x86_64-unknown-linux-musl aarch64-unknown-linux-musl \
 PYTHON         ?= 3.12
 # The plugin's runtime libraries come from plugin.yaml, the same list Hermes installs.
 PLUGIN_DEPS    := $(shell sed -n '/^python_dependencies:/,/^[a-z_]*:/s/^  - "\(.*\)"$$/--with "\1"/p' plugin.yaml)
-PYTEST         := env -u PYTHONPATH -u PYTHONHOME uv run --no-project --python $(PYTHON) --with pytest $(PLUGIN_DEPS) python -m pytest
+PYTEST         := env -u PYTHONPATH -u PYTHONHOME uv run --no-project --python $(PYTHON) --with pytest --with fastapi --with httpx $(PLUGIN_DEPS) python -m pytest
 
 # ============== Phony Targets ==============
 .PHONY: banner help setup engine test test-engine test-plugin test-desktop lint fmt fmt-check clippy \

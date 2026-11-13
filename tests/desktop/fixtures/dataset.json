@@ -1,0 +1,58 @@
+{
+ "ok": true,
+ "dataset": {
+  "id": "67d9c6095a1f",
+  "model_id": "toy",
+  "name": "Demo Week",
+  "tags": [
+   "demo"
+  ],
+  "origin": "demo",
+  "parent_id": null,
+  "config": {
+   "weights": {},
+   "params": {},
+   "solve": {}
+  },
+  "created_at": "2026-11-13T11:53:55.148+00:00",
+  "size": {
+   "nurses": 3,
+   "shifts": 6
+  },
+  "runs": [
+   {
+    "id": "01f3538e83f4",
+    "dataset_id": "67d9c6095a1f",
+    "model_id": "toy",
+    "kind": "solve",
+    "status": "completed",
+    "priority": 5,
+    "profile_id": "toy-standard",
+    "initial_score": "-6hard/0soft",
+    "score": "0hard/0soft",
+    "feasible": 1,
+    "created_at": "2026-11-13T11:53:55.179+00:00",
+    "started_at": "2026-11-13T11:53:55.238+00:00",
+    "finished_at": "2026-11-13T11:53:57.259+00:00",
+    "error": null
+   },
+   {
+    "id": "21bf98d8de39",
+    "dataset_id": "67d9c6095a1f",
+    "model_id": "toy",
+    "kind": "evaluate",
+    "status": "completed",
+    "priority": 5,
+    "profile_id": "toy-standard",
+    "initial_score": "-6hard/0soft",
+    "score": "-6hard/0soft",
+    "feasible": 0,
+    "created_at": "2026-11-13T11:53:55.161+00:00",
+    "started_at": null,
+    "finished_at": "2026-11-13T11:53:55.171+00:00",
+    "error": null
+   }
+  ],
+  "children": []
+ }
+}
