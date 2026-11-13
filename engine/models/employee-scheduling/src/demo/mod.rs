@@ -1,6 +1,7 @@
 //! Demo datasets.
 
 mod catalog;
+mod large;
 mod rng;
 mod small;
 

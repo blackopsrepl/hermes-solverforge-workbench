@@ -2,6 +2,7 @@
 //! constraint set is compiled once.
 
 mod common;
+mod demos;
 mod economy;
 mod fit;
 mod model;

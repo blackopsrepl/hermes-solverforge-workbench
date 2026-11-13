@@ -24,3 +24,11 @@ type = "change_move_selector"
 
 [[phases.move_selector.selectors]]
 type = "swap_move_selector"
+
+# Unassigning is the last candidate the change selector offers per shift, so
+# with the first accepted move taken it is rarely reached. Capped at one
+# employee per shift, this selector offers the unassign move every other
+# time, which optional shifts, alternatives and over-full days need.
+[[phases.move_selector.selectors]]
+type = "change_move_selector"
+value_candidate_limit = 1
