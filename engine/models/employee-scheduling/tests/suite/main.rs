@@ -5,6 +5,7 @@ mod common;
 mod demos;
 mod economy;
 mod fit;
+mod kpis;
 mod model;
 mod patterns;
 mod time_off;
