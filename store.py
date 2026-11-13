@@ -1,0 +1,360 @@
+"""The workbench's SQLite store: models, datasets, profiles and runs.
+
+Plain ``sqlite3`` in WAL mode, so the tools, the Desktop backend and the
+detached solve workers can share one file. Nothing here imports Hermes; the
+solve worker runs this module as a standalone script's dependency.
+"""
+
+from __future__ import annotations
+
+import json
+import sqlite3
+import threading
+import uuid
+from contextlib import contextmanager
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Iterator
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS models (
+    id           TEXT PRIMARY KEY,
+    kind         TEXT NOT NULL CHECK (kind IN ('stock', 'custom')),
+    name         TEXT NOT NULL,
+    manifest     TEXT NOT NULL,          -- the engine's describe output, JSON
+    engine       TEXT,                   -- custom models: their engine binary
+    source       TEXT,                   -- custom models: the solverforge-cli project
+    version      TEXT NOT NULL,          -- custom models: project tree hash
+    registered_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS datasets (
+    id          TEXT PRIMARY KEY,
+    model_id    TEXT NOT NULL,
+    name        TEXT NOT NULL,
+    tags        TEXT NOT NULL DEFAULT '[]',
+    origin      TEXT NOT NULL CHECK (origin IN ('demo', 'upload', 'patch', 'input', 'run')),
+    parent_id   TEXT REFERENCES datasets(id) ON DELETE SET NULL,
+    plan        TEXT NOT NULL,           -- the problem, JSON
+    config      TEXT NOT NULL DEFAULT '{}', -- settings carried by the dataset itself
+    patch       TEXT,                    -- the JSON Patch that produced it, if any
+    created_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS datasets_model ON datasets(model_id, created_at);
+CREATE TABLE IF NOT EXISTS profiles (
+    id          TEXT PRIMARY KEY,
+    model_id    TEXT NOT NULL,
+    name        TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    weights     TEXT NOT NULL DEFAULT '{}',
+    params      TEXT NOT NULL DEFAULT '{}',
+    solve       TEXT NOT NULL DEFAULT '{}',
+    is_default  INTEGER NOT NULL DEFAULT 0,
+    read_only   INTEGER NOT NULL DEFAULT 0,
+    revision    INTEGER NOT NULL DEFAULT 1,
+    updated_at  TEXT NOT NULL,
+    UNIQUE (model_id, name)
+);
+CREATE TABLE IF NOT EXISTS runs (
+    id               TEXT PRIMARY KEY,
+    dataset_id       TEXT NOT NULL REFERENCES datasets(id) ON DELETE CASCADE,
+    model_id         TEXT NOT NULL,
+    kind             TEXT NOT NULL CHECK (kind IN ('solve', 'evaluate')),
+    profile_id       TEXT,
+    overrides        TEXT NOT NULL DEFAULT '{}',
+    config           TEXT NOT NULL DEFAULT '{}', -- the effective settings
+    priority         INTEGER NOT NULL DEFAULT 5,
+    status           TEXT NOT NULL CHECK (status IN
+                        ('queued', 'solving', 'completed', 'incomplete', 'failed', 'invalid')),
+    cancel_requested INTEGER NOT NULL DEFAULT 0,
+    pid              INTEGER,
+    initial_score    TEXT,
+    score            TEXT,
+    feasible         INTEGER,
+    plan             TEXT,
+    analysis         TEXT,
+    kpis             TEXT,
+    issues           TEXT,
+    telemetry        TEXT,
+    error            TEXT,
+    created_at       TEXT NOT NULL,
+    started_at       TEXT,
+    finished_at      TEXT
+);
+CREATE INDEX IF NOT EXISTS runs_queue ON runs(status, priority, created_at);
+CREATE INDEX IF NOT EXISTS runs_dataset ON runs(dataset_id, created_at);
+CREATE TABLE IF NOT EXISTS run_points (
+    run_id      TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+    elapsed_ms  INTEGER NOT NULL,
+    score       TEXT NOT NULL,
+    PRIMARY KEY (run_id, elapsed_ms)
+);
+"""
+
+JSON_COLUMNS = {
+    "manifest", "tags", "plan", "config", "patch", "weights", "params", "solve",
+    "overrides", "analysis", "kpis", "issues", "telemetry", "error",
+}
+
+
+def now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
+
+
+def new_id() -> str:
+    return uuid.uuid4().hex[:12]
+
+
+class Stale(Exception):
+    """A revision-checked write found the record changed since it was read."""
+
+
+def _row(row: sqlite3.Row | None) -> dict[str, Any] | None:
+    if row is None:
+        return None
+    out: dict[str, Any] = {}
+    for key in row.keys():
+        value = row[key]
+        out[key] = json.loads(value) if key in JSON_COLUMNS and isinstance(value, str) else value
+    return out
+
+
+def _dump(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+
+
+class Store:
+    """Thread-safe access to one workbench database file."""
+
+    _lock = threading.Lock()
+    _stores: dict[Path, "Store"] = {}
+
+    def __init__(self, path: Path):
+        self.path = Path(path)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._local = threading.local()
+        # executescript manages its own transaction.
+        self._db().executescript(SCHEMA)
+
+    @classmethod
+    def at(cls, path: Path) -> "Store":
+        key = Path(path).resolve()
+        with cls._lock:
+            store = cls._stores.get(key)
+            if store is None:
+                store = cls._stores[key] = cls(key)
+            return store
+
+    def _db(self) -> sqlite3.Connection:
+        db = getattr(self._local, "db", None)
+        if db is None:
+            db = sqlite3.connect(self.path, timeout=30, isolation_level=None)
+            db.row_factory = sqlite3.Row
+            db.execute("PRAGMA journal_mode=WAL")
+            db.execute("PRAGMA foreign_keys=ON")
+            db.execute("PRAGMA busy_timeout=30000")
+            self._local.db = db
+        return db
+
+    @contextmanager
+    def tx(self) -> Iterator[sqlite3.Connection]:
+        db = self._db()
+        db.execute("BEGIN IMMEDIATE")
+        try:
+            yield db
+        except BaseException:
+            db.execute("ROLLBACK")
+            raise
+        db.execute("COMMIT")
+
+    def one(self, sql: str, *args: Any) -> dict[str, Any] | None:
+        return _row(self._db().execute(sql, args).fetchone())
+
+    def all(self, sql: str, *args: Any) -> list[dict[str, Any]]:
+        return [_row(row) for row in self._db().execute(sql, args).fetchall()]  # type: ignore[misc]
+
+    # ---- models -------------------------------------------------------------
+
+    def put_model(self, model: dict[str, Any]) -> None:
+        with self.tx() as db:
+            db.execute(
+                "INSERT INTO models (id, kind, name, manifest, engine, source, version, registered_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                " ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, name=excluded.name,"
+                " manifest=excluded.manifest, engine=excluded.engine, source=excluded.source,"
+                " version=excluded.version, registered_at=excluded.registered_at",
+                (model["id"], model["kind"], model["name"], _dump(model["manifest"]),
+                 model.get("engine"), model.get("source"), model["version"], now()),
+            )
+
+    def model(self, model_id: str) -> dict[str, Any] | None:
+        return self.one("SELECT * FROM models WHERE id = ?", model_id)
+
+    def models(self) -> list[dict[str, Any]]:
+        return self.all("SELECT * FROM models ORDER BY kind DESC, name")
+
+    def delete_model(self, model_id: str) -> None:
+        with self.tx() as db:
+            db.execute("DELETE FROM runs WHERE model_id = ?", (model_id,))
+            db.execute("DELETE FROM datasets WHERE model_id = ?", (model_id,))
+            db.execute("DELETE FROM profiles WHERE model_id = ?", (model_id,))
+            db.execute("DELETE FROM models WHERE id = ?", (model_id,))
+
+    # ---- datasets -----------------------------------------------------------
+
+    def add_dataset(self, *, model_id: str, name: str, plan: Any, origin: str,
+                    tags: list[str] | None = None, parent_id: str | None = None,
+                    config: dict | None = None, patch: Any = None) -> dict[str, Any]:
+        dataset_id = new_id()
+        with self.tx() as db:
+            db.execute(
+                "INSERT INTO datasets (id, model_id, name, tags, origin, parent_id, plan, config, patch, created_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (dataset_id, model_id, name, _dump(tags or []), origin, parent_id, _dump(plan),
+                 _dump(config or {}), None if patch is None else _dump(patch), now()),
+            )
+        return self.dataset(dataset_id)  # type: ignore[return-value]
+
+    def dataset(self, dataset_id: str) -> dict[str, Any] | None:
+        return self.one("SELECT * FROM datasets WHERE id = ?", dataset_id)
+
+    def datasets(self, model_id: str | None = None, query: str = "", tag: str = "",
+                 limit: int = 100) -> list[dict[str, Any]]:
+        sql = ("SELECT id, model_id, name, tags, origin, parent_id, config, created_at FROM datasets"
+               " WHERE (? = '' OR model_id = ?) AND (? = '' OR name LIKE ? OR id LIKE ?)"
+               " AND (? = '' OR EXISTS (SELECT 1 FROM json_each(datasets.tags) WHERE value = ?))"
+               " ORDER BY created_at DESC LIMIT ?")
+        like = f"%{query}%"
+        model = model_id or ""
+        return self.all(sql, model, model, query, like, f"{query}%", tag, tag, limit)
+
+    def update_dataset(self, dataset_id: str, *, name: str | None = None,
+                       tags: list[str] | None = None) -> dict[str, Any] | None:
+        with self.tx() as db:
+            if name is not None:
+                db.execute("UPDATE datasets SET name = ? WHERE id = ?", (name, dataset_id))
+            if tags is not None:
+                db.execute("UPDATE datasets SET tags = ? WHERE id = ?", (_dump(tags), dataset_id))
+        return self.dataset(dataset_id)
+
+    def delete_dataset(self, dataset_id: str) -> None:
+        with self.tx() as db:
+            db.execute("DELETE FROM datasets WHERE id = ?", (dataset_id,))
+
+    # ---- profiles -----------------------------------------------------------
+
+    def profile(self, profile_id: str) -> dict[str, Any] | None:
+        return self.one("SELECT * FROM profiles WHERE id = ?", profile_id)
+
+    def profile_named(self, model_id: str, name: str) -> dict[str, Any] | None:
+        return self.one("SELECT * FROM profiles WHERE model_id = ? AND name = ?", model_id, name)
+
+    def profiles(self, model_id: str) -> list[dict[str, Any]]:
+        return self.all("SELECT * FROM profiles WHERE model_id = ? ORDER BY read_only DESC, name", model_id)
+
+    def default_profile(self, model_id: str) -> dict[str, Any] | None:
+        return self.one("SELECT * FROM profiles WHERE model_id = ? ORDER BY is_default DESC, read_only DESC"
+                        " LIMIT 1", model_id)
+
+    def save_profile(self, profile: dict[str, Any], expected_revision: int | None = None) -> dict[str, Any]:
+        with self.tx() as db:
+            current = db.execute("SELECT revision, read_only FROM profiles WHERE id = ?",
+                                 (profile["id"],)).fetchone()
+            if current is None:
+                db.execute(
+                    "INSERT INTO profiles (id, model_id, name, description, weights, params, solve,"
+                    " is_default, read_only, revision, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)",
+                    (profile["id"], profile["model_id"], profile["name"], profile.get("description", ""),
+                     _dump(profile.get("weights", {})), _dump(profile.get("params", {})),
+                     _dump(profile.get("solve", {})), int(bool(profile.get("is_default"))),
+                     int(bool(profile.get("read_only"))), now()),
+                )
+            else:
+                if current["read_only"] and not profile.get("read_only"):
+                    raise PermissionError("the Standard profile is read-only; duplicate it to change settings")
+                if expected_revision is not None and current["revision"] != expected_revision:
+                    raise Stale(f"profile changed: revision {current['revision']}, expected {expected_revision}")
+                db.execute(
+                    "UPDATE profiles SET name=?, description=?, weights=?, params=?, solve=?,"
+                    " revision=revision+1, updated_at=? WHERE id=?",
+                    (profile["name"], profile.get("description", ""), _dump(profile.get("weights", {})),
+                     _dump(profile.get("params", {})), _dump(profile.get("solve", {})), now(), profile["id"]),
+                )
+        return self.profile(profile["id"])  # type: ignore[return-value]
+
+    def set_default_profile(self, model_id: str, profile_id: str) -> None:
+        with self.tx() as db:
+            db.execute("UPDATE profiles SET is_default = (id = ?) WHERE model_id = ?", (profile_id, model_id))
+
+    def delete_profile(self, profile_id: str) -> None:
+        with self.tx() as db:
+            row = db.execute("SELECT read_only FROM profiles WHERE id = ?", (profile_id,)).fetchone()
+            if row is not None and row["read_only"]:
+                raise PermissionError("the Standard profile cannot be deleted")
+            db.execute("DELETE FROM profiles WHERE id = ?", (profile_id,))
+
+    # ---- runs ---------------------------------------------------------------
+
+    def add_run(self, *, dataset_id: str, model_id: str, kind: str, profile_id: str | None,
+                overrides: dict, config: dict, priority: int, status: str) -> dict[str, Any]:
+        run_id = new_id()
+        with self.tx() as db:
+            db.execute(
+                "INSERT INTO runs (id, dataset_id, model_id, kind, profile_id, overrides, config, priority,"
+                " status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (run_id, dataset_id, model_id, kind, profile_id, _dump(overrides), _dump(config),
+                 priority, status, now()),
+            )
+        return self.run(run_id)  # type: ignore[return-value]
+
+    def run(self, run_id: str, with_plan: bool = True) -> dict[str, Any] | None:
+        columns = "*" if with_plan else ", ".join(c for c in RUN_SUMMARY_COLUMNS)
+        return self.one(f"SELECT {columns} FROM runs WHERE id = ?", run_id)
+
+    def runs(self, *, dataset_id: str | None = None, model_id: str | None = None,
+             status: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
+        columns = ", ".join(RUN_SUMMARY_COLUMNS)
+        return self.all(
+            f"SELECT {columns} FROM runs WHERE (? IS NULL OR dataset_id = ?) AND (? IS NULL OR model_id = ?)"
+            " AND (? IS NULL OR status = ?) ORDER BY created_at DESC LIMIT ?",
+            dataset_id, dataset_id, model_id, model_id, status, status, limit,
+        )
+
+    def update_run(self, run_id: str, **fields: Any) -> None:
+        if not fields:
+            return
+        names = ", ".join(f"{key} = ?" for key in fields)
+        values = [_dump(value) if key in JSON_COLUMNS and value is not None else value
+                  for key, value in fields.items()]
+        with self.tx() as db:
+            db.execute(f"UPDATE runs SET {names} WHERE id = ?", (*values, run_id))
+
+    def claim_next(self, pid: int) -> dict[str, Any] | None:
+        """Moves the highest-priority queued solve to solving, owned by ``pid``."""
+        with self.tx() as db:
+            row = db.execute(
+                "SELECT id FROM runs WHERE status = 'queued' AND kind = 'solve'"
+                " ORDER BY priority DESC, created_at LIMIT 1").fetchone()
+            if row is None:
+                return None
+            db.execute("UPDATE runs SET status = 'solving', pid = ?, started_at = ? WHERE id = ?",
+                       (pid, now(), row["id"]))
+        return self.run(row["id"])
+
+    def add_point(self, run_id: str, elapsed_ms: int, score: str) -> None:
+        with self.tx() as db:
+            db.execute("INSERT OR REPLACE INTO run_points (run_id, elapsed_ms, score) VALUES (?, ?, ?)",
+                       (run_id, elapsed_ms, score))
+
+    def points(self, run_id: str) -> list[dict[str, Any]]:
+        return self.all("SELECT elapsed_ms, score FROM run_points WHERE run_id = ? ORDER BY elapsed_ms", run_id)
+
+    def delete_run(self, run_id: str) -> None:
+        with self.tx() as db:
+            db.execute("DELETE FROM runs WHERE id = ?", (run_id,))
+
+
+RUN_SUMMARY_COLUMNS = (
+    "id", "dataset_id", "model_id", "kind", "profile_id", "overrides", "config", "priority", "status",
+    "cancel_requested", "pid", "initial_score", "score", "feasible", "kpis", "issues", "telemetry", "error",
+    "created_at", "started_at", "finished_at",
+)
