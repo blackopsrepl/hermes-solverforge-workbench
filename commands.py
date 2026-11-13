@@ -1,4 +1,4 @@
-"""The /workbench slash command and the `hermes solverforge-workbench` CLI command."""
+"""The /solverforge-workbench slash command and the `hermes solverforge-workbench` CLI command."""
 
 from __future__ import annotations
 
@@ -8,10 +8,10 @@ from .engine_bin import ENGINE_VERSION, EngineError, target_triple
 from .service import Workbench, WorkbenchError
 
 USAGE = (
-    "/workbench status     engine, models and the solve queue\n"
-    "/workbench install    download the SolverForge engine (verified by checksum)\n"
-    "/workbench models     list the models\n"
-    "/workbench runs       list recent runs"
+    "/solverforge-workbench status    engine, models and the solve queue\n"
+    "/solverforge-workbench install   download the SolverForge engine (verified by checksum)\n"
+    "/solverforge-workbench models    list the models\n"
+    "/solverforge-workbench runs      list recent runs"
 )
 
 
@@ -29,7 +29,7 @@ def slash_handler(wb: Workbench, raw: str) -> str:
         if verb == "models":
             models = wb.models()
             if not models:
-                return "No models yet: install the engine with /workbench install."
+                return "No models yet: install the engine with /solverforge-workbench install."
             return "\n".join(f"{m['name']} ({m['id']}): {m['constraints']} constraints, "
                              f"{m['datasets']} dataset(s)" for m in models)
         if verb == "runs":

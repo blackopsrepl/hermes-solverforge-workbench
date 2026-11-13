@@ -26,22 +26,22 @@ _LOADED: list = []
 
 # Tool names the page may call, by route action. Deletions stay with the agent's approval prompt.
 READS = {
-    "status": "workbench_status",
-    "models": "workbench_models",
-    "model": "workbench_model",
-    "datasets": "workbench_datasets",
-    "dataset": "workbench_dataset",
-    "runs": "workbench_runs",
-    "run": "workbench_run",
-    "compare": "workbench_compare",
+    "status": "solverforge_workbench_status",
+    "models": "solverforge_workbench_models",
+    "model": "solverforge_workbench_model",
+    "datasets": "solverforge_workbench_datasets",
+    "dataset": "solverforge_workbench_dataset",
+    "runs": "solverforge_workbench_runs",
+    "run": "solverforge_workbench_run",
+    "compare": "solverforge_workbench_compare",
 }
 WRITES = {
-    "solve": "workbench_solve",
-    "evaluate": "workbench_evaluate",
-    "cancel": "workbench_cancel",
-    "profile_save": "workbench_profile_save",
-    "profile_default": "workbench_profile_default",
-    "dataset_create": "workbench_dataset_create",
+    "solve": "solverforge_workbench_solve",
+    "evaluate": "solverforge_workbench_evaluate",
+    "cancel": "solverforge_workbench_cancel",
+    "profile_save": "solverforge_workbench_profile_save",
+    "profile_default": "solverforge_workbench_profile_default",
+    "dataset_create": "solverforge_workbench_dataset_create",
 }
 STATUS = {"unknown_model": 404, "unknown_dataset": 404, "unknown_run": 404, "unknown_profile": 404,
           "no_view": 404, "stale": 409, "busy": 409, "engine_missing": 503, "storage_error": 503}

@@ -1,11 +1,11 @@
 ---
-name: workbench
+name: solverforge-workbench
 description: "Use when solving, tuning or explaining SolverForge Workbench models."
 ---
 
 # SolverForge Workbench
 
-The workbench hosts optimization models (employee scheduling, field service
+The SolverForge Workbench hosts optimization models (employee scheduling, field service
 routing, pick-up and delivery, task scheduling and more) on the user's machine.
 Every score, analysis, match and KPI comes from the engine. Never estimate or
 invent one; read it from a tool result.
@@ -25,27 +25,27 @@ invent one; read it from a tool result.
 
 ## Workflow
 
-1. `workbench_status`. If the engine is not installed, tell the user to run
-   `/workbench install` (it downloads a checksum-verified binary).
-2. `workbench_models`, then `workbench_model` for the one that fits. Read the
+1. `solverforge_workbench_status`. If the engine is not installed, tell the user to run
+   `/solverforge-workbench install` (it downloads a checksum-verified binary).
+2. `solverforge_workbench_models`, then `solverforge_workbench_model` for the one that fits. Read the
    constraint list before promising what the model can express.
-3. Create a dataset with `workbench_dataset_create`: a demo (`demo: ""` for the
+3. Create a dataset with `solverforge_workbench_dataset_create`: a demo (`demo: ""` for the
    default) to show the model, or the user's data as `plan` or `path`. To learn
    a model's JSON format, create its demo dataset and read it with
-   `workbench_dataset` and `include_plan: true`.
-4. Solve with `workbench_solve`. It returns at once; follow the run with
-   `workbench_run` until its status is no longer queued or solving. Report the
+   `solverforge_workbench_dataset` and `include_plan: true`.
+4. Solve with `solverforge_workbench_solve`. It returns at once; follow the run with
+   `solverforge_workbench_run` until its status is no longer queued or solving. Report the
    final score, whether it is feasible, the gain from the starting score and
    the KPIs.
-5. Explain with `workbench_explain`: by constraint for "why is X penalized",
+5. Explain with `solverforge_workbench_explain`: by constraint for "why is X penalized",
    by entity (an id or name as it appears in the plan) for "why is this
    employee on that shift". Quote the matches; do not paraphrase them into
    claims they do not make.
-6. Change the problem with `workbench_dataset_patch` (JSON Patch; address
+6. Change the problem with `solverforge_workbench_dataset_patch` (JSON Patch; address
    records by id with `[id=X]` path segments). To replan a published plan,
    patch with `from_run` set to the solved run, pin what must stay, then solve
    the new dataset.
-7. Compare alternatives with `workbench_compare` over two or more runs.
+7. Compare alternatives with `solverforge_workbench_compare` over two or more runs.
 
 ## Settings
 
@@ -65,5 +65,5 @@ invent one; read it from a tool result.
   read the profile again and redo the change.
 - A run marked invalid lists the dataset's problems in `error.issues`: fix the
   data with a patch rather than retrying the same dataset.
-- `workbench_export` writes a solved plan or a dataset to a `.json` file when
+- `solverforge_workbench_export` writes a solved plan or a dataset to a `.json` file when
   the user wants the result outside Hermes.

@@ -19,7 +19,7 @@ TESTKIT = ROOT / "engine" / "target" / "release" / "workbench-testkit"
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
-    spec = importlib.util.spec_from_file_location("workbench_plugin_api", ROOT / "dashboard" / "plugin_api.py")
+    spec = importlib.util.spec_from_file_location("solverforge_workbench_plugin_api", ROOT / "dashboard" / "plugin_api.py")
     assert spec is not None and spec.loader is not None
     api = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(api)

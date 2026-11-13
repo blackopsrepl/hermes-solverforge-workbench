@@ -1,7 +1,7 @@
 {
  "ok": true,
  "dataset": {
-  "id": "25926c8e9afe",
+  "id": "5e531d196b35",
   "model_id": "toy",
   "name": "Demo Week",
   "tags": [
@@ -14,15 +14,15 @@
    "params": {},
    "solve": {}
   },
-  "created_at": "2026-11-13T15:03:21.199+00:00",
+  "created_at": "2026-11-13T15:10:18.698+00:00",
   "size": {
    "nurses": 3,
    "shifts": 6
   },
   "runs": [
    {
-    "id": "e4f6f2ab035e",
-    "dataset_id": "25926c8e9afe",
+    "id": "e5714d7703f7",
+    "dataset_id": "5e531d196b35",
     "model_id": "toy",
     "kind": "solve",
     "status": "completed",
@@ -31,14 +31,14 @@
     "initial_score": "-6hard/0soft",
     "score": "0hard/0soft",
     "feasible": 1,
-    "created_at": "2026-11-13T15:03:21.223+00:00",
-    "started_at": "2026-11-13T15:03:21.283+00:00",
-    "finished_at": "2026-11-13T15:03:23.311+00:00",
+    "created_at": "2026-11-13T15:10:18.723+00:00",
+    "started_at": "2026-11-13T15:10:18.780+00:00",
+    "finished_at": "2026-11-13T15:10:20.824+00:00",
     "error": null
    },
    {
-    "id": "a025daadf34c",
-    "dataset_id": "25926c8e9afe",
+    "id": "a36db6e959a6",
+    "dataset_id": "5e531d196b35",
     "model_id": "toy",
     "kind": "evaluate",
     "status": "completed",
@@ -47,9 +47,9 @@
     "initial_score": "-6hard/0soft",
     "score": "-6hard/0soft",
     "feasible": 0,
-    "created_at": "2026-11-13T15:03:21.210+00:00",
+    "created_at": "2026-11-13T15:10:18.710+00:00",
     "started_at": null,
-    "finished_at": "2026-11-13T15:03:21.217+00:00",
+    "finished_at": "2026-11-13T15:10:18.717+00:00",
     "error": null
    }
   ],

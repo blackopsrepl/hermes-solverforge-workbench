@@ -15,28 +15,28 @@ homepage: https://github.com/blackopsrepl/hermes-solverforge-workbench
 requires_hermes: ">=0.22.2"
 tags: [optimization, scheduling, routing, solver, solverforge, planning]
 provides_tools:
-  - workbench_status
-  - workbench_models
-  - workbench_model
-  - workbench_dataset_create
-  - workbench_datasets
-  - workbench_dataset
-  - workbench_dataset_update
-  - workbench_dataset_patch
-  - workbench_dataset_delete
-  - workbench_profile_save
-  - workbench_profile_default
-  - workbench_profile_delete
-  - workbench_profile_export
-  - workbench_profile_import
-  - workbench_solve
-  - workbench_evaluate
-  - workbench_run
-  - workbench_runs
-  - workbench_cancel
-  - workbench_explain
-  - workbench_compare
-  - workbench_export
+  - solverforge_workbench_status
+  - solverforge_workbench_models
+  - solverforge_workbench_model
+  - solverforge_workbench_dataset_create
+  - solverforge_workbench_datasets
+  - solverforge_workbench_dataset
+  - solverforge_workbench_dataset_update
+  - solverforge_workbench_dataset_patch
+  - solverforge_workbench_dataset_delete
+  - solverforge_workbench_profile_save
+  - solverforge_workbench_profile_default
+  - solverforge_workbench_profile_delete
+  - solverforge_workbench_profile_export
+  - solverforge_workbench_profile_import
+  - solverforge_workbench_solve
+  - solverforge_workbench_evaluate
+  - solverforge_workbench_run
+  - solverforge_workbench_runs
+  - solverforge_workbench_cancel
+  - solverforge_workbench_explain
+  - solverforge_workbench_compare
+  - solverforge_workbench_export
 provides_hooks:
   - pre_tool_call
 config_schema:

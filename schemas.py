@@ -39,16 +39,16 @@ def _tool(name: str, description: str, properties: dict[str, Any] | None = None,
 
 
 SCHEMAS: list[dict[str, Any]] = [
-    _tool("workbench_status",
+    _tool("solverforge_workbench_status",
           "Engine installation, its models, and how many solves are queued or running."),
-    _tool("workbench_models",
+    _tool("solverforge_workbench_models",
           "List the optimization models: stock models and the user's custom ones, with constraint counts "
           "by level, demo datasets and how many datasets each has."),
-    _tool("workbench_model",
+    _tool("solverforge_workbench_model",
           "One model in full: every constraint with its group, level (hard/medium/soft) and description, "
           "the demo datasets, and the model's settings profiles.",
           {"model": {"type": "string", "description": "Model id, e.g. employee-scheduling"}}, ["model"]),
-    _tool("workbench_dataset_create",
+    _tool("solverforge_workbench_dataset_create",
           "Create a dataset (a planning problem) for a model from exactly one source: a demo id, an inline "
           "JSON plan, or a path to a JSON file.",
           {"model": {"type": "string"},
@@ -60,17 +60,17 @@ SCHEMAS: list[dict[str, Any]] = [
            "settings": {**SETTINGS, "description": "Settings carried by the dataset itself; they win over "
                                                    "every profile. " + SETTINGS["description"]}},
           ["model"]),
-    _tool("workbench_datasets",
+    _tool("solverforge_workbench_datasets",
           "List datasets, newest first, with each one's latest run. Filter by model, name/id text or tag.",
           {"model": {"type": "string"}, "query": {"type": "string"}, "tag": {"type": "string"}}),
-    _tool("workbench_dataset",
+    _tool("solverforge_workbench_dataset",
           "One dataset: size, settings, lineage (parent, children) and all its runs. include_plan returns "
           "the full problem JSON.",
           {"dataset": {"type": "string"}, "include_plan": {"type": "boolean"}}, ["dataset"]),
-    _tool("workbench_dataset_update", "Rename a dataset or replace its tags.",
+    _tool("solverforge_workbench_dataset_update", "Rename a dataset or replace its tags.",
           {"dataset": {"type": "string"}, "name": {"type": "string"},
            "tags": {"type": "array", "items": {"type": "string"}}}, ["dataset"]),
-    _tool("workbench_dataset_patch",
+    _tool("solverforge_workbench_dataset_patch",
           "Make a new dataset from an existing one by changing it: JSON Patch operations (add, remove, "
           "replace) whose paths may address records by id, e.g. /shifts/[id=S12]/employee or "
           "/employees/[id=E3]/unavailable/-. from_run starts from that run's solved plan instead of the "
@@ -81,9 +81,9 @@ SCHEMAS: list[dict[str, Any]] = [
            "from_run": {"type": "string"},
            "name": {"type": "string"}},
           ["dataset", "operations"]),
-    _tool("workbench_dataset_delete", "Delete a dataset and all its runs. Asks the user first.",
+    _tool("solverforge_workbench_dataset_delete", "Delete a dataset and all its runs. Asks the user first.",
           {"dataset": {"type": "string"}}, ["dataset"]),
-    _tool("workbench_profile_save",
+    _tool("solverforge_workbench_profile_save",
           "Create or update a settings profile for a model: constraint weights, model parameters and solve "
           "settings. copy_from starts from another profile (e.g. Standard). Updating needs the profile id and "
           "the revision you last read. The Standard profile is read-only.",
@@ -92,51 +92,51 @@ SCHEMAS: list[dict[str, Any]] = [
            "expected_revision": {"type": "integer"},
            "copy_from": {"type": "string", "description": "Profile id or name to start from"}},
           ["model", "name"]),
-    _tool("workbench_profile_default", "Make a profile the model's default for new solves.",
+    _tool("solverforge_workbench_profile_default", "Make a profile the model's default for new solves.",
           {"model": {"type": "string"}, "profile": {"type": "string"}}, ["model", "profile"]),
-    _tool("workbench_profile_delete", "Delete a profile. Asks the user first.",
+    _tool("solverforge_workbench_profile_delete", "Delete a profile. Asks the user first.",
           {"model": {"type": "string"}, "profile": {"type": "string"}}, ["model", "profile"]),
-    _tool("workbench_profile_export", "Write a profile to a JSON file that can be imported again.",
+    _tool("solverforge_workbench_profile_export", "Write a profile to a JSON file that can be imported again.",
           {"model": {"type": "string"}, "profile": {"type": "string"}, "path": {"type": "string"}},
           ["model", "profile", "path"]),
-    _tool("workbench_profile_import", "Create a profile from an exported profile JSON file.",
+    _tool("solverforge_workbench_profile_import", "Create a profile from an exported profile JSON file.",
           {"path": {"type": "string"}, "name": {"type": "string"}}, ["path"]),
-    _tool("workbench_solve",
+    _tool("solverforge_workbench_solve",
           "Queue a solve of a dataset and return at once with the run id. The solve runs in the background; "
-          "follow it with workbench_run. Settings apply in this order, later winning: model defaults, parent "
+          "follow it with solverforge_workbench_run. Settings apply in this order, later winning: model defaults, parent "
           "dataset, profile (default profile if omitted), overrides, the dataset's own settings.",
           {"dataset": {"type": "string"}, "profile": {"type": "string"},
            "overrides": {**SETTINGS, "description": "One-off settings for this solve. " + SETTINGS["description"]},
            "priority": {"type": "integer", "minimum": 0, "maximum": 10,
                         "description": "Queue priority, 10 first; default 5"}},
           ["dataset"]),
-    _tool("workbench_evaluate",
+    _tool("solverforge_workbench_evaluate",
           "Score a dataset's plan exactly as it stands, without solving: total score, feasibility, every "
           "constraint's matches and the KPIs. Use it to check a hand-made or real-world plan.",
           {"dataset": {"type": "string"}, "profile": {"type": "string"}, "overrides": SETTINGS},
           ["dataset"]),
-    _tool("workbench_run",
+    _tool("solverforge_workbench_run",
           "One run: status, score progress, final score and feasibility, KPIs, and per-constraint scores with "
           "a few example matches. include_plan returns the solved plan.",
           {"run": {"type": "string"}, "include_plan": {"type": "boolean"},
            "max_matches": {"type": "integer", "minimum": 0, "maximum": 50}}, ["run"]),
-    _tool("workbench_runs", "List runs, newest first; filter by dataset, model or status.",
+    _tool("solverforge_workbench_runs", "List runs, newest first; filter by dataset, model or status.",
           {"dataset": {"type": "string"}, "model": {"type": "string"},
            "status": {"type": "string",
                       "enum": ["queued", "solving", "completed", "incomplete", "failed", "invalid"]}}),
-    _tool("workbench_cancel",
+    _tool("solverforge_workbench_cancel",
           "Stop a queued or running solve. A running solve keeps the best plan it found (status incomplete).",
           {"run": {"type": "string"}}, ["run"]),
-    _tool("workbench_explain",
+    _tool("solverforge_workbench_explain",
           "Why a plan scores as it does: the matches of one constraint, or every match involving an entity "
           "(an employee, shift, visit... named by text such as its id). With neither, lists every constraint "
           "that costs or earns score.",
           {"run": {"type": "string"}, "constraint": {"type": "string"}, "entity": {"type": "string"},
            "limit": {"type": "integer", "minimum": 1, "maximum": 200}}, ["run"]),
-    _tool("workbench_compare",
+    _tool("solverforge_workbench_compare",
           "Compare two or more runs side by side: scores, per-constraint scores, KPIs, profile and solve time.",
           {"runs": {"type": "array", "items": {"type": "string"}, "minItems": 2}}, ["runs"]),
-    _tool("workbench_export",
+    _tool("solverforge_workbench_export",
           "Write a run's solved plan, or a dataset's problem, to a JSON file.",
           {"run": {"type": "string"}, "dataset": {"type": "string"}, "path": {"type": "string"}}, ["path"]),
 ]

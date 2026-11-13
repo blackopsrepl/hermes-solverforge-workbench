@@ -33,7 +33,7 @@ test('scores parse into levels, including medium and decimals', () => {
 test('the catalog lists each model with its constraints by level', () => {
   setFixture(real)
   const page = text(render(h(Workbench, {})))
-  assert.match(page, /Workbench Models Datasets Runs/)
+  assert.match(page, /SolverForge Workbench Models Datasets Runs/)
   assert.match(page, /Toy roster toy stock 3 · 2 hard · 1 soft 1/)
 })
 
@@ -65,7 +65,7 @@ test('the chat card of an evaluated plan lists only what costs score', () => {
   assert.match(page, /infeasible/)
   assert.match(page, /What costs score .*Unassigned shift hard 6 -6 hard \/ 0 soft/)
   assert.doesNotMatch(page, /Shift for the first nurse/)
-  assert.match(page, /Open in the Workbench/)
+  assert.match(page, /Open in the SolverForge Workbench/)
 })
 
 test('a card with a malformed run id renders nothing', () => {
@@ -126,7 +126,7 @@ test('the chip, the palette and chat cards open the Workbench section at the ask
   const page = text(render(h(Workbench, {})))
   assert.match(page, /completed 0 hard \/ 0 soft/)
   assert.equal(opened.length, 0)
-  assert.deepEqual(navigated, ['/workbench'])
+  assert.deepEqual(navigated, ['/solverforge-workbench'])
 })
 
 test('a model with a schedule view draws the run as a schedule in a sandboxed frame', () => {

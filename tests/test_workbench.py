@@ -193,11 +193,11 @@ def test_profiles_export_and_import(wb, tmp_path):
 
 def test_tools_return_codes_and_messages_the_agent_can_act_on(wb):
     table = dict((schema["name"], handler) for schema, handler in tools_module.tool_table(lambda: wb))
-    answer = json.loads(table["workbench_model"]({"model": "nope"}))
+    answer = json.loads(table["solverforge_workbench_model"]({"model": "nope"}))
     assert answer == {"ok": False, "code": "unknown_model", "error": "no model is named 'nope'", "models": ["toy"]}
-    created = json.loads(table["workbench_dataset_create"]({"model": "toy", "demo": ""}))
+    created = json.loads(table["solverforge_workbench_dataset_create"]({"model": "toy", "demo": ""}))
     assert created["ok"] and created["dataset"]["size"]["shifts"] == 6
-    missing = json.loads(table["workbench_solve"]({}))
+    missing = json.loads(table["solverforge_workbench_solve"]({}))
     assert missing["code"] == "missing_argument"
 
 

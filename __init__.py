@@ -20,7 +20,7 @@ from .tools import tool_table
 NAME = "solverforge-workbench"
 TOOLSET = "solverforge-workbench"
 # Tools that delete the user's data. Each needs a human yes, every time.
-GATED = {"workbench_dataset_delete", "workbench_profile_delete"}
+GATED = {"solverforge_workbench_dataset_delete", "solverforge_workbench_profile_delete"}
 
 _lock = threading.Lock()
 # One workbench per plugin data directory. The data directory follows the Hermes
@@ -64,7 +64,7 @@ def workbench(get_config=None) -> Workbench:
 
 
 def approval_text(wb: Workbench, tool_name: str, args: dict) -> str:
-    if tool_name == "workbench_dataset_delete":
+    if tool_name == "solverforge_workbench_dataset_delete":
         dataset = wb.store.dataset(args.get("dataset", "")) or {}
         runs = len(wb.store.runs(dataset_id=args.get("dataset", "")))
         return f"Delete dataset “{dataset.get('name', args.get('dataset'))}” and its {runs} run(s)?"
@@ -92,7 +92,7 @@ def register(ctx) -> None:
     ctx.register_hook("pre_tool_call", gate)
 
     ctx.register_command(
-        "workbench",
+        "solverforge-workbench",
         lambda raw="", **kw: slash_handler(wb(), raw),
         description="SolverForge Workbench: status, install, models, runs",
         args_hint="[status|install|models|runs]",
@@ -103,4 +103,4 @@ def register(ctx) -> None:
         setup_fn=cli_setup,
         handler_fn=lambda args: cli_handler(wb(), args),
     )
-    ctx.register_skill("workbench", Path(__file__).parent / "skills" / "workbench" / "SKILL.md")
+    ctx.register_skill("solverforge-workbench", Path(__file__).parent / "skills" / "solverforge-workbench" / "SKILL.md")

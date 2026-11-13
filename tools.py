@@ -94,7 +94,7 @@ class Tools:
 
     def solve(self, args: dict) -> str:
         run = self.wb.solve(args["dataset"], args.get("profile"), args.get("overrides"), args.get("priority", 5))
-        return ok(run=run, next="call workbench_run with this run id to follow the solve")
+        return ok(run=run, next="call solverforge_workbench_run with this run id to follow the solve")
 
     def evaluate(self, args: dict) -> str:
         return ok(run=self.wb.evaluate(args["dataset"], args.get("profile"), args.get("overrides")))
@@ -147,6 +147,6 @@ def tool_table(workbench: Callable[[], Workbench]) -> list[tuple[dict, Callable[
     tools = Tools(workbench)
     table = []
     for schema in SCHEMAS:
-        method = getattr(tools, schema["name"].removeprefix("workbench_"))
+        method = getattr(tools, schema["name"].removeprefix("solverforge_workbench_"))
         table.append((schema, handler(method)))
     return table

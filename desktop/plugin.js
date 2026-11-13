@@ -1,8 +1,8 @@
 /**
  * SolverForge Workbench — Desktop half.
  *
- * Surfaces: the Workbench section (models, datasets, runs, compare) with its
- * own sidebar row and page, the same surface beside the chat on request, a ::workbench{run="…"} card
+ * Surfaces: the SolverForge Workbench section (models, datasets, runs, compare) with its
+ * own sidebar row and page, the same surface beside the chat on request, a ::solverforge-workbench{run="…"} card
  * in the transcript, a status-bar chip while solves run, and palette
  * commands. Every byte comes from this package's backend
  * (dashboard/plugin_api.py) through ctx.rest. The only writes are solve,
@@ -30,7 +30,7 @@ import { useEffect, useState } from 'react'
 import { jsx, jsxs } from 'react/jsx-runtime'
 
 const ID = 'solverforge-workbench'
-const ROUTE = '/workbench'
+const ROUTE = '/solverforge-workbench'
 const LIVE = ['queued', 'solving']
 
 let rest = () => Promise.reject(new Error('SolverForge Workbench not loaded'))
@@ -126,10 +126,10 @@ function useAction(action, onDone) {
     mutationFn: body => rest(`/actions/${action}`, { method: 'POST', body, timeoutMs: 120_000 }),
     onSuccess: result => {
       queryClient.invalidateQueries({ queryKey: [ID] })
-      if (result && result.ok === false) host.notify({ kind: 'error', message: `Workbench: ${errorText(result, action + ' failed')}` })
+      if (result && result.ok === false) host.notify({ kind: 'error', message: `SolverForge Workbench: ${errorText(result, action + ' failed')}` })
       else if (onDone) onDone(result)
     },
-    onError: error => host.notify({ kind: 'error', message: `Workbench: ${error.message || error}` })
+    onError: error => host.notify({ kind: 'error', message: `SolverForge Workbench: ${error.message || error}` })
   })
 }
 
@@ -165,8 +165,8 @@ function Table({ columns, rows, onRow }) {
 
 function Loading({ query, children }) {
   if (query.isLoading) return e('div', { style: muted }, 'Loading…')
-  if (!query.data) return e('div', { style: muted }, 'No answer from the workbench.')
-  if (query.data.ok === false) return e('div', { role: 'alert', style: muted }, errorText(query.data, 'The workbench refused.'))
+  if (!query.data) return e('div', { style: muted }, 'No answer from the SolverForge Workbench.')
+  if (query.data.ok === false) return e('div', { role: 'alert', style: muted }, errorText(query.data, 'The SolverForge Workbench refused.'))
   return children(query.data)
 }
 
@@ -191,7 +191,7 @@ function ModelsView({ go }) {
           })),
           onRow: row => go({ view: 'model', id: row.id })
         })
-      : e(EmptyState, { title: 'No models yet', description: 'Install the engine: type /workbench install in the chat.' })
+      : e(EmptyState, { title: 'No models yet', description: 'Install the engine: type /solverforge-workbench install in the chat.' })
   )
 }
 
@@ -402,7 +402,7 @@ export function RunView({ id, compact = false, go }) {
         run.initial_score && run.initial_score !== run.score ? e('span', { style: faint }, `from ${run.initial_score}`) : null,
         run.feasible === 1 ? e(Badge, { variant: 'success' }, 'feasible') : run.feasible === 0 ? e(Badge, { variant: 'destructive' }, 'infeasible') : null,
         live ? e(Button, { size: 'xs', variant: 'outline', disabled: cancel.isPending, onClick: () => cancel.mutate({ run: run.id }) }, 'Stop') : null,
-        compact ? e(Button, { size: 'xs', variant: 'text', onClick: () => openPage({ view: 'run', id: run.id }) }, 'Open in the Workbench') : null),
+        compact ? e(Button, { size: 'xs', variant: 'text', onClick: () => openPage({ view: 'run', id: run.id }) }, 'Open in the SolverForge Workbench') : null),
       e('div', { style: faint }, `${run.kind} of ${run.dataset_id} · ${run.model_id} · ${run.id}`),
       run.error ? e('div', { role: 'alert', style: muted }, run.error.message,
         run.error.issues ? e('ul', { style: { margin: '4px 0', paddingLeft: 18 } }, run.error.issues.map((i, n) => e('li', { key: n }, `${i.severity || ''} ${i.code}: ${i.message}`))) : null) : null,
@@ -465,7 +465,7 @@ const TABS = [
   { id: 'runs', label: 'Runs' }
 ]
 
-// Requests to show a view in the Workbench section, from the chip, the palette or a chat card.
+// Requests to show a view in the SolverForge Workbench section, from the chip, the palette or a chat card.
 let requested = null
 const listeners = new Set()
 export function openPage(start = { view: 'models' }) {
@@ -497,7 +497,7 @@ export function Workbench({ start }) {
   return e(
     'div', { style: { display: 'flex', flexDirection: 'column', gap: 12, padding: 16, height: '100%', overflow: 'auto', color: 'var(--ui-text-primary)' } },
     e('div', { style: bar },
-      e('span', { style: { fontSize: '0.95rem', fontWeight: 600 } }, 'Workbench'),
+      e('span', { style: { fontSize: '0.95rem', fontWeight: 600 } }, 'SolverForge Workbench'),
       e(SegmentedControl, { value: tab || '', onChange: id => setStack([{ view: id }]), options: TABS }),
       e('span', { style: { flex: 1 } }),
       stack.length > 1 ? e(Button, { size: 'xs', variant: 'text', onClick: () => setStack(stack.slice(0, -1)) }, '← Back') : null),
@@ -510,7 +510,7 @@ function EngineNotice() {
   const query = useRead('status')
   const engine = query.data && query.data.ok ? query.data.engine : null
   if (!engine || engine.installed) return null
-  return e(EmptyState, { title: 'The SolverForge engine is not installed', description: 'Type /workbench install in the chat; it downloads a checksum-verified binary.' })
+  return e(EmptyState, { title: 'The SolverForge engine is not installed', description: 'Type /solverforge-workbench install in the chat; it downloads a checksum-verified binary.' })
 }
 
 // ---- beside the chat, chip, card ---------------------------------------------
@@ -523,7 +523,7 @@ export function openBeside(start = { view: 'models' }) {
   }
   // Re-opening the same id fronts the tab and renders the new start view.
   closePane = host.openWorkspace(`${ID}:workbench`, {
-    title: 'Workbench', minWidth: '28rem', dock: { pane: 'workspace', pos: 'right' },
+    title: 'SolverForge Workbench', minWidth: '28rem', dock: { pane: 'workspace', pos: 'right' },
     render: () => e(Workbench, { start, key: JSON.stringify(start) }),
     onClose: () => { closePane = null }
   })
@@ -535,7 +535,7 @@ export function StatusChip() {
   if (!data || !(data.solving || data.queued)) return null
   const label = `⚙ ${data.solving} solving${data.queued ? ` · ${data.queued} queued` : ''}`
   return e('button', {
-    type: 'button', title: 'Show the Workbench runs', onClick: () => openPage({ view: 'runs' }),
+    type: 'button', title: 'Show the SolverForge Workbench runs', onClick: () => openPage({ view: 'runs' }),
     style: { ...tone('--ui-accent', '0.6875rem'), padding: '0 6px', height: '100%', background: 'none', border: 0, cursor: 'pointer' }
   }, label)
 }
@@ -559,13 +559,13 @@ export default {
     const refresh = () => queryClient.invalidateQueries({ queryKey: [ID] })
     ctx.onEvent(`plugin.${ID}.changed`, refresh)
     ctx.registerMany([
-      { id: 'run-card', area: TRANSCRIPT_DIRECTIVE_AREA, data: { name: 'workbench', render: props => jsx(RunCard, props) } },
-      { id: 'page', area: ROUTES_AREA, title: 'Workbench', data: { path: ROUTE }, render: () => jsx(Workbench, {}) },
-      { id: 'nav', area: SIDEBAR_NAV_AREA, data: { path: ROUTE, label: 'Workbench', codicon: 'beaker' } },
+      { id: 'run-card', area: TRANSCRIPT_DIRECTIVE_AREA, data: { name: 'solverforge-workbench', render: props => jsx(RunCard, props) } },
+      { id: 'page', area: ROUTES_AREA, title: 'SolverForge Workbench', data: { path: ROUTE }, render: () => jsx(Workbench, {}) },
+      { id: 'nav', area: SIDEBAR_NAV_AREA, data: { path: ROUTE, label: 'SolverForge Workbench', codicon: 'beaker' } },
       { id: 'chip', area: STATUSBAR_AREAS.right, order: 127, render: () => jsx(StatusChip, {}) },
-      { id: 'open', area: PALETTE_AREA, data: { id: `${ID}.open`, label: 'Workbench: open', keywords: ['optimize', 'solver', 'models', 'schedule'], run: () => openPage() } },
-      { id: 'runs', area: PALETTE_AREA, data: { id: `${ID}.runs`, label: 'Workbench: runs', keywords: ['solve', 'runs', 'score'], run: () => openPage({ view: 'runs' }) } },
-      { id: 'beside', area: PALETTE_AREA, data: { id: `${ID}.beside`, label: 'Workbench: open beside the chat', keywords: ['optimize', 'solver', 'side', 'pane'], run: () => openBeside() } }
+      { id: 'open', area: PALETTE_AREA, data: { id: `${ID}.open`, label: 'SolverForge Workbench: open', keywords: ['optimize', 'solver', 'models', 'schedule'], run: () => openPage() } },
+      { id: 'runs', area: PALETTE_AREA, data: { id: `${ID}.runs`, label: 'SolverForge Workbench: runs', keywords: ['solve', 'runs', 'score'], run: () => openPage({ view: 'runs' }) } },
+      { id: 'beside', area: PALETTE_AREA, data: { id: `${ID}.beside`, label: 'SolverForge Workbench: open beside the chat', keywords: ['optimize', 'solver', 'side', 'pane'], run: () => openBeside() } }
     ])
   }
 }
