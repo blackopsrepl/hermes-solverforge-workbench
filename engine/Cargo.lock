@@ -327,6 +327,17 @@ dependencies = [
 name = "solverforge-workbench"
 version = "0.1.0"
 dependencies = [
+ "solverforge-workbench-employee-scheduling",
+ "solverforge-workbench-host",
+]
+
+[[package]]
+name = "solverforge-workbench-employee-scheduling"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "solverforge",
  "solverforge-workbench-host",
 ]
 

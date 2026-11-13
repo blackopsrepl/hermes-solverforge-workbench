@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["app", "host", "testkit"]
+members = ["app", "host", "testkit", "models/*"]
 
 [workspace.package]
 edition = "2021"
