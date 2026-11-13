@@ -1,5 +1,6 @@
 //! Scoring helpers over the solver's grouped rows.
 
+mod economy;
 mod members;
 mod patterns;
 mod roster;
@@ -8,7 +9,12 @@ mod schedule;
 mod together;
 mod windows;
 
-pub use members::{ByDay, ByWindow, Members, MembersAccumulator, MembersCollector, Row};
+pub use economy::{
+    activation, alternatives_off, demand, disruption, fill_up, share_gap, unfairness,
+};
+pub use members::{
+    ByChoice, ByDay, ByShare, ByWindow, Members, MembersAccumulator, MembersCollector, Row,
+};
 pub use patterns::{
     day_patterns, gaps, location_change_shortfall, multi_day_patterns, overlap_minutes, pairings,
     rotation_blocks, weekly_rotation,

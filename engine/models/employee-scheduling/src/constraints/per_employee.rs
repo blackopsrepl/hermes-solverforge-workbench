@@ -6,9 +6,9 @@ use solverforge::prelude::*;
 use crate::derived::{Measure, Want};
 use crate::domain::{Employee, Plan, Shift};
 use crate::eval::{
-    day_patterns, day_runs, gaps, location_change_shortfall, multi_day_patterns, near_day_off,
-    overlap_minutes, pairings, rotation_blocks, rules, shift_runs, weekly_rotation, window_penalty,
-    Roster, RosterCollector,
+    activation, day_patterns, day_runs, disruption, fill_up, gaps, location_change_shortfall,
+    multi_day_patterns, near_day_off, overlap_minutes, pairings, rotation_blocks, rules,
+    shift_runs, unfairness, weekly_rotation, window_penalty, Roster, RosterCollector,
 };
 
 type Score = HardMediumSoftScore;
@@ -52,7 +52,31 @@ macro_rules! rosters {
 }
 
 pub fn constraints() -> impl ConstraintSet<Plan, Score> {
-    (work_limits(), time_off_and_patterns(), variety_and_more())
+    (
+        work_limits(),
+        time_off_and_patterns(),
+        variety_and_more(),
+        economy(),
+    )
+}
+
+fn economy() -> impl ConstraintSet<Plan, Score> {
+    use Measure as M;
+    rosters!()
+        .penalize(hard!(window(M::Cost, false, false)))
+        .named("Contract cost outside required range")
+        .penalize(soft!(window(M::Cost, false, true)))
+        .named("Contract cost")
+        .penalize(soft!(activation))
+        .named("Employee activated")
+        .reward(soft!(fill_up))
+        .named("Activated employee filled up")
+        .penalize(soft!(unfairness))
+        .named("Unfair workload")
+        .penalize(hard!(|r: &Roster, e| disruption(r, e, false)))
+        .named("Published shift reassigned against rule")
+        .penalize(soft!(|r: &Roster, e| disruption(r, e, true)))
+        .named("Published shift reassigned")
 }
 
 fn work_limits() -> impl ConstraintSet<Plan, Score> {

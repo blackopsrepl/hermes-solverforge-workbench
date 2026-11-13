@@ -21,6 +21,7 @@ pub enum Measure {
     ShiftTypes,
     DistinctTags,
     Locations,
+    Cost,
 }
 
 /// A limit evaluated over a list of windows.
@@ -41,6 +42,79 @@ pub struct WindowRule {
     pub weekdays: u8,
     /// `ShiftTypes`: category tags; `DistinctTags`: the tags counted. Sorted.
     pub tags: Vec<u32>,
+    /// `Cost`: the pay tiers.
+    pub cost: Option<Tiers>,
+}
+
+/// Pay per period: `base` cents per hour for `base_minutes`, then overtime
+/// tiers of `(cents per hour, minutes)` in order, the last unlimited.
+#[derive(Debug, Clone, Default)]
+pub struct Tiers {
+    pub base: i64,
+    pub base_minutes: Option<i64>,
+    pub overtime: Vec<(i64, Option<i64>)>,
+}
+
+impl Tiers {
+    /// Cost in cents of `minutes` worked in one period.
+    pub fn cents(&self, minutes: i64) -> i64 {
+        let mut left = minutes;
+        let mut cents = 0;
+        let mut pay = |rate: i64, limit: Option<i64>| {
+            let take = limit.map_or(left, |limit| left.min(limit)).max(0);
+            cents += (take * rate + 30) / 60;
+            left -= take;
+        };
+        pay(self.base, self.base_minutes);
+        for &(rate, limit) in &self.overtime {
+            pay(rate, limit);
+        }
+        cents
+    }
+
+    /// Minutes beyond the base allowance.
+    pub fn overtime_minutes(&self, minutes: i64) -> i64 {
+        self.base_minutes.map_or(0, |base| (minutes - base).max(0))
+    }
+}
+
+/// How changes to published assignments weigh for an employee.
+#[derive(Debug, Clone)]
+pub struct DisruptionRule {
+    pub preferred: bool,
+    pub weight: i64,
+    pub shifts: TagMatch,
+    /// Largest start and end difference for a new shift to replace a lost one.
+    pub within: Option<i64>,
+    pub keep_tags: Vec<u32>,
+}
+
+/// One fairness rule as it applies to one employee.
+#[derive(Debug, Clone)]
+pub struct FairShare {
+    pub minutes: bool,
+    pub shifts: TagMatch,
+    pub history: i64,
+}
+
+/// A demand slot in plan minutes.
+#[derive(Debug, Clone)]
+pub struct Slot {
+    pub preferred: bool,
+    pub start: i64,
+    pub end: i64,
+    pub shifts: TagMatch,
+    pub employees: Option<TagMatch>,
+    pub min: Option<i64>,
+    pub max: Option<i64>,
+}
+
+/// An hourly rate in cents; `None` groups match any.
+#[derive(Debug, Clone)]
+pub struct Rate {
+    pub employee_group: Option<u32>,
+    pub shift_group: Option<u32>,
+    pub cents: i64,
 }
 
 /// Limits on runs of consecutive worked days.
@@ -178,6 +252,7 @@ pub struct TeamInfo {
 pub enum GlobalKind {
     Shifts,
     DistinctTags,
+    Cost,
 }
 
 /// One period of a schedule-wide rule.
@@ -192,6 +267,8 @@ pub struct GlobalWindow {
     pub employees: Option<TagMatch>,
     /// `DistinctTags`: the tags counted, sorted.
     pub tags: Vec<u32>,
+    /// `Cost`: hourly rates, first match applies.
+    pub rates: Vec<Rate>,
     pub min: Option<i64>,
     pub max: Option<i64>,
 }

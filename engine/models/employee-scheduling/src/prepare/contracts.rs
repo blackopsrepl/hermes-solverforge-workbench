@@ -2,8 +2,8 @@
 
 use super::{Builder, Calendar};
 use crate::derived::{
-    DayPatternRule, DayRunRule, GapRule, Measure, MultiDayRule, NearDayOffRule, PairingRule,
-    RotationRule, ShiftRunRule, TagMatch, TravelRule, Want, WindowRule,
+    DayPatternRule, DayRunRule, DisruptionRule, GapRule, Measure, MultiDayRule, NearDayOffRule,
+    PairingRule, RotationRule, ShiftRunRule, TagMatch, Tiers, TravelRule, Want, WindowRule,
 };
 use crate::wire::{Contract, Cycle, Level, Rule, RuleKind, Stance, Weekday};
 
@@ -21,6 +21,12 @@ pub struct Compiled {
     pub multi_day: Vec<MultiDayRule>,
     pub rotations: Vec<RotationRule>,
     pub travel: Vec<TravelRule>,
+    pub disruption: Vec<DisruptionRule>,
+}
+
+/// An hourly amount in cents.
+pub fn cents(hourly: f64) -> i64 {
+    (hourly * 100.0).round() as i64
 }
 
 fn scaled<T: Clone>(rules: &[T], priority: i64, weight: fn(&mut T) -> &mut i64) -> Vec<T> {
@@ -70,6 +76,8 @@ impl Compiled {
         self.rotations
             .extend(scaled(&other.rotations, priority, |r| &mut r.weight));
         self.travel.extend(other.travel.iter().cloned());
+        self.disruption
+            .extend(scaled(&other.disruption, priority, |r| &mut r.weight));
     }
 }
 
@@ -102,6 +110,7 @@ fn window_kind(kind: RuleKind) -> Option<(Measure, Window)> {
         K::ShiftTypes => (Measure::ShiftTypes, Window::Period),
         K::DistinctTags => (Measure::DistinctTags, Window::Period),
         K::LocationsWorked => (Measure::Locations, Window::Period),
+        K::Cost => (Measure::Cost, Window::Period),
         _ => return None,
     })
 }
@@ -205,7 +214,40 @@ fn compile_rule(b: &mut Builder, calendar: &Calendar, rule: &Rule, what: &str, o
             measure,
             Measure::ConsecutiveDaysOff | Measure::MinutesOff | Measure::ConsecutiveWeekendsOff
         );
-        if (needs_min && rule.min.is_none()) || (rule.min.is_none() && rule.max.is_none()) {
+        let cost = if measure == Measure::Cost {
+            let Some(hourly) = rule.hourly else {
+                b.error("rule_limit_missing", format!("{what} needs an hourly rate"));
+                return;
+            };
+            if rule.base_minutes.is_none() && !rule.overtime.is_empty() {
+                b.error(
+                    "overtime_without_base",
+                    format!("{what} has overtime tiers but no baseMinutes"),
+                );
+                return;
+            }
+            Some(Tiers {
+                base: cents(hourly),
+                base_minutes: rule.base_minutes,
+                overtime: rule
+                    .overtime
+                    .iter()
+                    .map(|tier| (cents(tier.hourly), tier.minutes))
+                    .collect(),
+            })
+        } else {
+            None
+        };
+        if cost.is_some() && !preferred && rule.min.is_none() && rule.max.is_none() {
+            b.error(
+                "rule_limit_missing",
+                format!("{what} is required, so it needs a min or a max"),
+            );
+            return;
+        }
+        if cost.is_none()
+            && ((needs_min && rule.min.is_none()) || (rule.min.is_none() && rule.max.is_none()))
+        {
             let needed = if needs_min { "a min" } else { "a min or a max" };
             b.error("rule_limit_missing", format!("{what} needs {needed}"));
             return;
@@ -232,6 +274,7 @@ fn compile_rule(b: &mut Builder, calendar: &Calendar, rule: &Rule, what: &str, o
             windows: windows.0,
             min: rule.min,
             max: if needs_min { None } else { rule.max },
+            cost,
             whole_shift: rule.whole_shift,
             weekdays: if rule.weekdays.is_empty() {
                 0x7f
@@ -454,6 +497,16 @@ fn compile_rule(b: &mut Builder, calendar: &Calendar, rule: &Rule, what: &str, o
                 shifts,
                 max_meters: rule.max_meters,
                 min_change: rule.min_change_minutes,
+            });
+        }
+        RuleKind::Disruption => {
+            let keep_tags = b.tag_set(&rule.keep_tags);
+            out.disruption.push(DisruptionRule {
+                preferred,
+                weight: rule.weight,
+                shifts,
+                within: rule.within_minutes,
+                keep_tags,
             });
         }
         // Window kinds returned above.

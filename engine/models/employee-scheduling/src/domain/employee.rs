@@ -51,6 +51,9 @@ pub struct Employee {
     /// Where the employee travels from.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub home: Option<Place>,
+    /// Cost group, for cost rates and activation.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost_group: Option<String>,
     /// Ids of the contracts whose rules apply.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub contracts: Vec<String>,
@@ -83,6 +86,7 @@ impl Employee {
             preferred_shifts: None,
             pairings: Vec::new(),
             home: None,
+            cost_group: None,
             contracts: Vec::new(),
             days_off: Vec::new(),
             logged_before: Vec::new(),

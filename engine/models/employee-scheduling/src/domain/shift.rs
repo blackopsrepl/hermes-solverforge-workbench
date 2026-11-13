@@ -57,6 +57,15 @@ pub struct Shift {
     /// Where the shift is worked.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<Place>,
+    /// Cost group, for cost rates.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost_group: Option<String>,
+    /// Id of the alternatives group this shift is one version of.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub alternative_of: Option<String>,
+    /// Employee the shift was published to before replanning.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub published: Option<String>,
     /// Unpaid breaks inside the shift.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub breaks: Vec<Break>,
@@ -92,6 +101,9 @@ impl Shift {
             unwanted_employees: Vec::new(),
             barred_employees: Vec::new(),
             location: None,
+            cost_group: None,
+            alternative_of: None,
+            published: None,
             breaks: Vec::new(),
             logged_minutes: None,
             employee_idx: None,

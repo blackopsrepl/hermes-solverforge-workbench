@@ -96,6 +96,15 @@ fn window_deviation(
             max,
         ),
         Measure::Shifts => outside(inside().len() as i64, min, max),
+        Measure::Cost => {
+            let tiers = rule.cost.as_ref().expect("cost rules carry tiers");
+            let cents = tiers.cents(inside().iter().map(|i| i.minutes).sum());
+            if min.is_none() && max.is_none() {
+                cents
+            } else {
+                outside(cents, min, max)
+            }
+        }
         Measure::Weekends => {
             let weekends = distinct(
                 inside()

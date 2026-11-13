@@ -1,8 +1,9 @@
 //! The derived fact tables.
 
 use super::{
-    Colleagues, Concurrency, DayPatternRule, DayRunRule, GapRule, GlobalWindow, MultiDayRule,
-    NearDayOffRule, PairingRule, RotationRule, ShiftRunRule, TeamInfo, TravelRule, WindowRule,
+    Colleagues, Concurrency, DayPatternRule, DayRunRule, DisruptionRule, FairShare, GapRule,
+    GlobalWindow, MultiDayRule, NearDayOffRule, PairingRule, RotationRule, ShiftRunRule, Slot,
+    TeamInfo, TravelRule, WindowRule,
 };
 
 /// Tag ids as a sorted, deduplicated list.
@@ -94,6 +95,11 @@ pub struct ShiftInfo {
     /// Location as `(lat, lon)` and its id among distinct locations.
     pub location: Option<(f64, f64)>,
     pub location_id: Option<u32>,
+    pub cost_group: Option<u32>,
+    /// Alternatives group index.
+    pub alternative: Option<u32>,
+    /// Employee index the shift was published to.
+    pub published: Option<u32>,
     /// Inside the planning horizon (outside means history or context).
     pub in_horizon: bool,
 }
@@ -114,6 +120,16 @@ pub struct EmployeeInfo {
     pub shift_runs: Vec<ShiftRunRule>,
     pub near_day_off: Vec<NearDayOffRule>,
     pub colleagues: Vec<Colleagues>,
+    pub cost_group: Option<u32>,
+    /// Activation cost and fill-up reward of the employee's cost group.
+    pub activation_cost: i64,
+    pub fill_up: bool,
+    /// Index into `Derived::shares` of the employee's cost group, when it has a share.
+    pub share_group: Option<u32>,
+    /// Shifts published to this employee, sorted.
+    pub published_shifts: Vec<u32>,
+    pub disruption: Vec<DisruptionRule>,
+    pub fairness: Vec<FairShare>,
     /// Indexes of the teams the employee belongs to.
     pub teams: Vec<u32>,
     pub home: Option<(f64, f64)>,
@@ -159,6 +175,13 @@ pub struct Derived {
     pub shift_windows: Vec<Vec<u32>>,
     pub concurrency: Vec<Concurrency>,
     pub teams: Vec<TeamInfo>,
+    /// `(count, at_most)` per alternatives group.
+    pub alternatives: Vec<(i64, bool)>,
+    pub slots: Vec<Slot>,
+    /// Slot indexes by the plan day they start on.
+    pub slots_by_day: Vec<Vec<u32>>,
+    /// Target shares of activated employees, by share group.
+    pub shares: Vec<i64>,
 }
 
 impl Derived {

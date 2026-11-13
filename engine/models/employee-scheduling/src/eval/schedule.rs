@@ -65,6 +65,27 @@ pub fn window_deviation(
             used.dedup();
             used.len() as i64
         }
+        GlobalKind::Cost => members
+            .iter(d)
+            .filter(|(_, e, _)| {
+                rule.employees
+                    .as_ref()
+                    .is_none_or(|f| f.accepts(&d.employees[*e].tags))
+            })
+            .map(|(_, e, info)| {
+                let group = d.employees[e].cost_group;
+                rule.rates
+                    .iter()
+                    .find(|rate| {
+                        rate.employee_group.is_none_or(|g| Some(g) == group)
+                            && rate.shift_group.is_none_or(|g| Some(g) == info.cost_group)
+                    })
+                    .map_or(0, |rate| (info.minutes * rate.cents + 30) / 60)
+            })
+            .sum(),
     };
+    if kind == GlobalKind::Cost && rule.min.is_none() && rule.max.is_none() {
+        return value * rule.weight;
+    }
     outside(value, rule.min, rule.max) * rule.weight
 }

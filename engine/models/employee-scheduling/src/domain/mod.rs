@@ -6,7 +6,7 @@ solverforge::planning_model! {
     mod plan;
     mod shift;
 
-    pub use bucket::{Day, Window};
+    pub use bucket::{Choice, Day, Whole, Window};
     pub use employee::Employee;
     pub use plan::Plan;
     pub use shift::Shift;

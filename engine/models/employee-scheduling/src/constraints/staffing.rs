@@ -7,7 +7,9 @@ use crate::domain::{Plan, Shift};
 type Score = HardMediumSoftScore;
 
 fn open_in_horizon(shift: &Shift) -> bool {
-    shift.employee_idx.is_none() && shift.ctx.shift(shift.index).in_horizon
+    let info = shift.ctx.shift(shift.index);
+    // Alternatives are governed by their group's count instead.
+    shift.employee_idx.is_none() && info.in_horizon && info.alternative.is_none()
 }
 
 pub fn constraints() -> impl ConstraintSet<Plan, Score> {

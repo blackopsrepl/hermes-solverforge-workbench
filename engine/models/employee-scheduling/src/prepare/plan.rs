@@ -10,7 +10,7 @@ use super::contracts::{compile, Compiled};
 use super::schedule_rules::compile_schedule_rules;
 use super::{Builder, Calendar};
 use crate::derived::{Ctx, Derived, EmployeeInfo, ShiftInfo};
-use crate::domain::{Day, Plan, Window};
+use crate::domain::{Choice, Day, Plan, Whole, Window};
 use crate::time::{overlap, parse_date_time, DAY};
 
 /// Longest shift, in calendar days touched, that the day buckets support.
@@ -165,6 +165,59 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
         }
     }
 
+    let mut shares = Vec::new();
+    let mut groups: HashMap<String, (i64, bool, Option<u32>)> = HashMap::new();
+    for group in &plan.cost_groups {
+        let share = group.share.map(|share| {
+            shares.push(share.max(0));
+            shares.len() as u32 - 1
+        });
+        if group.activation_cost < 0 || group.share.is_some_and(|s| s < 0) {
+            b.error(
+                "negative_weight",
+                format!("cost group {} has a negative cost or share", group.id),
+            );
+        }
+        if groups
+            .insert(
+                group.id.clone(),
+                (group.activation_cost.max(0), group.fill_up, share),
+            )
+            .is_some()
+        {
+            b.error(
+                "duplicate_cost_group",
+                format!("cost group id {:?} is used more than once", group.id),
+            );
+        }
+    }
+    for (n, rule) in plan.schedule_rules.fairness.iter().enumerate() {
+        for id in rule.history.keys() {
+            if !b.employee_ids.contains_key(id) {
+                b.error(
+                    "unknown_employee",
+                    format!(
+                        "fairness rule #{} has history for unknown employee {id:?}",
+                        n + 1
+                    ),
+                );
+            }
+        }
+    }
+    let alternative_ids: HashMap<&str, u32> = plan
+        .alternatives
+        .iter()
+        .enumerate()
+        .map(|(i, a)| (a.id.as_str(), i as u32))
+        .collect();
+    for a in &plan.alternatives {
+        if a.count < 0 {
+            b.error(
+                "rule_negative_limit",
+                format!("alternatives {} has a negative count", a.id),
+            );
+        }
+    }
     let employee_tags: Vec<Vec<u32>> = plan
         .employees
         .iter()
@@ -252,7 +305,32 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
                     on_tags: b.tag_set(&pairing.on_tags),
                 });
             }
+            let (activation_cost, fill_up, share_group) = employee
+                .cost_group
+                .as_ref()
+                .and_then(|g| groups.get(g).copied())
+                .unwrap_or((0, false, None));
+            let mut fairness = Vec::new();
+            for rule in &plan.schedule_rules.fairness {
+                if let Some(filter) = &rule.employees {
+                    if !b.tag_match(filter).accepts(&employee_tags[employee.index]) {
+                        continue;
+                    }
+                }
+                fairness.push(crate::derived::FairShare {
+                    minutes: rule.balance == crate::wire::Balance::Minutes,
+                    shifts: b.tag_match(&rule.shifts),
+                    history: rule.history.get(&employee.id).copied().unwrap_or(0),
+                });
+            }
             EmployeeInfo {
+                cost_group: employee.cost_group.as_ref().map(|g| b.intern(g)),
+                activation_cost,
+                fill_up,
+                share_group,
+                published_shifts: Vec::new(),
+                disruption: rules.disruption,
+                fairness,
                 colleagues,
                 teams: Vec::new(),
                 home: employee.home.map(|p| (p.lat, p.lon)),
@@ -380,7 +458,34 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
             let next = places.len() as u32;
             *places.entry((lat.to_bits(), lon.to_bits())).or_insert(next)
         });
+        let alternative = match &shift.alternative_of {
+            Some(id) => match alternative_ids.get(id.as_str()) {
+                Some(&index) => Some(index),
+                None => {
+                    b.error(
+                        "unknown_alternatives",
+                        format!("{what} is an alternative of {id:?}, which does not exist"),
+                    );
+                    None
+                }
+            },
+            None => None,
+        };
+        let published = shift.published.as_ref().and_then(|id| {
+            let found = b.employee_ids.get(id).map(|&e| e as u32);
+            if found.is_none() {
+                b.error(
+                    "unknown_employee",
+                    format!("{what} was published to employee {id:?}, which does not exist"),
+                );
+            }
+            found
+        });
+        let cost_group = shift.cost_group.as_ref().map(|g| b.intern(g));
         shifts.push(ShiftInfo {
+            cost_group,
+            alternative,
+            published,
             location,
             location_id,
             start,
@@ -442,13 +547,25 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
         });
     }
 
-    let (windows, shift_windows, concurrency) =
-        compile_schedule_rules(&mut b, &calendar, &plan.schedule_rules, &shifts);
+    for (s, info) in shifts.iter().enumerate() {
+        if let Some(e) = info.published {
+            employees[e as usize].published_shifts.push(s as u32);
+        }
+    }
+    let rules = compile_schedule_rules(&mut b, &calendar, &plan.schedule_rules, &shifts);
 
     let derived = Derived {
-        windows,
-        shift_windows,
-        concurrency,
+        windows: rules.windows,
+        shift_windows: rules.shift_windows,
+        concurrency: rules.concurrency,
+        slots: rules.slots,
+        slots_by_day: rules.slots_by_day,
+        alternatives: plan
+            .alternatives
+            .iter()
+            .map(|a| (a.count, a.at_most))
+            .collect(),
+        shares,
         teams,
         origin: origin_day,
         horizon_start: h_start,
@@ -480,5 +597,15 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
             ctx: ctx.clone(),
         })
         .collect();
+    plan.choices = (0..ctx.alternatives.len())
+        .map(|index| Choice {
+            index,
+            ctx: ctx.clone(),
+        })
+        .collect();
+    plan.wholes = vec![Whole {
+        index: 0,
+        ctx: ctx.clone(),
+    }];
     b.issues
 }

@@ -18,3 +18,20 @@ pub struct Window {
     pub index: usize,
     pub ctx: Ctx,
 }
+
+/// One group of alternative shifts, derived by `prepare`.
+#[problem_fact]
+pub struct Choice {
+    #[planning_id]
+    pub index: usize,
+    pub ctx: Ctx,
+}
+
+/// The whole schedule as a single bucket, derived by `prepare`; for scores
+/// that compare employees with each other.
+#[problem_fact]
+pub struct Whole {
+    #[planning_id]
+    pub index: usize,
+    pub ctx: Ctx,
+}

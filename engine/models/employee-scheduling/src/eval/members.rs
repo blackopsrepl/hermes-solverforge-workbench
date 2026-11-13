@@ -162,3 +162,55 @@ impl Accumulator<(Ctx, u32, u32), Members> for MembersAccumulator {
         self.0.rows.clear();
     }
 }
+
+/// Emits an assigned alternative shift into its alternatives group.
+pub struct ByChoice;
+
+impl Projection<Shift> for ByChoice {
+    type Out = Row;
+    const MAX_EMITS: usize = 1;
+
+    fn project<Sink>(&self, shift: &Shift, sink: &mut Sink)
+    where
+        Sink: ProjectionSink<Row>,
+    {
+        let (Some(employee), Some(group)) =
+            (shift.employee_idx, shift.ctx.shift(shift.index).alternative)
+        else {
+            return;
+        };
+        sink.emit(Row {
+            ctx: shift.ctx.clone(),
+            bucket: group,
+            shift: shift.index as u32,
+            employee: employee as u32,
+        });
+    }
+}
+
+/// Emits every assigned shift of an employee in a cost group with a share
+/// into the single whole-schedule bucket.
+pub struct ByShare;
+
+impl Projection<Shift> for ByShare {
+    type Out = Row;
+    const MAX_EMITS: usize = 1;
+
+    fn project<Sink>(&self, shift: &Shift, sink: &mut Sink)
+    where
+        Sink: ProjectionSink<Row>,
+    {
+        let Some(employee) = shift.employee_idx else {
+            return;
+        };
+        if shift.ctx.employees[employee].share_group.is_none() {
+            return;
+        }
+        sink.emit(Row {
+            ctx: shift.ctx.clone(),
+            bucket: 0,
+            shift: shift.index as u32,
+            employee: employee as u32,
+        });
+    }
+}

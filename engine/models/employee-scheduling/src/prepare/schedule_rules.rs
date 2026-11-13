@@ -1,7 +1,8 @@
 //! Compiles schedule-wide rules into windows and concurrency limits.
 
 use super::{Builder, Calendar};
-use crate::derived::{Concurrency, GlobalKind, GlobalWindow, ShiftInfo, TagMatch};
+use crate::derived::{Concurrency, GlobalKind, GlobalWindow, Rate, ShiftInfo, Slot, TagMatch};
+use crate::time::DAY;
 use crate::wire::{Level, ScheduleRules, TagFilter};
 
 /// Most schedule-wide windows one shift may count toward.
@@ -34,7 +35,7 @@ fn add_windows(
             return;
         }
     }
-    if template.min.is_none() && template.max.is_none() {
+    if template.min.is_none() && template.max.is_none() && template.kind != GlobalKind::Cost {
         b.error("rule_limit_missing", format!("{what} needs a min or a max"));
         return;
     }
@@ -54,14 +55,59 @@ fn add_windows(
     }
 }
 
-/// Windows, per-shift window lists and concurrency limits of the schedule rules.
+/// Compiled schedule-wide rules.
+pub struct Compiled {
+    pub windows: Vec<GlobalWindow>,
+    pub shift_windows: Vec<Vec<u32>>,
+    pub concurrency: Vec<Concurrency>,
+    pub slots: Vec<Slot>,
+    pub slots_by_day: Vec<Vec<u32>>,
+}
+
+/// Windows, per-shift window lists, concurrency limits and demand slots of
+/// the schedule rules.
 pub fn compile_schedule_rules(
     b: &mut Builder,
     calendar: &Calendar,
     rules: &ScheduleRules,
     shifts: &[ShiftInfo],
-) -> (Vec<GlobalWindow>, Vec<Vec<u32>>, Vec<Concurrency>) {
+) -> Compiled {
     let mut out = (Vec::new(), vec![Vec::new(); shifts.len()]);
+    for (n, rule) in rules.costs.iter().enumerate() {
+        let what = format!("schedule cost rule #{}", n + 1);
+        let employees = rule.employees.as_ref().map(|f| b.tag_match(f));
+        let rates = rule
+            .rates
+            .iter()
+            .map(|rate| Rate {
+                employee_group: rate.employee_group.as_ref().map(|g| b.intern(g)),
+                shift_group: rate.shift_group.as_ref().map(|g| b.intern(g)),
+                cents: super::contracts::cents(rate.hourly),
+            })
+            .collect();
+        let template = GlobalWindow {
+            kind: GlobalKind::Cost,
+            preferred: rule.level == Level::Preferred,
+            weight: rule.weight.max(0),
+            start: 0,
+            end: 0,
+            employees,
+            tags: Vec::new(),
+            rates,
+            min: rule.min,
+            max: rule.max,
+        };
+        add_windows(
+            b,
+            calendar,
+            shifts,
+            &mut out,
+            &what,
+            &rule.period,
+            &rule.shifts,
+            template,
+        );
+    }
     for (n, rule) in rules.shift_counts.iter().enumerate() {
         let what = format!("schedule shift count rule #{}", n + 1);
         let employees = rule.employees.as_ref().map(|f| b.tag_match(f));
@@ -73,6 +119,7 @@ pub fn compile_schedule_rules(
             end: 0,
             employees,
             tags: Vec::new(),
+            rates: Vec::new(),
             min: rule.min,
             max: rule.max,
         };
@@ -105,6 +152,7 @@ pub fn compile_schedule_rules(
             end: 0,
             employees: None,
             tags,
+            rates: Vec::new(),
             min: rule.min,
             max: rule.max,
         };
@@ -156,5 +204,63 @@ pub fn compile_schedule_rules(
             to,
         });
     }
-    (out.0, out.1, concurrency)
+    let mut slots = Vec::new();
+    let mut slots_by_day = vec![Vec::new(); calendar.days.max(0) as usize];
+    for (n, rule) in rules.demand.iter().enumerate() {
+        let what = format!("demand rule #{}", n + 1);
+        let shifts = b.tag_match(&rule.shifts);
+        let employees = rule.employees.as_ref().map(|f| b.tag_match(f));
+        for slot in &rule.slots {
+            let start = b.minutes(&slot.from, || what.clone());
+            let end = b.minutes(&slot.to, || what.clone());
+            let (Some(start), Some(end)) = (start, end) else {
+                continue;
+            };
+            if end <= start || end - start > DAY {
+                b.error(
+                    "demand_slot_invalid",
+                    format!(
+                        "{what} has a slot from {} that is empty or longer than a day",
+                        slot.from
+                    ),
+                );
+                continue;
+            }
+            if slot.min.is_none() && slot.max.is_none() {
+                b.error(
+                    "rule_limit_missing",
+                    format!("{what} has a slot without min or max"),
+                );
+                continue;
+            }
+            let day = start.div_euclid(DAY);
+            if day < 0 || day >= calendar.days {
+                b.warning(
+                    "demand_outside_schedule",
+                    format!(
+                        "{what} has a slot from {} outside the data, ignored",
+                        slot.from
+                    ),
+                );
+                continue;
+            }
+            slots_by_day[day as usize].push(slots.len() as u32);
+            slots.push(Slot {
+                preferred: rule.level == Level::Preferred,
+                start,
+                end,
+                shifts: shifts.clone(),
+                employees: employees.clone(),
+                min: slot.min,
+                max: slot.max,
+            });
+        }
+    }
+    Compiled {
+        windows: out.0,
+        shift_windows: out.1,
+        concurrency,
+        slots,
+        slots_by_day,
+    }
 }

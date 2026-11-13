@@ -70,6 +70,10 @@ pub enum RuleKind {
     Travel,
     /// Distinct shift locations per period.
     LocationsWorked,
+    /// What the employee's matching work costs per period, with overtime tiers.
+    Cost,
+    /// How changes to published assignments are weighed for the employee.
+    Disruption,
 }
 
 /// One limit of a contract.
@@ -77,7 +81,7 @@ pub enum RuleKind {
 /// The window is either a `period` (`day`, `week`, `month`, `year`,
 /// `schedule` or a custom period id) or `rollingDays`. The penalty is the
 /// distance outside `[min, max]`, times `weight` and the employee's priority.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Rule {
     pub kind: RuleKind,
@@ -164,6 +168,18 @@ pub struct Rule {
     /// `travel`: least minutes between two shifts at different locations.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub min_change_minutes: Option<i64>,
+    /// `cost`: hourly rate up to `baseMinutes` per period.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hourly: Option<f64>,
+    /// `cost`: minutes per period paid at `hourly`; the rest is overtime.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub base_minutes: Option<i64>,
+    /// `cost`: overtime tiers in order; the last one has no limit.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub overtime: Vec<Overtime>,
+    /// `disruption`: tags whose loss is made good when a new shift keeps them.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub keep_tags: Vec<String>,
     /// `nearDayOff`: shifts to avoid on the day before a requested day off;
     /// `restBetween`, `splitShifts`: the earlier shift of a pair.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -172,6 +188,18 @@ pub struct Rule {
     /// `restBetween`, `splitShifts`: the later shift of a pair.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub after: Option<TagFilter>,
+}
+
+impl Eq for Rule {}
+
+impl std::hash::Hash for Rule {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.kind.hash(state);
+        self.period.hash(state);
+        self.rolling_days.hash(state);
+        self.min.hash(state);
+        self.max.hash(state);
+    }
 }
 
 impl Rule {
@@ -209,7 +237,28 @@ impl Rule {
             tag_types: Vec::new(),
             max_meters: None,
             min_change_minutes: None,
+            hourly: None,
+            base_minutes: None,
+            overtime: Vec::new(),
+            keep_tags: Vec::new(),
         }
+    }
+}
+
+/// One overtime tier: `minutes` (unlimited when absent) at `hourly`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Overtime {
+    pub hourly: f64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub minutes: Option<i64>,
+}
+
+impl Eq for Overtime {}
+
+impl std::hash::Hash for Overtime {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.hourly.to_bits().hash(state);
+        self.minutes.hash(state);
     }
 }
 

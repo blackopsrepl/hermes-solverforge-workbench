@@ -205,3 +205,33 @@ pub struct Team {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_shifts_per_day: Option<i64>,
 }
+
+/// A group of employees sharing activation costs and a target share of the
+/// activated employees.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CostGroup {
+    pub id: String,
+    /// Soft cost of giving any shift to an employee of this group.
+    #[serde(default)]
+    pub activation_cost: i64,
+    /// Share of activated employees this group should have, relative to the
+    /// other groups' shares.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub share: Option<i64>,
+    /// Reward giving each activated employee of this group many shifts.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub fill_up: bool,
+}
+
+/// Alternative versions of one shift: `count` of them should be worked,
+/// exactly or at most.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Alternatives {
+    pub id: String,
+    #[serde(default = "one")]
+    pub count: i64,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub at_most: bool,
+}
