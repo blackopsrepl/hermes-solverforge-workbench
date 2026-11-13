@@ -52,6 +52,8 @@ test('a model shows its constraints grouped, with the profile’s weights and it
   assert.match(page, /Coverage · 1/)
   assert.match(page, /Unassigned shift .*hard/)
   assert.match(page, /Standard is read-only/)
+  assert.match(page, /3 constraints/)
+  assert.match(renderToStaticMarkup(h(Workbench, { start: { view: 'model', id: 'toy' } })), /placeholder="Search constraints: name, group, level or rule"/)
 })
 
 test('a solved run shows its score, the gain, feasibility, KPIs and every constraint', () => {
@@ -61,6 +63,7 @@ test('a solved run shows its score, the gain, feasibility, KPIs and every constr
   assert.match(page, /Assigned shifts 6 shifts/)
   assert.match(page, /Unassigned shift hard 0/)
   assert.match(page, /Score over 2\.0 s · bands top to bottom: hard/)
+  assert.match(page, /3 constraints Only what costs score \(0\)/)
 })
 
 test('the chat card of an evaluated plan lists only what costs score', () => {

@@ -205,11 +205,126 @@ function WeightCell({ value, editable, onChange }) {
   })
 }
 
+// ---- constraint search -------------------------------------------------------
+
+const WORD_START = /[\s\-_/·:(]/
+
+/** Fuzzy match of `needle` in `hay`. A substring always matches. Otherwise the characters
+ *  appear in order, the first at a word start, and each later one either inside the word
+ *  of the one before it or at the start of a later word: "rst btwn" finds "Rest between
+ *  shifts" and "cdo" finds "Consecutive days off", while letters scattered across the
+ *  middles of words never match. Returns { score, hits } (indices into hay) or null. */
+export function fuzzyMatch(needle, hay) {
+  const q = Array.from(String(needle || '').toLowerCase())
+  const t = Array.from(String(hay || '').toLowerCase())
+  if (!q.length) return { score: 0, hits: [] }
+  const starts = t.map((_, j) => j === 0 || WORD_START.test(t[j - 1]))
+  const text = t.join('')
+  const exact = text.indexOf(q.join(''))
+  if (exact >= 0) {
+    return { score: 100 + q.length * 4 + (starts[exact] ? 40 : 0) - exact * 0.1, hits: q.map((_, i) => exact + i) }
+  }
+  // best[i][j]: best score with q[i] placed at t[j]; from[i][j]: where q[i-1] sat.
+  const best = q.map(() => new Array(t.length).fill(-Infinity))
+  const from = q.map(() => new Array(t.length).fill(-1))
+  for (let j = 0; j < t.length; j++) if (t[j] === q[0] && starts[j]) best[0][j] = j === 0 ? 12 : 10
+  const separator = t.map(ch => WORD_START.test(ch))
+  for (let i = 1; i < q.length; i++) {
+    let lead = -Infinity // best placement of q[i-1] anywhere before j
+    let leadAt = -1
+    let word = -Infinity // best placement of q[i-1] earlier in j's own word
+    let wordAt = -1
+    for (let j = 0; j < t.length; j++) {
+      if (starts[j]) { word = -Infinity; wordAt = -1 }
+      if (t[j] === q[i] && !separator[j]) {
+        const options = [
+          [j > 0 ? best[i - 1][j - 1] + 8 : -Infinity, j - 1], // the next letter
+          [starts[j] ? lead + 6 : -Infinity, leadAt], // the start of a later word
+          [word + 3, wordAt] // further along the same word
+        ]
+        for (const [score, at] of options) if (score > best[i][j]) { best[i][j] = score; from[i][j] = at }
+      }
+      if (best[i - 1][j] > lead) { lead = best[i - 1][j]; leadAt = j }
+      if (best[i - 1][j] > word) { word = best[i - 1][j]; wordAt = j }
+    }
+  }
+  const last = best[q.length - 1]
+  let end = -1
+  for (let j = 0; j < t.length; j++) if (last[j] > -Infinity && (end < 0 || last[j] > last[end])) end = j
+  if (end < 0) return null
+  const hits = []
+  for (let i = q.length - 1, j = end; i >= 0; j = from[i][j], i--) hits.unshift(j)
+  return { score: last[end], hits }
+}
+
+const FIELDS = [['name', 1], ['group', 0.6], ['level', 0.6], ['description', 0.4]]
+
+/** Every whitespace-separated term must match some field. Results keep the input order
+ *  when the query is empty, and rank best first otherwise; `hits` highlight the name. */
+export function searchConstraints(items, query) {
+  const terms = String(query || '').trim().split(/\s+/).filter(Boolean)
+  if (!terms.length) return items.map(item => ({ item, score: 0, hits: [] }))
+  const found = []
+  for (const item of items) {
+    let total = 0
+    const hits = new Set()
+    let matched = true
+    let previous = -1 // last name position matched by the term before, to reward terms read in order
+    for (const term of terms) {
+      let best = null
+      for (const [field, weight] of FIELDS) {
+        const m = fuzzyMatch(term, item[field])
+        if (m && (!best || m.score * weight > best.score)) best = { score: m.score * weight, field, hits: m.hits }
+      }
+      if (!best) { matched = false; break }
+      total += best.score
+      if (best.field === 'name') {
+        if (best.hits[0] > previous && previous >= 0) total += 8
+        previous = best.hits[best.hits.length - 1]
+        best.hits.forEach(h => hits.add(h))
+      }
+    }
+    if (matched) found.push({ item, score: total, hits: [...hits].sort((x, y) => x - y) })
+  }
+  return found.sort((x, y) => y.score - x.score)
+}
+
+function Highlight({ text, hits }) {
+  if (!hits || !hits.length) return text
+  const marks = new Set(hits)
+  const parts = []
+  let run = ''
+  let marked = false
+  const flush = () => {
+    if (run) parts.push(marked ? e('mark', { key: parts.length, style: { background: 'color-mix(in srgb, var(--ui-accent) 28%, transparent)', color: 'inherit', borderRadius: 2 } }, run) : run)
+    run = ''
+  }
+  Array.from(text).forEach((ch, i) => {
+    if (marks.has(i) !== marked) { flush(); marked = marks.has(i) }
+    run += ch
+  })
+  flush()
+  return e('span', null, ...parts)
+}
+
+function SearchBox({ value, onChange, shown, total, extra }) {
+  return e('div', { style: { ...bar, position: 'sticky', top: 0, zIndex: 1, background: 'var(--ui-bg-primary, var(--background))', padding: '6px 0' } },
+    e('input', {
+      type: 'search', value, placeholder: 'Search constraints: name, group, level or rule', 'aria-label': 'Search constraints',
+      style: { ...input, flex: '1 1 280px', padding: '5px 8px', fontSize: '0.8rem' },
+      onChange: event => onChange(event.target.value),
+      onKeyDown: event => { if (event.key === 'Escape') onChange('') }
+    }),
+    e('span', { style: faint, 'aria-live': 'polite' }, value.trim() ? `${shown} of ${total}` : `${total} constraints`),
+    extra || null)
+}
+
 function ModelView({ id, go }) {
   const query = useRead('model', { model: id })
   const [picked, setPicked] = useState(null)
   const [draft, setDraft] = useState({})
   const [name, setName] = useState('')
+  const [search, setSearch] = useState('')
   const create = useAction('dataset_create', r => r.dataset && go({ view: 'dataset', id: r.dataset.id }))
   const save = useAction('profile_save', r => { setDraft({}); setName(''); r.profile && setPicked(r.profile.id) })
   const makeDefault = useAction('profile_default')
@@ -218,12 +333,14 @@ function ModelView({ id, go }) {
     const weights = { ...(profile ? profile.weights : {}), ...draft }
     const editable = model.weights
     const changed = Object.keys(draft).length > 0
+    // Groups in catalog order; while searching, groups and their rows rank by the best match.
+    const results = searchConstraints(model.constraints, search)
     const groups = []
-    for (const c of model.constraints) {
-      const group = c.group || 'Constraints'
+    for (const r of results) {
+      const group = r.item.group || 'Constraints'
       let found = groups.find(g => g.name === group)
-      if (!found) groups.push((found = { name: group, items: [] }))
-      found.items.push(c)
+      if (!found) groups.push((found = { name: group, items: [], size: model.constraints.filter(c => (c.group || 'Constraints') === group).length }))
+      found.items.push(r)
     }
     const settings = { weights, params: profile ? profile.params : {}, solve: profile ? profile.solve : {} }
     return e(
@@ -256,13 +373,15 @@ function ModelView({ id, go }) {
           : null),
       profile && profile.read_only && editable ? e('div', { style: faint }, 'Standard is read-only: change a weight, then save it as a new profile.') : null,
       !editable ? e('div', { style: faint }, 'This model has no adjustable weights.') : null,
+      e(SearchBox, { value: search, onChange: setSearch, shown: results.length, total: model.constraints.length }),
+      search.trim() && !results.length ? e('div', { style: muted }, `No constraint matches “${search.trim()}”.`) : null,
       groups.map(g => e('div', { key: g.name, style: section },
-        e(Sub, null, `${g.name} · ${g.items.length}`),
+        e(Sub, null, search.trim() ? `${g.name} · ${g.items.length} of ${g.size}` : `${g.name} · ${g.size}`),
         e(Table, {
           columns: [{ id: 'name', label: 'Constraint' }, { id: 'level', label: 'Level', width: 96 }, { id: 'weight', label: 'Weight', num: true, width: 104 }],
-          rows: g.items.map(c => ({
+          rows: g.items.map(({ item: c, hits }) => ({
             key: c.name,
-            name: e('div', null, c.name, c.description ? e('div', { style: faint }, c.description) : null),
+            name: e('div', null, e(Highlight, { text: c.name, hits }), c.description ? e('div', { style: faint }, c.description) : null),
             level: e('span', { style: { color: levelColor(c.level) } }, c.level),
             weight: e(WeightCell, { value: weights[c.name] ?? 1, editable, onChange: v => setDraft({ ...draft, [c.name]: v }) })
           }))
@@ -387,14 +506,22 @@ function Matches({ item }) {
 
 export function RunView({ id, compact = false, go }) {
   const [open, setOpen] = useState(null)
-    const query = useRead('run', { run: id, max_matches: 10 }, {
+  const [search, setSearch] = useState('')
+  const [costlyOnly, setCostlyOnly] = useState(false)
+  const query = useRead('run', { run: id, max_matches: 10 }, {
     refetchInterval: q => (q && q.state && q.state.data && q.state.data.run && LIVE.includes(q.state.data.run.status) ? 1_500 : false)
   })
   const cancel = useAction('cancel')
+  const model = useRead('model', { model: query.data && query.data.ok ? query.data.run.model_id : '' },
+    { enabled: Boolean(query.data && query.data.ok) })
   return e(Loading, { query }, ({ run }) => {
     const live = LIVE.includes(run.status)
     const costing = (run.analysis || []).filter(c => parseScore(c.score).some(p => p.value !== 0))
-    const rows = compact ? costing : run.analysis || []
+    const all = compact ? costing : run.analysis || []
+    // The run's analysis has names and levels; the catalog adds group and description to search on.
+    const catalog = new Map(((model.data && model.data.ok && model.data.model.constraints) || []).map(c => [c.name, c]))
+    const pool = (costlyOnly ? costing : all).map(c => ({ ...catalog.get(c.name), ...c }))
+    const rows = compact ? pool.map(item => ({ item, hits: [] })) : searchConstraints(pool, search)
     const drawable = !compact && run.status !== 'queued' && run.model_id
     return e(
       'div', { style: section, 'data-run': run.id },
@@ -416,11 +543,20 @@ export function RunView({ id, compact = false, go }) {
               e('div', { style: { fontWeight: 600, fontVariantNumeric: 'tabular-nums' } }, `${Number(k.value).toLocaleString()} ${k.unit || ''}`))))
         : null,
       drawable ? e(RunSchedule, { run }) : null,
+      !compact && all.length
+        ? e(SearchBox, {
+            value: search, onChange: setSearch, shown: rows.length, total: all.length,
+            extra: e('label', { style: { ...faint, display: 'inline-flex', alignItems: 'center', gap: 4 } },
+              e('input', { type: 'checkbox', checked: costlyOnly, onChange: event => setCostlyOnly(event.target.checked) }),
+              `Only what costs score (${costing.length})`)
+          })
+        : null,
+      !compact && all.length && !rows.length ? e('div', { style: muted }, 'No constraint matches.') : null,
       rows.length
         ? e(Table, {
             columns: [{ id: 'name', label: compact ? 'What costs score' : 'Constraint' }, { id: 'level', label: 'Level' }, { id: 'count', label: 'Matches', num: true }, { id: 'score', label: 'Score', num: true }],
-            rows: rows.map(c => ({
-              key: c.name, name: e('div', null, c.name, open === c.name ? e(Matches, { item: c }) : null),
+            rows: rows.map(({ item: c, hits }) => ({
+              key: c.name, name: e('div', null, e(Highlight, { text: c.name, hits }), open === c.name ? e(Matches, { item: c }) : null),
               level: e('span', { style: { color: levelColor(c.level) } }, c.level),
               count: c.match_count, score: e(ScoreText, { score: c.score })
             })),

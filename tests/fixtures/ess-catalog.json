@@ -1,0 +1,764 @@
+[
+ {
+  "description": "A mandatory shift inside the schedule has no employee; costs its importance.",
+  "group": "Staffing",
+  "level": "medium",
+  "name": "Mandatory shift left open"
+ },
+ {
+  "description": "An optional shift inside the schedule has no employee; costs its importance.",
+  "group": "Staffing",
+  "level": "soft",
+  "name": "Optional shift left open"
+ },
+ {
+  "description": "The employee does not hold, at the required level and at the shift start, a skill the shift requires.",
+  "group": "Skills and risk",
+  "level": "hard",
+  "name": "Required skill lacking"
+ },
+ {
+  "description": "The employee does not hold a skill the shift would like its employee to have.",
+  "group": "Skills and risk",
+  "level": "soft",
+  "name": "Preferred skill lacking"
+ },
+ {
+  "description": "The shift exposes the employee to a risk factor they must avoid.",
+  "group": "Skills and risk",
+  "level": "hard",
+  "name": "Prohibited risk exposure"
+ },
+ {
+  "description": "Minutes of a shift fall inside a time the employee cannot work.",
+  "group": "Availability",
+  "level": "hard",
+  "name": "Works while unavailable"
+ },
+ {
+  "description": "Minutes of a shift fall outside the only times the employee said they can work.",
+  "group": "Availability",
+  "level": "hard",
+  "name": "Works outside available hours"
+ },
+ {
+  "description": "Rewards minutes of a shift inside a time the employee would like to work.",
+  "group": "Availability",
+  "level": "soft",
+  "name": "Works in preferred hours"
+ },
+ {
+  "description": "Minutes of a shift fall inside a time the employee would rather not work.",
+  "group": "Availability",
+  "level": "soft",
+  "name": "Works in unwanted hours"
+ },
+ {
+  "description": "Rewards a shift worked by one of the employees it prefers.",
+  "group": "Shift assignment",
+  "level": "soft",
+  "name": "Preferred employee on shift"
+ },
+ {
+  "description": "A shift is worked by an employee it would rather not have.",
+  "group": "Shift assignment",
+  "level": "soft",
+  "name": "Unwanted employee on shift"
+ },
+ {
+  "description": "A shift is worked by an employee it bars.",
+  "group": "Shift assignment",
+  "level": "hard",
+  "name": "Barred employee on shift"
+ },
+ {
+  "description": "An employee who only works certain shifts is given another kind.",
+  "group": "Shift variety",
+  "level": "hard",
+  "name": "Shift outside employee's required tags"
+ },
+ {
+  "description": "Rewards a shift of a kind the employee likes.",
+  "group": "Shift variety",
+  "level": "soft",
+  "name": "Shift has employee's preferred tags"
+ },
+ {
+  "description": "A shift lies further from the employee's home than a travel rule allows; costs the excess kilometres.",
+  "group": "Travel and locations",
+  "level": "hard",
+  "name": "Travel distance over limit"
+ },
+ {
+  "description": "Kilometres from each employee's home to their shift, to keep travel short.",
+  "group": "Travel and locations",
+  "level": "soft",
+  "name": "Travel distance"
+ },
+ {
+  "description": "Minutes worked in a period is outside a required contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "hard",
+  "name": "Minutes per period outside required range"
+ },
+ {
+  "description": "Minutes worked in a period is outside a preferred contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "soft",
+  "name": "Minutes per period outside preferred range"
+ },
+ {
+  "description": "Minutes worked in a rolling window is outside a required contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "hard",
+  "name": "Minutes in rolling window outside required range"
+ },
+ {
+  "description": "Minutes worked in a rolling window is outside a preferred contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "soft",
+  "name": "Minutes in rolling window outside preferred range"
+ },
+ {
+  "description": "Logged minutes in a period, including minutes logged before the data, is outside a required contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "hard",
+  "name": "Logged minutes per period outside required range"
+ },
+ {
+  "description": "Logged minutes in a period, including minutes logged before the data, is outside a preferred contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "soft",
+  "name": "Logged minutes per period outside preferred range"
+ },
+ {
+  "description": "The number of days worked in a period is outside a required contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "hard",
+  "name": "Days worked per period outside required range"
+ },
+ {
+  "description": "The number of days worked in a period is outside a preferred contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "soft",
+  "name": "Days worked per period outside preferred range"
+ },
+ {
+  "description": "The number of days worked in a rolling window is outside a required contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "hard",
+  "name": "Days worked in rolling window outside required range"
+ },
+ {
+  "description": "The number of days worked in a rolling window is outside a preferred contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "soft",
+  "name": "Days worked in rolling window outside preferred range"
+ },
+ {
+  "description": "An employee's shift count in a period is outside a required contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "hard",
+  "name": "Employee shifts per period outside required range"
+ },
+ {
+  "description": "An employee's shift count in a period is outside a preferred contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "soft",
+  "name": "Employee shifts per period outside preferred range"
+ },
+ {
+  "description": "An employee's shift count in a rolling window is outside a required contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "hard",
+  "name": "Employee shifts in rolling window outside required range"
+ },
+ {
+  "description": "An employee's shift count in a rolling window is outside a preferred contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "soft",
+  "name": "Employee shifts in rolling window outside preferred range"
+ },
+ {
+  "description": "The number of weekends worked in a period is outside a required contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "hard",
+  "name": "Weekends worked per period outside required range"
+ },
+ {
+  "description": "The number of weekends worked in a period is outside a preferred contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "soft",
+  "name": "Weekends worked per period outside preferred range"
+ },
+ {
+  "description": "The number of weekends worked in a rolling window is outside a required contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "hard",
+  "name": "Weekends worked in rolling window outside required range"
+ },
+ {
+  "description": "The number of weekends worked in a rolling window is outside a preferred contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "soft",
+  "name": "Weekends worked in rolling window outside preferred range"
+ },
+ {
+  "description": "Minutes worked on weekend days in a period is outside a required contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "hard",
+  "name": "Weekend minutes per period outside required range"
+ },
+ {
+  "description": "Minutes worked on weekend days in a period is outside a preferred contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "soft",
+  "name": "Weekend minutes per period outside preferred range"
+ },
+ {
+  "description": "A run of worked weekends inside a period is outside a required contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "hard",
+  "name": "Consecutive weekends worked outside required range"
+ },
+ {
+  "description": "A run of worked weekends inside a period is outside a preferred contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "soft",
+  "name": "Consecutive weekends worked outside preferred range"
+ },
+ {
+  "description": "A run of consecutive worked days is outside a required contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "hard",
+  "name": "Consecutive days worked outside required range"
+ },
+ {
+  "description": "A run of consecutive worked days is outside a preferred contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "soft",
+  "name": "Consecutive days worked outside preferred range"
+ },
+ {
+  "description": "A run of shifts close together is outside a required contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "hard",
+  "name": "Consecutive shifts outside required range"
+ },
+ {
+  "description": "A run of shifts close together is outside a preferred contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Work limits",
+  "level": "soft",
+  "name": "Consecutive shifts outside preferred range"
+ },
+ {
+  "description": "After a long enough run of shifts the employee gets fewer minutes off than required; costs the missing minutes.",
+  "group": "Work limits",
+  "level": "hard",
+  "name": "Rest after a run of shifts below required minimum"
+ },
+ {
+  "description": "After a long enough run of shifts the employee gets fewer minutes off than preferred; costs the missing minutes.",
+  "group": "Work limits",
+  "level": "soft",
+  "name": "Rest after a run of shifts below preferred minimum"
+ },
+ {
+  "description": "A run of one shift category follows a run of another too soon; costs the missing minutes.",
+  "group": "Work limits",
+  "level": "hard",
+  "name": "Gap between differing runs below required minimum"
+ },
+ {
+  "description": "A run of one shift category follows a run of another sooner than preferred; costs the missing minutes.",
+  "group": "Work limits",
+  "level": "soft",
+  "name": "Gap between differing runs below preferred minimum"
+ },
+ {
+  "description": "A run of worked days starts on a weekday a required rule does not allow.",
+  "group": "Work limits",
+  "level": "hard",
+  "name": "Run starts on a disallowed day"
+ },
+ {
+  "description": "Rewards each run of worked days that starts on a weekday a preferred rule allows.",
+  "group": "Work limits",
+  "level": "soft",
+  "name": "Run starts on an allowed day"
+ },
+ {
+  "description": "A run of worked days ends on a weekday reserved for starting runs.",
+  "group": "Work limits",
+  "level": "soft",
+  "name": "Run ends on a start day"
+ },
+ {
+  "description": "Rewards each day that continues the previous day's shift category within a run.",
+  "group": "Work limits",
+  "level": "soft",
+  "name": "Compact run of one category"
+ },
+ {
+  "description": "The number of days off in a period is outside a required contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Time off",
+  "level": "hard",
+  "name": "Days off per period outside required range"
+ },
+ {
+  "description": "The number of days off in a period is outside a preferred contract range; costs the distance outside it times rule weight and employee priority.",
+  "group": "Time off",
+  "level": "soft",
+  "name": "Days off per period outside preferred range"
+ },
+ {
+  "description": "The longest run of days off in a period is shorter than required; costs the missing days.",
+  "group": "Time off",
+  "level": "hard",
+  "name": "Consecutive days off per period below required minimum"
+ },
+ {
+  "description": "The longest run of days off in a period is shorter than preferred; costs the missing days.",
+  "group": "Time off",
+  "level": "soft",
+  "name": "Consecutive days off per period below preferred minimum"
+ },
+ {
+  "description": "The longest run of days off in a rolling window is shorter than required; costs the missing days.",
+  "group": "Time off",
+  "level": "hard",
+  "name": "Consecutive days off in rolling window below required minimum"
+ },
+ {
+  "description": "The longest run of days off in a rolling window is shorter than preferred; costs the missing days.",
+  "group": "Time off",
+  "level": "soft",
+  "name": "Consecutive days off in rolling window below preferred minimum"
+ },
+ {
+  "description": "The longest stretch without work in a rolling window is shorter than required; costs the missing minutes.",
+  "group": "Time off",
+  "level": "hard",
+  "name": "Continuous rest in rolling window below required minimum"
+ },
+ {
+  "description": "The longest stretch without work in a rolling window is shorter than preferred; costs the missing minutes.",
+  "group": "Time off",
+  "level": "soft",
+  "name": "Continuous rest in rolling window below preferred minimum"
+ },
+ {
+  "description": "The longest run of weekends off in a period is shorter than required; costs the missing weekends.",
+  "group": "Time off",
+  "level": "hard",
+  "name": "Consecutive weekends off per period below required minimum"
+ },
+ {
+  "description": "The longest run of weekends off in a period is shorter than preferred; costs the missing weekends.",
+  "group": "Time off",
+  "level": "soft",
+  "name": "Consecutive weekends off per period below preferred minimum"
+ },
+ {
+  "description": "A shift a contract bars lands on the day before or after a requested day off.",
+  "group": "Time off",
+  "level": "hard",
+  "name": "Barred shift next to a requested day off"
+ },
+ {
+  "description": "A shift a contract dislikes lands on the day before or after a requested day off.",
+  "group": "Time off",
+  "level": "soft",
+  "name": "Unwanted shift next to a requested day off"
+ },
+ {
+  "description": "Minutes in which two shifts of one employee overlap, unless a contract allows both to overlap.",
+  "group": "Rotations and patterns",
+  "level": "hard",
+  "name": "Overlapping shifts"
+ },
+ {
+  "description": "The minutes from one shift's end to the employee's next shift are outside a required range; costs the distance.",
+  "group": "Rotations and patterns",
+  "level": "hard",
+  "name": "Rest between shifts outside required range"
+ },
+ {
+  "description": "The minutes from one shift's end to the employee's next shift are outside a preferred range; costs the distance.",
+  "group": "Rotations and patterns",
+  "level": "soft",
+  "name": "Rest between shifts outside preferred range"
+ },
+ {
+  "description": "The earliest and latest start times of day in a period lie further apart than required; costs the excess minutes.",
+  "group": "Rotations and patterns",
+  "level": "hard",
+  "name": "Start time spread per period outside required range"
+ },
+ {
+  "description": "The earliest and latest start times of day in a period lie further apart than preferred; costs the excess minutes.",
+  "group": "Rotations and patterns",
+  "level": "soft",
+  "name": "Start time spread per period outside preferred range"
+ },
+ {
+  "description": "Rewards successive shifts of a split day for every minute their gap stays under the largest allowed gap.",
+  "group": "Rotations and patterns",
+  "level": "soft",
+  "name": "Split shifts close together"
+ },
+ {
+  "description": "A shift that must come with a paired shift on a set day lacks it.",
+  "group": "Rotations and patterns",
+  "level": "hard",
+  "name": "Required shift pairing missing"
+ },
+ {
+  "description": "A shift that should come with a paired shift on a set day lacks it.",
+  "group": "Rotations and patterns",
+  "level": "soft",
+  "name": "Preferred shift pairing missing"
+ },
+ {
+  "description": "A shift is worked together with a paired shift it must never go with.",
+  "group": "Rotations and patterns",
+  "level": "hard",
+  "name": "Barred shift pairing worked"
+ },
+ {
+  "description": "A shift is worked together with a paired shift it should not go with.",
+  "group": "Rotations and patterns",
+  "level": "soft",
+  "name": "Unwanted shift pairing worked"
+ },
+ {
+  "description": "A day has shifts of a required single-day pattern without completing the pattern.",
+  "group": "Rotations and patterns",
+  "level": "hard",
+  "name": "Required day pattern broken"
+ },
+ {
+  "description": "Rewards each day whose shifts complete a preferred single-day pattern.",
+  "group": "Rotations and patterns",
+  "level": "soft",
+  "name": "Preferred day pattern worked"
+ },
+ {
+  "description": "A day's shifts complete a barred single-day pattern.",
+  "group": "Rotations and patterns",
+  "level": "hard",
+  "name": "Barred day pattern worked"
+ },
+ {
+  "description": "A day's shifts complete an unwanted single-day pattern.",
+  "group": "Rotations and patterns",
+  "level": "soft",
+  "name": "Unwanted day pattern worked"
+ },
+ {
+  "description": "A run of days starts like a required multi-day pattern but does not follow it.",
+  "group": "Rotations and patterns",
+  "level": "hard",
+  "name": "Required multi-day pattern broken"
+ },
+ {
+  "description": "Rewards each run of days that follows a preferred multi-day pattern.",
+  "group": "Rotations and patterns",
+  "level": "soft",
+  "name": "Preferred multi-day pattern worked"
+ },
+ {
+  "description": "A run of days follows a barred multi-day pattern.",
+  "group": "Rotations and patterns",
+  "level": "hard",
+  "name": "Barred multi-day pattern worked"
+ },
+ {
+  "description": "A run of days follows an unwanted multi-day pattern.",
+  "group": "Rotations and patterns",
+  "level": "soft",
+  "name": "Unwanted multi-day pattern worked"
+ },
+ {
+  "description": "A week mixes rotation groups or does not move on to the next group, against a required rotation.",
+  "group": "Rotations and patterns",
+  "level": "hard",
+  "name": "Required weekly rotation broken"
+ },
+ {
+  "description": "A week mixes rotation groups or does not move on to the next group, against a preferred rotation.",
+  "group": "Rotations and patterns",
+  "level": "soft",
+  "name": "Preferred weekly rotation broken"
+ },
+ {
+  "description": "A block of days in one rotation group runs longer than required; costs the extra days.",
+  "group": "Rotations and patterns",
+  "level": "hard",
+  "name": "Rotation block longer than required maximum"
+ },
+ {
+  "description": "A block of days in one rotation group is shorter or longer than preferred; costs the distance.",
+  "group": "Rotations and patterns",
+  "level": "soft",
+  "name": "Rotation block length outside preferred range"
+ },
+ {
+  "description": "The shifts of a category an employee works in a period fall outside a required range; costs the distance per category.",
+  "group": "Shift variety",
+  "level": "hard",
+  "name": "Shift types per period outside required range"
+ },
+ {
+  "description": "The shifts of a category an employee works in a period fall outside a preferred range; costs the distance per category.",
+  "group": "Shift variety",
+  "level": "soft",
+  "name": "Shift types per period outside preferred range"
+ },
+ {
+  "description": "An employee works more (or fewer) distinct tags of some types in a period than required.",
+  "group": "Shift variety",
+  "level": "hard",
+  "name": "Distinct tags per period for employee outside required range"
+ },
+ {
+  "description": "An employee works more (or fewer) distinct tags of some types in a period than preferred.",
+  "group": "Shift variety",
+  "level": "soft",
+  "name": "Distinct tags per period for employee outside preferred range"
+ },
+ {
+  "description": "Successive shifts at different locations leave less time between them than required; costs the missing minutes.",
+  "group": "Travel and locations",
+  "level": "hard",
+  "name": "Too little time to change location"
+ },
+ {
+  "description": "An employee works at more (or fewer) distinct locations in a period than required.",
+  "group": "Travel and locations",
+  "level": "hard",
+  "name": "Locations per period outside required range"
+ },
+ {
+  "description": "An employee works at more (or fewer) distinct locations in a period than preferred.",
+  "group": "Travel and locations",
+  "level": "soft",
+  "name": "Locations per period outside preferred range"
+ },
+ {
+  "description": "An employee's pay for a period, overtime tiers included, falls outside a required range; costs the distance in cents.",
+  "group": "Cost and activation",
+  "level": "hard",
+  "name": "Contract cost outside required range"
+ },
+ {
+  "description": "An employee's pay for a period, overtime tiers included, in cents (or its distance from a preferred range).",
+  "group": "Cost and activation",
+  "level": "soft",
+  "name": "Contract cost"
+ },
+ {
+  "description": "An employee works at least one shift, at their cost group's activation cost.",
+  "group": "Cost and activation",
+  "level": "soft",
+  "name": "Employee activated"
+ },
+ {
+  "description": "Rewards the square of the shifts worked by employees of fill-up cost groups, so work concentrates on fewer people.",
+  "group": "Cost and activation",
+  "level": "soft",
+  "name": "Activated employee filled up"
+ },
+ {
+  "description": "The square of each employee's shift count (history included) under a fairness rule, so shifts spread evenly.",
+  "group": "Fairness",
+  "level": "soft",
+  "name": "Uneven shift counts"
+ },
+ {
+  "description": "The square of each employee's hours (history included) under a fairness rule, so time worked spreads evenly.",
+  "group": "Fairness",
+  "level": "soft",
+  "name": "Uneven time worked"
+ },
+ {
+  "description": "An employee loses shifts published to them, times their priority.",
+  "group": "Replanning",
+  "level": "soft",
+  "name": "Published shifts lost by employee"
+ },
+ {
+  "description": "An employee gets shifts that were not published to them, times their priority.",
+  "group": "Replanning",
+  "level": "soft",
+  "name": "Unpublished shifts gained by employee"
+ },
+ {
+  "description": "Rewards each tag a gained shift shares with a shift the employee lost.",
+  "group": "Replanning",
+  "level": "soft",
+  "name": "Gained shifts keep tags of lost ones"
+ },
+ {
+  "description": "Rewards each rule tag a close replacement keeps from the shift it replaces.",
+  "group": "Replanning",
+  "level": "soft",
+  "name": "Close replacements keep rule tags"
+ },
+ {
+  "description": "An employee loses a shift in a required disruption rule's scope with no close replacement.",
+  "group": "Replanning",
+  "level": "hard",
+  "name": "Lost shift without required close replacement"
+ },
+ {
+  "description": "An employee loses a shift in a preferred disruption rule's scope with no close replacement.",
+  "group": "Replanning",
+  "level": "soft",
+  "name": "Lost shift without preferred close replacement"
+ },
+ {
+  "description": "More matching shifts run at once than a concurrency rule allows; costs the excess at each shift start.",
+  "group": "Shift assignment",
+  "level": "hard",
+  "name": "Concurrent shifts over limit"
+ },
+ {
+  "description": "An employee works a shift without the colleague they must work with at the same time.",
+  "group": "Working together",
+  "level": "hard",
+  "name": "Required partner absent"
+ },
+ {
+  "description": "Rewards a shift during which a colleague the employee likes to work with also works.",
+  "group": "Working together",
+  "level": "soft",
+  "name": "Preferred partner present"
+ },
+ {
+  "description": "An employee works a shift at the same time as a colleague they would rather avoid.",
+  "group": "Working together",
+  "level": "soft",
+  "name": "Unwanted partner present"
+ },
+ {
+  "description": "An employee works a shift at the same time as a colleague they must never work with.",
+  "group": "Working together",
+  "level": "hard",
+  "name": "Barred partner present"
+ },
+ {
+  "description": "Two team members work at the same time on shifts sharing no tag of the team's tag type.",
+  "group": "Working together",
+  "level": "hard",
+  "name": "Team members split across tags"
+ },
+ {
+  "description": "A team member who is not a lead works a shift with no team lead working at the same time.",
+  "group": "Working together",
+  "level": "hard",
+  "name": "Team member without a lead"
+ },
+ {
+  "description": "Rewards a team lead's shift during which another team member also works.",
+  "group": "Working together",
+  "level": "soft",
+  "name": "Team lead works with the team"
+ },
+ {
+  "description": "A team spreads one tag's work over more distinct shift times in a day than allowed.",
+  "group": "Working together",
+  "level": "hard",
+  "name": "Team shifts per day over limit"
+ },
+ {
+  "description": "A required demand slot has fewer covering staff than its minimum; costs each missing person.",
+  "group": "Demand",
+  "level": "medium",
+  "name": "Required demand under-staffed"
+ },
+ {
+  "description": "A required demand slot has more covering staff than its maximum; costs each extra person.",
+  "group": "Demand",
+  "level": "medium",
+  "name": "Required demand over-staffed"
+ },
+ {
+  "description": "A preferred demand slot has fewer covering staff than its minimum; costs each missing person.",
+  "group": "Demand",
+  "level": "soft",
+  "name": "Preferred demand under-staffed"
+ },
+ {
+  "description": "A preferred demand slot has more covering staff than its maximum; costs each extra person.",
+  "group": "Demand",
+  "level": "soft",
+  "name": "Preferred demand over-staffed"
+ },
+ {
+  "description": "The square of the staff beyond each slot's minimum, so surplus spreads evenly over the day.",
+  "group": "Demand",
+  "level": "soft",
+  "name": "Surplus staff unevenly spread over demand"
+ },
+ {
+  "description": "Assigned matching shifts across all employees in a period fall outside a required range; costs the distance.",
+  "group": "Shift assignment",
+  "level": "hard",
+  "name": "Shift count per period outside required range"
+ },
+ {
+  "description": "Assigned matching shifts across all employees in a period fall outside a preferred range; costs the distance.",
+  "group": "Shift assignment",
+  "level": "soft",
+  "name": "Shift count per period outside preferred range"
+ },
+ {
+  "description": "All assigned shifts of a period staff more (or fewer) distinct tags of some types than required.",
+  "group": "Shift variety",
+  "level": "hard",
+  "name": "Distinct tags per period across schedule outside required range"
+ },
+ {
+  "description": "All assigned shifts of a period staff more (or fewer) distinct tags of some types than preferred.",
+  "group": "Shift variety",
+  "level": "soft",
+  "name": "Distinct tags per period across schedule outside preferred range"
+ },
+ {
+  "description": "The pay of matching assignments across employees in a period falls outside a required range; costs the distance in cents.",
+  "group": "Cost and activation",
+  "level": "hard",
+  "name": "Cost per period outside required range"
+ },
+ {
+  "description": "The pay of matching assignments across employees in a period falls outside a preferred range; costs the distance in cents.",
+  "group": "Cost and activation",
+  "level": "soft",
+  "name": "Cost per period outside preferred range"
+ },
+ {
+  "description": "The pay of matching assignments across employees in a period, in cents, to keep it low.",
+  "group": "Cost and activation",
+  "level": "soft",
+  "name": "Cost per period"
+ },
+ {
+  "description": "A group of alternative shifts has more (or fewer) of its versions worked than asked.",
+  "group": "Demand",
+  "level": "hard",
+  "name": "Alternative shifts worked off count"
+ },
+ {
+  "description": "Activated employees per cost group stray from the groups' target shares; costs each employee off target.",
+  "group": "Cost and activation",
+  "level": "soft",
+  "name": "Activated employees off target share"
+ },
+ {
+  "description": "A shift no longer goes to the employee it was published to.",
+  "group": "Replanning",
+  "level": "soft",
+  "name": "Published assignment changed"
+ }
+]

@@ -1,4 +1,4 @@
-"""Regenerate ess-small-week-run.json: the SMALL_WEEK demo as the stock engine solves and scores it.
+"""Regenerate ess-small-week-run.json and ess-catalog.json: the SMALL_WEEK demo as the stock engine solves and scores it.
 
 Run from the repository root after `make engine`:
 
@@ -58,4 +58,7 @@ scored = next(e for e in call({"command": "evaluate", "model": MODEL, "plan": pl
 fixture = {"model_id": MODEL, "plan": plan, "analysis": scored["analysis"], "score": scored["score"],
            "moved": moved["id"], "opened": open_shift["id"]}
 (Path(__file__).parent / "ess-small-week-run.json").write_text(json.dumps(fixture, indent=1) + "\n")
+# The model's constraint catalog, for search tests over the real names, groups and descriptions.
+catalog = next(e for e in call({"command": "describe", "model": MODEL}) if "constraints" in e)["constraints"]
+(Path(__file__).parent / "ess-catalog.json").write_text(json.dumps(catalog, indent=1) + "\n")
 print(scored["score"], moved["id"], "->", other["employee"], "| open:", open_shift["id"])

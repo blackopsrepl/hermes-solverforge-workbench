@@ -326,7 +326,7 @@
   "score": {
    "hard": 0,
    "medium": 0,
-   "soft": 955
+   "soft": 956
   },
   "shifts": [
    {
@@ -377,7 +377,7 @@
     ]
    },
    {
-    "employee": "elif",
+    "employee": "hana",
     "end": "2027-03-01T23:00",
     "id": "2027-03-01-late-1",
     "requiredSkills": [
@@ -390,7 +390,7 @@
     ]
    },
    {
-    "employee": "dmitri",
+    "employee": "ivo",
     "end": "2027-03-02T07:00",
     "id": "2027-03-01-night-0",
     "requiredSkills": [
@@ -406,7 +406,7 @@
     ]
    },
    {
-    "employee": "hana",
+    "employee": "chiara",
     "end": "2027-03-01T13:00",
     "id": "2027-03-01-support-0",
     "importance": 2,
@@ -454,7 +454,7 @@
     ]
    },
    {
-    "employee": "jun",
+    "employee": "farah",
     "end": "2027-03-02T23:00",
     "id": "2027-03-02-late-0",
     "requiredSkills": [
@@ -467,7 +467,7 @@
     ]
    },
    {
-    "employee": "ivo",
+    "employee": "amina",
     "end": "2027-03-02T23:00",
     "id": "2027-03-02-late-1",
     "requiredSkills": [
@@ -480,7 +480,7 @@
     ]
    },
    {
-    "employee": "farah",
+    "employee": "ivo",
     "end": "2027-03-03T07:00",
     "id": "2027-03-02-night-0",
     "requiredSkills": [
@@ -496,7 +496,7 @@
     ]
    },
    {
-    "employee": "amina",
+    "employee": "jun",
     "end": "2027-03-02T13:00",
     "id": "2027-03-02-support-0",
     "importance": 2,
@@ -528,7 +528,7 @@
     ]
    },
    {
-    "employee": "elif",
+    "employee": "hana",
     "end": "2027-03-03T15:00",
     "id": "2027-03-03-early-1",
     "preferredSkills": [
@@ -544,7 +544,7 @@
     ]
    },
    {
-    "employee": "ivo",
+    "employee": "elif",
     "end": "2027-03-03T23:00",
     "id": "2027-03-03-late-0",
     "requiredSkills": [
@@ -557,7 +557,7 @@
     ]
    },
    {
-    "employee": "dmitri",
+    "employee": "goran",
     "end": "2027-03-03T23:00",
     "id": "2027-03-03-late-1",
     "requiredSkills": [
@@ -570,7 +570,7 @@
     ]
    },
    {
-    "employee": "goran",
+    "employee": "ivo",
     "end": "2027-03-04T07:00",
     "id": "2027-03-03-night-0",
     "requiredSkills": [
@@ -601,7 +601,7 @@
     ]
    },
    {
-    "employee": "chiara",
+    "employee": "bruno",
     "end": "2027-03-04T15:00",
     "id": "2027-03-04-early-0",
     "preferredSkills": [
@@ -618,7 +618,7 @@
     ]
    },
    {
-    "employee": "elif",
+    "employee": "chiara",
     "end": "2027-03-04T15:00",
     "id": "2027-03-04-early-1",
     "preferredSkills": [
@@ -634,7 +634,7 @@
     ]
    },
    {
-    "employee": "hana",
+    "employee": "goran",
     "end": "2027-03-04T23:00",
     "id": "2027-03-04-late-0",
     "requiredSkills": [
@@ -647,7 +647,7 @@
     ]
    },
    {
-    "employee": "bruno",
+    "employee": "dmitri",
     "end": "2027-03-04T23:00",
     "id": "2027-03-04-late-1",
     "requiredSkills": [
@@ -660,7 +660,7 @@
     ]
    },
    {
-    "employee": "farah",
+    "employee": "jun",
     "end": "2027-03-05T07:00",
     "id": "2027-03-04-night-0",
     "requiredSkills": [
@@ -691,7 +691,7 @@
     ]
    },
    {
-    "employee": "chiara",
+    "employee": "bruno",
     "end": "2027-03-05T15:00",
     "id": "2027-03-05-early-0",
     "preferredSkills": [
@@ -737,7 +737,7 @@
     ]
    },
    {
-    "employee": "goran",
+    "employee": "farah",
     "end": "2027-03-05T23:00",
     "id": "2027-03-05-late-1",
     "requiredSkills": [
@@ -750,7 +750,7 @@
     ]
    },
    {
-    "employee": "farah",
+    "employee": "amina",
     "end": "2027-03-06T07:00",
     "id": "2027-03-05-night-0",
     "requiredSkills": [
@@ -766,7 +766,7 @@
     ]
    },
    {
-    "employee": "jun",
+    "employee": "chiara",
     "end": "2027-03-05T13:00",
     "id": "2027-03-05-support-0",
     "importance": 2,
@@ -798,7 +798,7 @@
     ]
    },
    {
-    "employee": "dmitri",
+    "employee": "chiara",
     "end": "2027-03-06T23:00",
     "id": "2027-03-06-late-0",
     "requiredSkills": [
@@ -827,7 +827,7 @@
     ]
    },
    {
-    "employee": "chiara",
+    "employee": "amina",
     "end": "2027-03-07T15:00",
     "id": "2027-03-07-early-0",
     "preferredSkills": [
@@ -844,7 +844,7 @@
     ]
    },
    {
-    "employee": "farah",
+    "employee": "chiara",
     "end": "2027-03-07T23:00",
     "id": "2027-03-07-late-0",
     "requiredSkills": [
@@ -857,7 +857,7 @@
     ]
    },
    {
-    "employee": "amina",
+    "employee": "farah",
     "end": "2027-03-08T07:00",
     "id": "2027-03-07-night-0",
     "requiredSkills": [
@@ -912,7 +912,7 @@
   },
   {
    "level": "soft",
-   "match_count": 6,
+   "match_count": 5,
    "matches": [
     {
      "entities": [
@@ -944,7 +944,7 @@
     {
      "entities": [
       {
-       "text": "Shift { index: 18, id: \"2027-03-04-early-0\", start: \"2027-03-04T07:00\", end: \"2027-03-04T15:00\", employee: Some(\"chiara\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\"), Id(\"senior\")], any_required_skill: false, pr\u2026",
+       "text": "Shift { index: 19, id: \"2027-03-04-early-1\", start: \"2027-03-04T07:00\", end: \"2027-03-04T15:00\", employee: Some(\"chiara\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills\u2026",
        "type": "Shift"
       }
      ],
@@ -953,16 +953,7 @@
     {
      "entities": [
       {
-       "text": "Shift { index: 24, id: \"2027-03-05-early-0\", start: \"2027-03-05T07:00\", end: \"2027-03-05T15:00\", employee: Some(\"chiara\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\"), Id(\"senior\")], any_required_skill: false, pr\u2026",
-       "type": "Shift"
-      }
-     ],
-     "score": "0hard/0medium/-1soft"
-    },
-    {
-     "entities": [
-      {
-       "text": "Shift { index: 33, id: \"2027-03-07-early-0\", start: \"2027-03-07T07:00\", end: \"2027-03-07T15:00\", employee: Some(\"chiara\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\"), Id(\"senior\")], any_required_skill: false, pr\u2026",
+       "text": "Shift { index: 33, id: \"2027-03-07-early-0\", start: \"2027-03-07T07:00\", end: \"2027-03-07T15:00\", employee: Some(\"amina\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\"), Id(\"senior\")], any_required_skill: false, pre\u2026",
        "type": "Shift"
       }
      ],
@@ -970,7 +961,7 @@
     }
    ],
    "name": "Preferred skill lacking",
-   "score": "0hard/0medium/-6soft",
+   "score": "0hard/0medium/-5soft",
    "weight": 1
   },
   {
@@ -1013,7 +1004,7 @@
     {
      "entities": [
       {
-       "text": "Shift { index: 18, id: \"2027-03-04-early-0\", start: \"2027-03-04T07:00\", end: \"2027-03-04T15:00\", employee: Some(\"chiara\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\"), Id(\"senior\")], any_required_skill: false, pr\u2026",
+       "text": "Shift { index: 19, id: \"2027-03-04-early-1\", start: \"2027-03-04T07:00\", end: \"2027-03-04T15:00\", employee: Some(\"chiara\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills\u2026",
        "type": "Shift"
       }
      ],
@@ -1093,7 +1084,7 @@
    "match_count": 0,
    "matches": [],
    "name": "Minutes per period outside required range",
-   "score": "0hard/0medium/0soft",
+   "score": "-240hard/0medium/0soft",
    "weight": 1
   },
   {
@@ -1101,7 +1092,7 @@
    "match_count": 0,
    "matches": [],
    "name": "Minutes per period outside preferred range",
-   "score": "0hard/0medium/0soft",
+   "score": "0hard/0medium/-960soft",
    "weight": 1
   },
   {
@@ -1977,7 +1968,7 @@
    "weight": 1
   }
  ],
- "score": "-481hard/-1medium/954soft",
+ "score": "-721hard/-1medium/-5soft",
  "moved": "2027-03-01-early-1",
  "opened": "2027-03-01-late-0"
 }
