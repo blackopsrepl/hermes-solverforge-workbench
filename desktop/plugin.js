@@ -337,7 +337,11 @@ function ProfilePicker({ model, value, onChange }) {
 }
 
 function Matches({ item }) {
-  if (!item.matches || !item.matches.length) return e('div', { style: faint }, item.match_count ? 'Matches are counted, not listed, for this constraint.' : 'No matches.')
+  if (!item.matches || !item.matches.length) {
+    // Range, balance and window rules are scored as one total per employee or period, not per match.
+    const scored = parseScore(item.score).some(p => p.value !== 0)
+    return e('div', { style: faint }, item.match_count ? 'Matches are counted, not listed, for this constraint.' : scored ? 'Scored as a total; this rule has no individual matches.' : 'No matches.')
+  }
   return e('ul', { style: { margin: '4px 0', paddingLeft: 18, ...muted } },
     item.matches.map((m, i) => e('li', { key: i },
       e(ScoreText, { score: m.score }), ' · ', m.entities.map(x => `${x.type} ${x.text}`).join(' ↔ '))),

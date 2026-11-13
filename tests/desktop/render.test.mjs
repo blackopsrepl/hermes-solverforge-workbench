@@ -101,6 +101,14 @@ test('the chip appears only while solves run', () => {
   assert.match(text(render(h(StatusChip))), /⚙ 2 solving · 1 queued/)
 })
 
+test('a constraint scored as a total shows its score with zero matches', () => {
+  const run = structuredClone(real.run)
+  run.run.analysis = [{ name: 'Minutes per period outside preferred range', level: 'soft', weight: 1, score: '0hard/-9870soft', match_count: 0, matches: [] }]
+  setFixture({ ...real, run })
+  const html = text(render(h(RunView, { id: run.run.id })))
+  assert.match(html, /Minutes per period outside preferred range soft 0 0 hard \/ -9870 soft/)
+})
+
 test('a flat score history draws no chart', () => {
   assert.equal(render(h(ScoreChart, { points: [{ elapsed_ms: 0, score: '0hard/0soft' }, { elapsed_ms: 9, score: '0hard/0soft' }] })), '')
 })
