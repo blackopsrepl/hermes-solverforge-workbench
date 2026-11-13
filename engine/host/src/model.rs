@@ -29,6 +29,13 @@ pub trait Model: 'static {
     /// Builds one demo dataset.
     fn demo(id: &str) -> Option<Self::Plan>;
 
+    /// Checks a plan and fills its derived fields before it is scored or solved.
+    ///
+    /// Any issue of severity `Error` refuses the request; warnings are reported
+    /// with the result.
+    fn prepare(_plan: &mut Self::Plan) -> Vec<Issue> {
+        Vec::new()
+    }
     /// The plan's `#[constraint_weights]` field, when the model has one.
     fn weights_mut(_plan: &mut Self::Plan) -> Option<&mut ConstraintWeights> {
         None
@@ -68,4 +75,37 @@ pub struct Kpi {
     pub label: &'static str,
     pub value: f64,
     pub unit: &'static str,
+}
+
+/// A problem found in a plan before it is scored.
+#[derive(Debug, Clone, Serialize)]
+pub struct Issue {
+    pub severity: Severity,
+    pub code: &'static str,
+    pub message: String,
+}
+
+impl Issue {
+    pub fn error(code: &'static str, message: impl Into<String>) -> Self {
+        Self {
+            severity: Severity::Error,
+            code,
+            message: message.into(),
+        }
+    }
+
+    pub fn warning(code: &'static str, message: impl Into<String>) -> Self {
+        Self {
+            severity: Severity::Warning,
+            code,
+            message: message.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Severity {
+    Error,
+    Warning,
 }

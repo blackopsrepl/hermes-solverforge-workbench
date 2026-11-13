@@ -14,6 +14,6 @@ mod run;
 mod solve;
 
 pub use analysis::{Analysis, ConstraintReport, EntityReport, MatchReport};
-pub use model::{ConstraintInfo, Kpi, Level, Model, ScoreOf};
+pub use model::{ConstraintInfo, Issue, Kpi, Level, Model, ScoreOf, Severity};
 pub use protocol::{Command, EngineError, Request, Termination};
 pub use run::{entry, run, run_io, Entry};

@@ -70,7 +70,7 @@ pub fn evaluate<M: Model, W: Write>(
     request: Request,
     out: &mut Output<W>,
 ) -> Result<(), EngineError> {
-    let mut plan = parse::<M>(request.plan)?;
+    let (mut plan, issues) = parse::<M>(request.plan)?;
     apply_weights::<M>(&mut plan, &request.weights)?;
     let kpis: Vec<Kpi> = M::kpis(&plan);
     let analysis = analyze::<M>(plan, request.max_matches);
@@ -81,6 +81,7 @@ pub fn evaluate<M: Model, W: Write>(
             "feasible": analysis.feasible,
             "analysis": analysis.constraints,
             "kpis": kpis,
+            "issues": issues,
         }),
     );
     Ok(())

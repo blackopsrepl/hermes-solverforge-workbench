@@ -1,7 +1,7 @@
 //! The toy roster as a workbench model.
 
 use solverforge::{ConstraintSet, ConstraintWeights, HardSoftScore, SolverManager};
-use solverforge_workbench_host::{ConstraintInfo, Kpi, Level, Model};
+use solverforge_workbench_host::{ConstraintInfo, Issue, Kpi, Level, Model};
 
 use super::domain::{self, Nurse, Roster, Shift};
 
@@ -29,6 +29,28 @@ impl Model for Toy {
     }
     fn demo(id: &str) -> Option<Roster> {
         (id == "WEEK").then(week)
+    }
+    fn prepare(plan: &mut Roster) -> Vec<Issue> {
+        let mut issues = Vec::new();
+        let nurses = plan.nurses.len();
+        for shift in &plan.shifts {
+            if shift.nurse_idx.is_some_and(|idx| idx >= nurses) {
+                issues.push(Issue::error(
+                    "unknown_nurse",
+                    format!(
+                        "shift {} names nurse {:?}, which does not exist",
+                        shift.id, shift.nurse_idx
+                    ),
+                ));
+            }
+        }
+        if nurses < 2 {
+            issues.push(Issue::warning(
+                "few_nurses",
+                "fewer than two nurses cannot cover a day",
+            ));
+        }
+        issues
     }
     fn weights_mut(plan: &mut Roster) -> Option<&mut ConstraintWeights> {
         Some(&mut plan.weights)

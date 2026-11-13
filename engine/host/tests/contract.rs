@@ -153,6 +153,34 @@ fn a_plan_of_the_wrong_shape_is_refused() {
 }
 
 #[test]
+fn a_dataset_error_refuses_the_request_with_every_issue() {
+    let mut roster = toy::week();
+    roster.shifts[0].nurse_idx = Some(7);
+    roster.nurses.truncate(1);
+    let (code, events) = request(json!({
+        "command": "evaluate", "model": "toy", "plan": plan_json(roster)
+    }));
+    assert_eq!(code, 1);
+    let error = &last(&events)["error"];
+    assert_eq!(error["code"], "invalid_dataset");
+    let issues = error["detail"]["issues"].as_array().unwrap();
+    assert_eq!(issues.len(), 2);
+    assert_eq!(issues[0]["code"], "unknown_nurse");
+    assert_eq!(issues[1]["severity"], "warning");
+}
+
+#[test]
+fn warnings_travel_with_the_result() {
+    let mut roster = toy::week();
+    roster.nurses.truncate(1);
+    let (code, events) = request(json!({
+        "command": "evaluate", "model": "toy", "plan": plan_json(roster)
+    }));
+    assert_eq!(code, 0);
+    assert_eq!(last(&events)["issues"][0]["code"], "few_nurses");
+}
+
+#[test]
 fn solve_finishes_feasible_and_keeps_pinned_assignments() {
     let mut roster = toy::week();
     roster.shifts[0].nurse_idx = Some(0);

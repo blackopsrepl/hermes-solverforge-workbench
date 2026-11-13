@@ -34,7 +34,7 @@ pub fn solve<M: Model, W: Write>(
     controls: impl BufRead + Send + 'static,
     out: &mut Output<W>,
 ) -> Result<(), EngineError> {
-    let mut plan = parse::<M>(request.plan)?;
+    let (mut plan, issues) = parse::<M>(request.plan)?;
     apply_weights::<M>(&mut plan, &request.weights)?;
     let manager = M::manager();
     let started = match &request.termination {
@@ -46,7 +46,7 @@ pub fn solve<M: Model, W: Write>(
     };
     let (job, mut receiver) =
         started.map_err(|error| EngineError::new("solve_rejected", error.to_string()))?;
-    out.event("started", json!({ "model": M::id() }));
+    out.event("started", json!({ "model": M::id(), "issues": issues }));
     thread::spawn(move || watch_controls::<M>(controls, job));
 
     let mut last_progress: Option<Instant> = None;

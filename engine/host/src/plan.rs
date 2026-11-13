@@ -5,18 +5,32 @@ use std::collections::BTreeMap;
 use serde_json::{json, Value};
 use solverforge::{ConstraintSet, ConstraintWeightError, ConstraintWeights};
 
-use crate::model::Model;
+use crate::model::{Issue, Model, Severity};
 use crate::protocol::EngineError;
 
-/// Deserializes the plan, reporting the JSON path of the first bad field.
-pub fn parse<M: Model>(plan: Option<Value>) -> Result<M::Plan, EngineError> {
+/// Deserializes and prepares the plan. Returns it with the model's warnings;
+/// any error-level issue refuses the request with every issue attached.
+pub fn parse<M: Model>(plan: Option<Value>) -> Result<(M::Plan, Vec<Issue>), EngineError> {
     let plan = plan.ok_or_else(|| EngineError::new("missing_plan", "the request has no plan"))?;
-    serde_json::from_value(plan).map_err(|error| {
+    let mut plan: M::Plan = serde_json::from_value(plan).map_err(|error| {
         EngineError::new(
             "invalid_plan",
             format!("the plan does not match the model: {error}"),
         )
-    })
+    })?;
+    let issues = M::prepare(&mut plan);
+    let errors = issues
+        .iter()
+        .filter(|issue| issue.severity == Severity::Error)
+        .count();
+    if errors > 0 {
+        return Err(EngineError::new(
+            "invalid_dataset",
+            format!("the dataset has {errors} error(s)"),
+        )
+        .with_detail(json!({ "issues": issues })));
+    }
+    Ok((plan, issues))
 }
 
 /// Validates the requested multipliers and stores them in the plan.
