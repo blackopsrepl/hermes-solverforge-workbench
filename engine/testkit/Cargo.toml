@@ -1,0 +1,19 @@
+[package]
+name = "solverforge-workbench-testkit"
+version = "0.0.0"
+description = "A small real model and an engine binary that runs it, for testing the host and the plugin"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "workbench-testkit"
+path = "src/main.rs"
+
+[dependencies]
+solverforge-workbench-host = { path = "../host" }
+solverforge.workspace = true
+serde.workspace = true
+serde_json.workspace = true

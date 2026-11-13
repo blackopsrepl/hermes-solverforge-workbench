@@ -340,6 +340,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "solverforge-workbench-testkit"
+version = "0.0.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "solverforge",
+ "solverforge-workbench-host",
+]
+
+[[package]]
 name = "syn"
 version = "2.0.119"
 source = "registry+https://github.com/rust-lang/crates.io-index"

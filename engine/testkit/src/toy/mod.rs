@@ -4,5 +4,5 @@
 mod domain;
 mod model;
 
-pub use domain::Roster;
+pub use domain::{Nurse, Roster, Shift};
 pub use model::{week, Toy};

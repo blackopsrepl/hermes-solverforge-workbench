@@ -1,7 +1,5 @@
 //! Drives every engine command end to end on a small real model.
 
-mod toy;
-
 use std::io::{self, Write};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -9,6 +7,7 @@ use std::time::Duration;
 
 use serde_json::{json, Value};
 use solverforge_workbench_host::{entry, run_io};
+use solverforge_workbench_testkit::toy;
 
 /// Collects what the engine writes.
 #[derive(Clone, Default)]

@@ -1,5 +1,5 @@
 solverforge::planning_model! {
-    root = "tests/toy/domain";
+    root = "src/toy/domain";
 
     mod nurse;
     mod roster;
