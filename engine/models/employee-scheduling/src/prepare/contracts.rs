@@ -3,7 +3,7 @@
 use super::{Builder, Calendar};
 use crate::derived::{
     DayPatternRule, DayRunRule, GapRule, Measure, MultiDayRule, NearDayOffRule, PairingRule,
-    RotationRule, ShiftRunRule, TagMatch, Want, WindowRule,
+    RotationRule, ShiftRunRule, TagMatch, TravelRule, Want, WindowRule,
 };
 use crate::wire::{Contract, Cycle, Level, Rule, RuleKind, Stance, Weekday};
 
@@ -20,6 +20,7 @@ pub struct Compiled {
     pub day_patterns: Vec<DayPatternRule>,
     pub multi_day: Vec<MultiDayRule>,
     pub rotations: Vec<RotationRule>,
+    pub travel: Vec<TravelRule>,
 }
 
 fn scaled<T: Clone>(rules: &[T], priority: i64, weight: fn(&mut T) -> &mut i64) -> Vec<T> {
@@ -68,6 +69,7 @@ impl Compiled {
             .extend(scaled(&other.multi_day, priority, |r| &mut r.weight));
         self.rotations
             .extend(scaled(&other.rotations, priority, |r| &mut r.weight));
+        self.travel.extend(other.travel.iter().cloned());
     }
 }
 
@@ -99,6 +101,7 @@ fn window_kind(kind: RuleKind) -> Option<(Measure, Window)> {
         K::StartSpread => (Measure::StartSpread, Window::Period),
         K::ShiftTypes => (Measure::ShiftTypes, Window::Period),
         K::DistinctTags => (Measure::DistinctTags, Window::Period),
+        K::LocationsWorked => (Measure::Locations, Window::Period),
         _ => return None,
     })
 }
@@ -437,6 +440,20 @@ fn compile_rule(b: &mut Builder, calendar: &Calendar, rule: &Rule, what: &str, o
                 },
                 min: rule.min,
                 max: rule.max,
+            });
+        }
+        RuleKind::Travel => {
+            if rule.max_meters.is_none() && rule.min_change_minutes.is_none() {
+                b.error(
+                    "rule_limit_missing",
+                    format!("{what} needs maxMeters or minChangeMinutes"),
+                );
+                return;
+            }
+            out.travel.push(TravelRule {
+                shifts,
+                max_meters: rule.max_meters,
+                min_change: rule.min_change_minutes,
             });
         }
         // Window kinds returned above.

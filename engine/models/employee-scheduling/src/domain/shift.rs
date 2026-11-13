@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use solverforge::prelude::*;
 
 use crate::derived::Ctx;
-use crate::wire::{Break, SkillRef};
+use crate::wire::{Break, Place, SkillRef};
 
 /// A stretch of work that needs one employee.
 #[planning_entity]
@@ -54,6 +54,9 @@ pub struct Shift {
     /// Employees who must never work the shift.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub barred_employees: Vec<String>,
+    /// Where the shift is worked.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<Place>,
     /// Unpaid breaks inside the shift.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub breaks: Vec<Break>,
@@ -88,6 +91,7 @@ impl Shift {
             preferred_employees: Vec::new(),
             unwanted_employees: Vec::new(),
             barred_employees: Vec::new(),
+            location: None,
             breaks: Vec::new(),
             logged_minutes: None,
             employee_idx: None,

@@ -178,6 +178,10 @@ fn window_deviation(
             );
             outside(used.len() as i64, min, max)
         }
+        Measure::Locations => {
+            let places = distinct(inside().iter().filter_map(|i| i.location_id.map(i64::from)));
+            outside(places.len() as i64, min, max)
+        }
         Measure::StartSpread => {
             let times: Vec<i64> = inside().iter().map(|i| i.start.rem_euclid(DAY)).collect();
             match (times.iter().min(), times.iter().max()) {

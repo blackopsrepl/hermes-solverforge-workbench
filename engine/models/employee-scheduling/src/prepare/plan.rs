@@ -165,6 +165,11 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
         }
     }
 
+    let employee_tags: Vec<Vec<u32>> = plan
+        .employees
+        .iter()
+        .map(|employee| b.tag_set(&employee.tags))
+        .collect();
     let employees: Vec<EmployeeInfo> = plan
         .employees
         .iter()
@@ -204,7 +209,54 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
                     Some((day, entry.minutes))
                 })
                 .collect();
+            let mut colleagues = Vec::new();
+            for pairing in &employee.pairings {
+                let partners: Vec<u32> = match (&pairing.with, pairing.with_tags.is_empty()) {
+                    (Some(id), true) => {
+                        b.employee_list(std::slice::from_ref(id), || format!("{what} pairing"))
+                    }
+                    (None, false) => {
+                        let wanted = b.tag_set(&pairing.with_tags);
+                        employee_tags
+                            .iter()
+                            .enumerate()
+                            .filter(|(i, tags)| {
+                                *i != employee.index
+                                    && wanted.iter().any(|t| tags.binary_search(t).is_ok())
+                            })
+                            .map(|(i, _)| i as u32)
+                            .collect()
+                    }
+                    _ => {
+                        b.error(
+                            "pairing_target_invalid",
+                            format!(
+                                "{what} has a pairing that needs exactly one of with or withTags"
+                            ),
+                        );
+                        continue;
+                    }
+                };
+                if partners.contains(&(employee.index as u32)) {
+                    b.error("pairing_with_self", format!("{what} is paired with itself"));
+                    continue;
+                }
+                colleagues.push(crate::derived::Colleagues {
+                    want: match pairing.stance {
+                        crate::wire::Stance::Required => crate::derived::Want::Required,
+                        crate::wire::Stance::Preferred => crate::derived::Want::Preferred,
+                        crate::wire::Stance::Unwanted => crate::derived::Want::Unwanted,
+                        crate::wire::Stance::Barred => crate::derived::Want::Barred,
+                    },
+                    partners,
+                    on_tags: b.tag_set(&pairing.on_tags),
+                });
+            }
             EmployeeInfo {
+                colleagues,
+                teams: Vec::new(),
+                home: employee.home.map(|p| (p.lat, p.lon)),
+                travel: rules.travel,
                 window_rules: rules.windows,
                 day_runs: rules.day_runs,
                 shift_runs: rules.shift_runs,
@@ -233,6 +285,7 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
         })
         .collect();
 
+    let mut places: HashMap<(u64, u64), u32> = HashMap::new();
     let mut shifts = Vec::with_capacity(plan.shifts.len());
     for shift in plan.shifts.iter_mut() {
         let what = format!("shift {}", shift.id);
@@ -322,7 +375,14 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
                 );
             }
         }
+        let location = shift.location.map(|p| (p.lat, p.lon));
+        let location_id = location.map(|(lat, lon)| {
+            let next = places.len() as u32;
+            *places.entry((lat.to_bits(), lon.to_bits())).or_insert(next)
+        });
         shifts.push(ShiftInfo {
+            location,
+            location_id,
             start,
             end,
             day,
@@ -344,6 +404,44 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
         });
     }
 
+    let mut employees = employees;
+    let mut teams = Vec::new();
+    for (t, team) in plan.teams.iter().enumerate() {
+        let what = format!("team {}", team.id);
+        let leads = b.employee_list(&team.leads, || what.clone());
+        let mut everyone = b.employee_list(&team.members, || what.clone());
+        everyone.extend(&leads);
+        everyone.sort_unstable();
+        everyone.dedup();
+        let tags = match &team.tag_type {
+            Some(kind) => {
+                let tags = b.tags_of_types(std::slice::from_ref(kind), &what);
+                if tags.is_empty() {
+                    continue;
+                }
+                tags
+            }
+            None => {
+                if team.max_shifts_per_day.is_some() {
+                    b.error(
+                        "team_needs_tag_type",
+                        format!("{what} limits shifts per day, which needs a tag type"),
+                    );
+                }
+                Vec::new()
+            }
+        };
+        for &e in &everyone {
+            employees[e as usize].teams.push(t as u32);
+        }
+        teams.push(crate::derived::TeamInfo {
+            leads,
+            everyone,
+            tags,
+            max_shifts_per_day: team.max_shifts_per_day,
+        });
+    }
+
     let (windows, shift_windows, concurrency) =
         compile_schedule_rules(&mut b, &calendar, &plan.schedule_rules, &shifts);
 
@@ -351,6 +449,7 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
         windows,
         shift_windows,
         concurrency,
+        teams,
         origin: origin_day,
         horizon_start: h_start,
         horizon_end: h_end,

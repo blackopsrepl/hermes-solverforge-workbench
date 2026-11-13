@@ -115,6 +115,7 @@ pub fn small_week() -> Plan {
         tags: Vec::new(),
         contracts: contracts(),
         schedule_rules: Default::default(),
+        teams: Vec::new(),
         employees,
         shifts,
         days: Vec::new(),

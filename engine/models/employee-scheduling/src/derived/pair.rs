@@ -128,6 +128,38 @@ impl Derived {
             .map_or(0, |filter| i64::from(filter.accepts(tags)))
     }
 
+    /// Metres from the employee's home to the shift, when both are placed.
+    pub fn travel_metres(&self, shift: usize, employee: usize) -> Option<f64> {
+        let (lat, lon) = self.employees[employee].home?;
+        let (to_lat, to_lon) = self.shifts[shift].location?;
+        let from = crate::wire::Place { lat, lon };
+        Some(from.metres_to(&crate::wire::Place {
+            lat: to_lat,
+            lon: to_lon,
+        }))
+    }
+
+    /// Kilometres (rounded up) beyond each matching travel rule's maximum.
+    pub fn travel_over_limit(&self, shift: usize, employee: usize) -> i64 {
+        let Some(metres) = self.travel_metres(shift, employee) else {
+            return 0;
+        };
+        let tags = &self.shifts[shift].tags;
+        self.employees[employee]
+            .travel
+            .iter()
+            .filter(|rule| rule.shifts.accepts(tags))
+            .filter_map(|rule| rule.max_meters)
+            .map(|max| ((metres - max as f64).max(0.0) / 1000.0).ceil() as i64)
+            .sum()
+    }
+
+    /// Kilometres from home to the shift, rounded.
+    pub fn travel_km(&self, shift: usize, employee: usize) -> i64 {
+        self.travel_metres(shift, employee)
+            .map_or(0, |metres| (metres / 1000.0).round() as i64)
+    }
+
     /// Minutes of the shift inside preferred times, times each span's weight.
     pub fn preferred_minutes(&self, shift: usize, employee: usize) -> i64 {
         self.span_minutes(&self.employees[employee].preferred_times, shift, true)

@@ -29,5 +29,7 @@ pub fn constraints() -> impl ConstraintSet<Plan, Score> {
             "Shift has employee's preferred tags",
             Derived::inside_preferred_shifts,
         ),
+        hard("Travel distance over limit", Derived::travel_over_limit),
+        soft("Travel distance", Derived::travel_km),
     )
 }

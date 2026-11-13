@@ -171,3 +171,37 @@ pub struct TagType {
     #[serde(rename = "type")]
     pub kind: String,
 }
+
+/// Another employee (or employees with some tags) an employee works with.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Pairing {
+    /// Whether working together is `required`, `preferred`, `unwanted` or `barred`.
+    pub stance: Stance,
+    /// The other employee's id.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub with: Option<String>,
+    /// Or: any employee with one of these tags.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub with_tags: Vec<String>,
+    /// Only shifts carrying one of these tags are concerned; all by default.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub on_tags: Vec<String>,
+}
+
+/// Employees who work together: leads may work alone, members need a lead.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Team {
+    pub id: String,
+    #[serde(default)]
+    pub leads: Vec<String>,
+    #[serde(default)]
+    pub members: Vec<String>,
+    /// Members working at the same time must share a tag of this type.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tag_type: Option<String>,
+    /// Most distinct shift times per day for each tag of `tag_type`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_shifts_per_day: Option<i64>,
+}

@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use solverforge::prelude::*;
 
 use crate::derived::Ctx;
-use crate::wire::{LoggedMinutes, SkillRef, TagFilter, TimeSpan};
+use crate::wire::{LoggedMinutes, Pairing, Place, SkillRef, TagFilter, TimeSpan};
 
 /// Someone who can be given shifts.
 #[problem_fact]
@@ -45,6 +45,12 @@ pub struct Employee {
     /// Shifts the employee likes: each one worked is rewarded.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub preferred_shifts: Option<TagFilter>,
+    /// Colleagues to work with, or not.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub pairings: Vec<Pairing>,
+    /// Where the employee travels from.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub home: Option<Place>,
     /// Ids of the contracts whose rules apply.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub contracts: Vec<String>,
@@ -75,6 +81,8 @@ impl Employee {
             unwanted_times: Vec::new(),
             required_shifts: None,
             preferred_shifts: None,
+            pairings: Vec::new(),
+            home: None,
             contracts: Vec::new(),
             days_off: Vec::new(),
             logged_before: Vec::new(),

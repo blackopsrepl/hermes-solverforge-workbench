@@ -275,3 +275,35 @@ pub fn rotation_blocks(roster: &Roster, e: usize, preferred: bool) -> i64 {
     }
     total
 }
+
+/// Minutes missing between successive shifts at different locations, per
+/// the employee's travel rules (the largest requirement of the rules that
+/// match the later shift).
+pub fn location_change_shortfall(roster: &Roster, e: usize) -> i64 {
+    let Some(d) = roster.derived() else {
+        return 0;
+    };
+    let rules = &d.employees[e].travel;
+    if rules.iter().all(|r| r.min_change.is_none()) {
+        return 0;
+    }
+    let items = infos(roster, d);
+    let mut total = 0;
+    for pair in items.windows(2) {
+        let (prev, next) = (pair[0], pair[1]);
+        if prev.location_id.is_none()
+            || next.location_id.is_none()
+            || prev.location_id == next.location_id
+        {
+            continue;
+        }
+        let need = rules
+            .iter()
+            .filter(|r| r.shifts.accepts(&next.tags))
+            .filter_map(|r| r.min_change)
+            .max()
+            .unwrap_or(0);
+        total += (need - (next.start - prev.end)).max(0);
+    }
+    total
+}

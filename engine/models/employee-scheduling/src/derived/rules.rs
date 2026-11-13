@@ -20,6 +20,7 @@ pub enum Measure {
     StartSpread,
     ShiftTypes,
     DistinctTags,
+    Locations,
 }
 
 /// A limit evaluated over a list of windows.
@@ -140,6 +141,36 @@ pub struct RotationRule {
     pub weeks: Vec<(i64, i64)>,
     pub min: Option<i64>,
     pub max: Option<i64>,
+}
+
+/// Working with colleagues.
+#[derive(Debug, Clone)]
+pub struct Colleagues {
+    pub want: Want,
+    /// Employee indexes that count as partners, sorted.
+    pub partners: Vec<u32>,
+    /// Shift tags the pairing applies to; empty for every shift.
+    pub on_tags: Vec<u32>,
+}
+
+/// Distance and location-change limits for matching shifts.
+#[derive(Debug, Clone)]
+pub struct TravelRule {
+    pub shifts: TagMatch,
+    pub max_meters: Option<i64>,
+    pub min_change: Option<i64>,
+}
+
+/// A team of employees.
+#[derive(Debug, Clone)]
+pub struct TeamInfo {
+    /// Employee indexes, sorted.
+    pub leads: Vec<u32>,
+    /// Leads and members, sorted.
+    pub everyone: Vec<u32>,
+    /// Tags of the team's tag type, sorted; empty without one.
+    pub tags: Vec<u32>,
+    pub max_shifts_per_day: Option<i64>,
 }
 
 /// What a schedule-wide window counts.

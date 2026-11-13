@@ -10,6 +10,8 @@ const TIME_OFF: &str = "Time off";
 const PATTERNS: &str = "Rotations and patterns";
 const ASSIGNMENT: &str = "Shift assignment";
 const VARIETY: &str = "Shift variety";
+const TOGETHER: &str = "Working together";
+const TRAVEL: &str = "Travel and locations";
 
 const fn info(
     name: &'static str,
@@ -120,5 +122,18 @@ pub fn catalog() -> Vec<ConstraintInfo> {
         info("Distinct tags per period for employee outside preferred range", VARIETY, Soft, "An employee works more (or fewer) distinct tags of some types in a period than preferred."),
         info("Distinct tags per period across schedule outside required range", VARIETY, Hard, "All assigned shifts of a period staff more (or fewer) distinct tags of some types than required."),
         info("Distinct tags per period across schedule outside preferred range", VARIETY, Soft, "All assigned shifts of a period staff more (or fewer) distinct tags of some types than preferred."),
+        info("Required partner absent", TOGETHER, Hard, "An employee works a shift without the colleague they must work with at the same time."),
+        info("Preferred partner present", TOGETHER, Soft, "Rewards a shift during which a colleague the employee likes to work with also works."),
+        info("Unwanted partner present", TOGETHER, Soft, "An employee works a shift at the same time as a colleague they would rather avoid."),
+        info("Barred partner present", TOGETHER, Hard, "An employee works a shift at the same time as a colleague they must never work with."),
+        info("Team members split across tags", TOGETHER, Hard, "Two team members work at the same time on shifts sharing no tag of the team's tag type."),
+        info("Team member without a lead", TOGETHER, Hard, "A team member who is not a lead works a shift with no team lead working at the same time."),
+        info("Team lead works with the team", TOGETHER, Soft, "Rewards a team lead's shift during which another team member also works."),
+        info("Team shifts per day over limit", TOGETHER, Hard, "A team spreads one tag's work over more distinct shift times in a day than allowed."),
+        info("Travel distance over limit", TRAVEL, Hard, "A shift lies further from the employee's home than a travel rule allows; costs the excess kilometres."),
+        info("Travel distance", TRAVEL, Soft, "Kilometres from each employee's home to their shift, to keep travel short."),
+        info("Too little time to change location", TRAVEL, Hard, "Successive shifts at different locations leave less time between them than required; costs the missing minutes."),
+        info("Locations per period outside required range", TRAVEL, Hard, "An employee works at more (or fewer) distinct locations in a period than required."),
+        info("Locations per period outside preferred range", TRAVEL, Soft, "An employee works at more (or fewer) distinct locations in a period than preferred."),
     ]
 }

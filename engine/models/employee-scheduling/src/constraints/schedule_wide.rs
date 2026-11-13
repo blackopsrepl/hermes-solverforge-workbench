@@ -3,10 +3,11 @@
 
 use solverforge::prelude::*;
 
-use crate::derived::GlobalKind;
+use crate::derived::{GlobalKind, Want};
 use crate::domain::{Day, Plan, Window};
 use crate::eval::{
-    concurrency_excess, window_deviation, ByDay, ByWindow, Members, MembersCollector, Row,
+    colleagues, concurrency_excess, teams, window_deviation, ByDay, ByWindow, Members,
+    MembersCollector, Row, TeamScore,
 };
 
 type Score = HardMediumSoftScore;
@@ -29,6 +30,32 @@ fn by_day() -> impl ConstraintSet<Plan, Score> {
             Score::of_hard(concurrency_excess(m, *day))
         }))
         .named("Concurrent shifts over limit")
+        .penalize(hard_weight(|day: &usize, m: &Members| {
+            Score::of_hard(colleagues(m, *day, Want::Required))
+        }))
+        .named("Required partner absent")
+        .reward(|day: &usize, m: &Members| Score::of_soft(colleagues(m, *day, Want::Preferred)))
+        .named("Preferred partner present")
+        .penalize(|day: &usize, m: &Members| Score::of_soft(colleagues(m, *day, Want::Unwanted)))
+        .named("Unwanted partner present")
+        .penalize(hard_weight(|day: &usize, m: &Members| {
+            Score::of_hard(colleagues(m, *day, Want::Barred))
+        }))
+        .named("Barred partner present")
+        .penalize(hard_weight(|day: &usize, m: &Members| {
+            Score::of_hard(teams(m, *day, TeamScore::SplitTags))
+        }))
+        .named("Team members split across tags")
+        .penalize(hard_weight(|day: &usize, m: &Members| {
+            Score::of_hard(teams(m, *day, TeamScore::HelperWithoutLead))
+        }))
+        .named("Team member without a lead")
+        .reward(|day: &usize, m: &Members| Score::of_soft(teams(m, *day, TeamScore::LeadWithTeam)))
+        .named("Team lead works with the team")
+        .penalize(hard_weight(|day: &usize, m: &Members| {
+            Score::of_hard(teams(m, *day, TeamScore::ShiftsPerDay))
+        }))
+        .named("Team shifts per day over limit")
 }
 
 fn by_window() -> impl ConstraintSet<Plan, Score> {

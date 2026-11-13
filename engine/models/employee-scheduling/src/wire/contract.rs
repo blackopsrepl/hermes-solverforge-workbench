@@ -66,6 +66,10 @@ pub enum RuleKind {
     ShiftTypes,
     /// Distinct tags of some types worked per period.
     DistinctTags,
+    /// Distance from home to matching shifts, and time to change location.
+    Travel,
+    /// Distinct shift locations per period.
+    LocationsWorked,
 }
 
 /// One limit of a contract.
@@ -154,6 +158,12 @@ pub struct Rule {
     /// `distinctTags`: tag types whose distinct tags are counted.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tag_types: Vec<String>,
+    /// `travel`: most metres from the employee's home to a matching shift.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_meters: Option<i64>,
+    /// `travel`: least minutes between two shifts at different locations.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min_change_minutes: Option<i64>,
     /// `nearDayOff`: shifts to avoid on the day before a requested day off;
     /// `restBetween`, `splitShifts`: the earlier shift of a pair.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -197,6 +207,8 @@ impl Rule {
             groups: Vec::new(),
             cycle: None,
             tag_types: Vec::new(),
+            max_meters: None,
+            min_change_minutes: None,
         }
     }
 }

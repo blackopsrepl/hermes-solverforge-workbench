@@ -6,8 +6,9 @@ use solverforge::prelude::*;
 use crate::derived::{Measure, Want};
 use crate::domain::{Employee, Plan, Shift};
 use crate::eval::{
-    day_patterns, day_runs, gaps, multi_day_patterns, near_day_off, overlap_minutes, pairings,
-    rotation_blocks, rules, shift_runs, weekly_rotation, window_penalty, Roster, RosterCollector,
+    day_patterns, day_runs, gaps, location_change_shortfall, multi_day_patterns, near_day_off,
+    overlap_minutes, pairings, rotation_blocks, rules, shift_runs, weekly_rotation, window_penalty,
+    Roster, RosterCollector,
 };
 
 type Score = HardMediumSoftScore;
@@ -235,4 +236,10 @@ fn variety_and_more() -> impl ConstraintSet<Plan, Score> {
         .named("Distinct tags per period for employee outside required range")
         .penalize(soft!(window(M::DistinctTags, false, true)))
         .named("Distinct tags per period for employee outside preferred range")
+        .penalize(hard!(|r: &Roster, e| location_change_shortfall(r, e)))
+        .named("Too little time to change location")
+        .penalize(hard!(window(M::Locations, false, false)))
+        .named("Locations per period outside required range")
+        .penalize(soft!(window(M::Locations, false, true)))
+        .named("Locations per period outside preferred range")
 }

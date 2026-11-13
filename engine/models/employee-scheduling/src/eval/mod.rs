@@ -5,14 +5,16 @@ mod patterns;
 mod roster;
 mod runs;
 mod schedule;
+mod together;
 mod windows;
 
 pub use members::{ByDay, ByWindow, Members, MembersAccumulator, MembersCollector, Row};
 pub use patterns::{
-    day_patterns, gaps, multi_day_patterns, overlap_minutes, pairings, rotation_blocks,
-    weekly_rotation,
+    day_patterns, gaps, location_change_shortfall, multi_day_patterns, overlap_minutes, pairings,
+    rotation_blocks, weekly_rotation,
 };
 pub use roster::{Roster, RosterAccumulator, RosterCollector};
 pub use runs::{day_runs, near_day_off, shift_runs, DayRunScores};
 pub use schedule::{concurrency_excess, window_deviation};
+pub use together::{colleagues, teams, TeamScore};
 pub use windows::{rules, window_penalty};

@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use solverforge::prelude::*;
 
 use super::{Day, Employee, Shift, Window};
-use crate::wire::{Contract, Schedule, ScheduleRules, TagType};
+use crate::wire::{Contract, Schedule, ScheduleRules, TagType, Team};
 
 /// An employee scheduling dataset and, once solved, its assignments.
 #[planning_solution(
@@ -20,6 +20,9 @@ pub struct Plan {
     pub contracts: Vec<Contract>,
     #[serde(default, skip_serializing_if = "is_default")]
     pub schedule_rules: ScheduleRules,
+    /// Employees who work together.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub teams: Vec<Team>,
     #[problem_fact_collection]
     pub employees: Vec<Employee>,
     #[planning_entity_collection]

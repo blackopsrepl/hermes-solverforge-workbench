@@ -1,8 +1,8 @@
 //! The derived fact tables.
 
 use super::{
-    Concurrency, DayPatternRule, DayRunRule, GapRule, GlobalWindow, MultiDayRule, NearDayOffRule,
-    PairingRule, RotationRule, ShiftRunRule, WindowRule,
+    Colleagues, Concurrency, DayPatternRule, DayRunRule, GapRule, GlobalWindow, MultiDayRule,
+    NearDayOffRule, PairingRule, RotationRule, ShiftRunRule, TeamInfo, TravelRule, WindowRule,
 };
 
 /// Tag ids as a sorted, deduplicated list.
@@ -91,6 +91,9 @@ pub struct ShiftInfo {
     pub preferred_employees: Vec<u32>,
     pub unwanted_employees: Vec<u32>,
     pub barred_employees: Vec<u32>,
+    /// Location as `(lat, lon)` and its id among distinct locations.
+    pub location: Option<(f64, f64)>,
+    pub location_id: Option<u32>,
     /// Inside the planning horizon (outside means history or context).
     pub in_horizon: bool,
 }
@@ -110,6 +113,11 @@ pub struct EmployeeInfo {
     pub day_runs: Vec<DayRunRule>,
     pub shift_runs: Vec<ShiftRunRule>,
     pub near_day_off: Vec<NearDayOffRule>,
+    pub colleagues: Vec<Colleagues>,
+    /// Indexes of the teams the employee belongs to.
+    pub teams: Vec<u32>,
+    pub home: Option<(f64, f64)>,
+    pub travel: Vec<TravelRule>,
     pub required_shifts: Option<TagMatch>,
     pub preferred_shifts: Option<TagMatch>,
     /// Filters of shifts allowed to overlap each other.
@@ -150,6 +158,7 @@ pub struct Derived {
     /// Windows each shift counts toward, by shift index.
     pub shift_windows: Vec<Vec<u32>>,
     pub concurrency: Vec<Concurrency>,
+    pub teams: Vec<TeamInfo>,
 }
 
 impl Derived {
