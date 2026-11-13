@@ -324,6 +324,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "solverforge-workbench"
+version = "0.1.0"
+dependencies = [
+ "solverforge-workbench-host",
+]
+
+[[package]]
 name = "solverforge-workbench-host"
 version = "0.1.0"
 dependencies = [
