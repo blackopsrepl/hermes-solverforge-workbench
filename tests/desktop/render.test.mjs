@@ -16,6 +16,11 @@ mkdirSync(join(here, '.build'), { recursive: true })
 cpSync(join(here, '../../desktop/plugin.js'), join(here, '.build/plugin.mjs'))
 const { default: plugin, Workbench, RunView, ScoreChart, StatusChip, parseScore, openBeside, openPage } = await import('./.build/plugin.mjs')
 
+// React reports misuse (lost keys, bad props) through console.error; any of it fails the run.
+const reactErrors = []
+const consoleError = console.error
+console.error = (...args) => { reactErrors.push(args.map(String).join(' ')); consoleError(...args) }
+
 const real = Object.fromEntries(
   readdirSync(join(here, 'fixtures')).map(f => [f.replace('.json', ''), JSON.parse(readFileSync(join(here, 'fixtures', f), 'utf8'))])
 )
@@ -145,4 +150,8 @@ test('a model without one shows no schedule', () => {
 
 test('every surface registers', () => {
   assert.deepEqual(items.map(i => i.id), ['run-card', 'page', 'nav', 'chip', 'open', 'runs', 'beside'])
+})
+
+test('rendering every surface raised no React errors', () => {
+  assert.deepEqual(reactErrors, [])
 })

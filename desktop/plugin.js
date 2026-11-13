@@ -36,9 +36,11 @@ const LIVE = ['queued', 'solving']
 let rest = () => Promise.reject(new Error('SolverForge Workbench not loaded'))
 
 // One element: a single child goes in as is, several as a static list.
+// React reads `key` from jsx()'s third argument; inside props it is dropped.
 const e = (type, props, ...children) => {
   const kids = children.filter(c => c !== null && c !== undefined && c !== false)
-  return (kids.length > 1 ? jsxs : jsx)(type, { ...(props || {}), children: kids.length > 1 ? kids : kids[0] })
+  const { key, ...rest } = props || {}
+  return (kids.length > 1 ? jsxs : jsx)(type, { ...rest, children: kids.length > 1 ? kids : kids[0] }, key)
 }
 const tone = (color, size = '0.75rem') => ({ color: `var(${color})`, fontSize: size })
 const muted = tone('--ui-text-secondary')
