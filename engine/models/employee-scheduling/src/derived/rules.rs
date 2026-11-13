@@ -17,6 +17,7 @@ pub enum Measure {
     ConsecutiveDaysOff,
     MinutesOff,
     ConsecutiveWeekendsOff,
+    StartSpread,
 }
 
 /// A limit evaluated over a list of windows.
@@ -73,6 +74,68 @@ pub struct NearDayOffRule {
     pub weight: i64,
     pub before: Option<TagMatch>,
     pub after: Option<TagMatch>,
+}
+
+/// How a pattern rule wants its situation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Want {
+    Required,
+    Preferred,
+    Unwanted,
+    Barred,
+}
+
+/// Rest or split-shift limits on pairs of successive shifts.
+#[derive(Debug, Clone)]
+pub struct GapRule {
+    /// `false`: rest range; `true`: split-shift reward with `max` as the largest gap.
+    pub split: bool,
+    pub preferred: bool,
+    pub weight: i64,
+    pub before: TagMatch,
+    pub after: TagMatch,
+    pub min: Option<i64>,
+    pub max: Option<i64>,
+    pub within: Option<i64>,
+}
+
+/// A shift that goes with another one `offset` days later.
+#[derive(Debug, Clone)]
+pub struct PairingRule {
+    pub want: Want,
+    pub weight: i64,
+    pub first: TagMatch,
+    pub paired: TagMatch,
+    pub offset: i64,
+}
+
+/// Shifts of one day following steps.
+#[derive(Debug, Clone)]
+pub struct DayPatternRule {
+    pub want: Want,
+    pub weight: i64,
+    pub steps: Vec<TagMatch>,
+    pub ordered: bool,
+}
+
+/// Worked and free days following a pattern.
+#[derive(Debug, Clone)]
+pub struct MultiDayRule {
+    pub want: Want,
+    pub weight: i64,
+    pub days: Vec<(bool, TagMatch)>,
+}
+
+/// Groups of shifts worked in turn.
+#[derive(Debug, Clone)]
+pub struct RotationRule {
+    pub preferred: bool,
+    pub weight: i64,
+    pub groups: Vec<TagMatch>,
+    /// Weekly cycle windows; empty for block rotations.
+    pub weeks: Vec<(i64, i64)>,
+    pub min: Option<i64>,
+    pub max: Option<i64>,
 }
 
 /// Deviation of `value` from `[min, max]`.

@@ -1,6 +1,9 @@
 //! The derived fact tables.
 
-use super::{DayRunRule, NearDayOffRule, ShiftRunRule, WindowRule};
+use super::{
+    DayPatternRule, DayRunRule, GapRule, MultiDayRule, NearDayOffRule, PairingRule, RotationRule,
+    ShiftRunRule, WindowRule,
+};
 
 /// Tag ids as a sorted, deduplicated list.
 pub type TagSet = Vec<u32>;
@@ -107,6 +110,13 @@ pub struct EmployeeInfo {
     pub day_runs: Vec<DayRunRule>,
     pub shift_runs: Vec<ShiftRunRule>,
     pub near_day_off: Vec<NearDayOffRule>,
+    /// Filters of shifts allowed to overlap each other.
+    pub overlap_allowed: Vec<TagMatch>,
+    pub gaps: Vec<GapRule>,
+    pub pairings: Vec<PairingRule>,
+    pub day_patterns: Vec<DayPatternRule>,
+    pub multi_day: Vec<MultiDayRule>,
+    pub rotations: Vec<RotationRule>,
     /// Requested days off, as sorted plan days.
     pub requested_off: Vec<i64>,
     /// Minutes logged before the data, by plan day.

@@ -7,6 +7,7 @@ const FIT: &str = "Skills and risk";
 const AVAILABILITY: &str = "Availability";
 const LIMITS: &str = "Work limits";
 const TIME_OFF: &str = "Time off";
+const PATTERNS: &str = "Rotations and patterns";
 
 const fn info(
     name: &'static str,
@@ -81,5 +82,27 @@ pub fn catalog() -> Vec<ConstraintInfo> {
         info("Consecutive weekends off per period below preferred minimum", TIME_OFF, Soft, "The longest run of weekends off in a period is shorter than preferred; costs the missing weekends."),
         info("Barred shift next to a requested day off", TIME_OFF, Hard, "A shift a contract bars lands on the day before or after a requested day off."),
         info("Unwanted shift next to a requested day off", TIME_OFF, Soft, "A shift a contract dislikes lands on the day before or after a requested day off."),
+        info("Overlapping shifts", PATTERNS, Hard, "Minutes in which two shifts of one employee overlap, unless a contract allows both to overlap."),
+        info("Rest between shifts outside required range", PATTERNS, Hard, "The minutes from one shift's end to the employee's next shift are outside a required range; costs the distance."),
+        info("Rest between shifts outside preferred range", PATTERNS, Soft, "The minutes from one shift's end to the employee's next shift are outside a preferred range; costs the distance."),
+        info("Start time spread per period outside required range", PATTERNS, Hard, "The earliest and latest start times of day in a period lie further apart than required; costs the excess minutes."),
+        info("Start time spread per period outside preferred range", PATTERNS, Soft, "The earliest and latest start times of day in a period lie further apart than preferred; costs the excess minutes."),
+        info("Split shifts close together", PATTERNS, Soft, "Rewards successive shifts of a split day for every minute their gap stays under the largest allowed gap."),
+        info("Required shift pairing missing", PATTERNS, Hard, "A shift that must come with a paired shift on a set day lacks it."),
+        info("Preferred shift pairing missing", PATTERNS, Soft, "A shift that should come with a paired shift on a set day lacks it."),
+        info("Barred shift pairing worked", PATTERNS, Hard, "A shift is worked together with a paired shift it must never go with."),
+        info("Unwanted shift pairing worked", PATTERNS, Soft, "A shift is worked together with a paired shift it should not go with."),
+        info("Required day pattern broken", PATTERNS, Hard, "A day has shifts of a required single-day pattern without completing the pattern."),
+        info("Preferred day pattern worked", PATTERNS, Soft, "Rewards each day whose shifts complete a preferred single-day pattern."),
+        info("Barred day pattern worked", PATTERNS, Hard, "A day's shifts complete a barred single-day pattern."),
+        info("Unwanted day pattern worked", PATTERNS, Soft, "A day's shifts complete an unwanted single-day pattern."),
+        info("Required multi-day pattern broken", PATTERNS, Hard, "A run of days starts like a required multi-day pattern but does not follow it."),
+        info("Preferred multi-day pattern worked", PATTERNS, Soft, "Rewards each run of days that follows a preferred multi-day pattern."),
+        info("Barred multi-day pattern worked", PATTERNS, Hard, "A run of days follows a barred multi-day pattern."),
+        info("Unwanted multi-day pattern worked", PATTERNS, Soft, "A run of days follows an unwanted multi-day pattern."),
+        info("Required weekly rotation broken", PATTERNS, Hard, "A week mixes rotation groups or does not move on to the next group, against a required rotation."),
+        info("Preferred weekly rotation broken", PATTERNS, Soft, "A week mixes rotation groups or does not move on to the next group, against a preferred rotation."),
+        info("Rotation block longer than required maximum", PATTERNS, Hard, "A block of days in one rotation group runs longer than required; costs the extra days."),
+        info("Rotation block length outside preferred range", PATTERNS, Soft, "A block of days in one rotation group is shorter or longer than preferred; costs the distance."),
     ]
 }

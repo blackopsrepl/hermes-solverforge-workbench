@@ -46,6 +46,22 @@ pub enum RuleKind {
     ConsecutiveWeekendsOff,
     /// Shifts next to a requested day off.
     NearDayOff,
+    /// Shifts that may overlap each other.
+    OverlapAllowed,
+    /// Minutes between one shift's end and the next shift's start.
+    RestBetween,
+    /// Spread of shift start times of day within a period, in minutes.
+    StartSpread,
+    /// Rewards split shifts close together.
+    SplitShifts,
+    /// A shift that goes (or must not go) with another shift a fixed number of days later.
+    DailyPairing,
+    /// Shifts in one day that should (or should not) follow a pattern.
+    DayPattern,
+    /// Worked and free days that should (or should not) follow a pattern.
+    MultiDayPattern,
+    /// Groups of shifts worked in turn: by week, or in blocks of days.
+    Rotation,
 }
 
 /// One limit of a contract.
@@ -105,10 +121,37 @@ pub struct Rule {
     /// `nearDayOff`: whether such shifts are `barred` or `unwanted`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stance: Option<Stance>,
-    /// `nearDayOff`: shifts to avoid on the day before a requested day off.
+    /// `restBetween`, `splitShifts`: pairs further apart than this are ignored.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub within_minutes: Option<i64>,
+    /// `dailyPairing`: the shift that goes with the rule's shifts.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub paired: Option<ShiftFilter>,
+    /// `dailyPairing`: days from the rule's shift to the paired shift; 0 by default.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub day_offset: Option<i64>,
+    /// `dayPattern`: shifts of one day, one filter per step.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub steps: Vec<ShiftFilter>,
+    /// `dayPattern`: the steps must happen in this order.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub ordered: bool,
+    /// `multiDayPattern`: one entry per consecutive day.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub days: Vec<PatternDay>,
+    /// `rotation`: the groups rotated through, in order.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub groups: Vec<ShiftFilter>,
+    /// `rotation`: `weekly` (a new group each week) or `blocks` (blocks of
+    /// days limited by `min`/`max`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cycle: Option<Cycle>,
+    /// `nearDayOff`: shifts to avoid on the day before a requested day off;
+    /// `restBetween`, `splitShifts`: the earlier shift of a pair.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub before: Option<ShiftFilter>,
-    /// `nearDayOff`: shifts to avoid on the day after a requested day off.
+    /// `nearDayOff`: shifts to avoid on the day after a requested day off;
+    /// `restBetween`, `splitShifts`: the later shift of a pair.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub after: Option<ShiftFilter>,
 }
@@ -137,8 +180,34 @@ impl Rule {
             stance: None,
             before: None,
             after: None,
+            within_minutes: None,
+            paired: None,
+            day_offset: None,
+            steps: Vec::new(),
+            ordered: false,
+            days: Vec::new(),
+            groups: Vec::new(),
+            cycle: None,
         }
     }
+}
+
+/// One day of a multi-day pattern.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PatternDay {
+    /// `true`: a matching shift starts that day; `false`: none does.
+    pub work: bool,
+    #[serde(default, flatten)]
+    pub shifts: ShiftFilter,
+}
+
+/// How a rotation cycles.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Cycle {
+    Weekly,
+    Blocks,
 }
 
 /// Minutes an employee logged before the data starts, counted by

@@ -157,6 +157,13 @@ fn window_deviation(
             longest = longest.max(end - cursor);
             outside(longest, min, None)
         }
+        Measure::StartSpread => {
+            let times: Vec<i64> = inside().iter().map(|i| i.start.rem_euclid(DAY)).collect();
+            match (times.iter().min(), times.iter().max()) {
+                (Some(lo), Some(hi)) => outside(hi - lo, min, max),
+                _ => 0,
+            }
+        }
         Measure::ConsecutiveWeekendsOff => {
             let worked = distinct(
                 inside()

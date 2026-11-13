@@ -3,10 +3,11 @@
 
 use solverforge::prelude::*;
 
-use crate::derived::Measure;
+use crate::derived::{Measure, Want};
 use crate::domain::{Employee, Plan, Shift};
 use crate::eval::{
-    day_runs, near_day_off, rules, shift_runs, window_penalty, Roster, RosterCollector,
+    day_patterns, day_runs, gaps, multi_day_patterns, near_day_off, overlap_minutes, pairings,
+    rotation_blocks, rules, shift_runs, weekly_rotation, window_penalty, Roster, RosterCollector,
 };
 
 type Score = HardMediumSoftScore;
@@ -29,20 +30,33 @@ fn window(measure: Measure, rolling: bool, preferred: bool) -> impl Fn(&Roster, 
     move |r, e| window_penalty(r, e, rules(measure, rolling, preferred))
 }
 
+/// One grouped node over every employee's roster, employees without shifts
+/// included. Each node carries at most a few dozen terminals: the compiler
+/// nests one type level per terminal.
+macro_rules! rosters {
+    () => {
+        ConstraintFactory::<Plan, Score>::new()
+            .for_each(Plan::shifts())
+            .group_by(
+                |shift: &Shift| shift.employee_idx.unwrap_or(usize::MAX),
+                RosterCollector,
+            )
+            .complement_with_key(
+                Plan::employees(),
+                |shift: &Shift| shift.employee_idx,
+                |employee: &Employee| employee.index,
+                |employee: &Employee| Roster::empty(employee.ctx.clone()),
+            )
+    };
+}
+
 pub fn constraints() -> impl ConstraintSet<Plan, Score> {
+    (work_limits(), time_off_and_patterns())
+}
+
+fn work_limits() -> impl ConstraintSet<Plan, Score> {
     use Measure as M;
-    ConstraintFactory::<Plan, Score>::new()
-        .for_each(Plan::shifts())
-        .group_by(
-            |shift: &Shift| shift.employee_idx.unwrap_or(usize::MAX),
-            RosterCollector,
-        )
-        .complement_with_key(
-            Plan::employees(),
-            |shift: &Shift| shift.employee_idx,
-            |employee: &Employee| employee.index,
-            |employee: &Employee| Roster::empty(employee.ctx.clone()),
-        )
+    rosters!()
         // Work limits.
         .penalize(hard!(window(M::Minutes, false, false)))
         .named("Minutes per period outside required range")
@@ -116,7 +130,11 @@ pub fn constraints() -> impl ConstraintSet<Plan, Score> {
             day_runs(r, e, false).compact + day_runs(r, e, true).compact
         }))
         .named("Compact run of one category")
-        // Time off.
+}
+
+fn time_off_and_patterns() -> impl ConstraintSet<Plan, Score> {
+    use Measure as M;
+    rosters!()
         .penalize(hard!(window(M::DaysOff, false, false)))
         .named("Days off per period outside required range")
         .penalize(soft!(window(M::DaysOff, false, true)))
@@ -141,4 +159,67 @@ pub fn constraints() -> impl ConstraintSet<Plan, Score> {
         .named("Barred shift next to a requested day off")
         .penalize(soft!(|r: &Roster, e| near_day_off(r, e, false)))
         .named("Unwanted shift next to a requested day off")
+        // Rotations and patterns.
+        .penalize(hard!(|r: &Roster, e| overlap_minutes(r, e)))
+        .named("Overlapping shifts")
+        .penalize(hard!(|r: &Roster, e| gaps(r, e, false, false)))
+        .named("Rest between shifts outside required range")
+        .penalize(soft!(|r: &Roster, e| gaps(r, e, false, true)))
+        .named("Rest between shifts outside preferred range")
+        .penalize(hard!(window(M::StartSpread, false, false)))
+        .named("Start time spread per period outside required range")
+        .penalize(soft!(window(M::StartSpread, false, true)))
+        .named("Start time spread per period outside preferred range")
+        .reward(soft!(
+            |r: &Roster, e| gaps(r, e, true, false) + gaps(r, e, true, true)
+        ))
+        .named("Split shifts close together")
+        .penalize(hard!(|r: &Roster, e| pairings(r, e, Want::Required)))
+        .named("Required shift pairing missing")
+        .penalize(soft!(|r: &Roster, e| pairings(r, e, Want::Preferred)))
+        .named("Preferred shift pairing missing")
+        .penalize(hard!(|r: &Roster, e| pairings(r, e, Want::Barred)))
+        .named("Barred shift pairing worked")
+        .penalize(soft!(|r: &Roster, e| pairings(r, e, Want::Unwanted)))
+        .named("Unwanted shift pairing worked")
+        .penalize(hard!(|r: &Roster, e| day_patterns(r, e, Want::Required)))
+        .named("Required day pattern broken")
+        .reward(soft!(|r: &Roster, e| day_patterns(r, e, Want::Preferred)))
+        .named("Preferred day pattern worked")
+        .penalize(hard!(|r: &Roster, e| day_patterns(r, e, Want::Barred)))
+        .named("Barred day pattern worked")
+        .penalize(soft!(|r: &Roster, e| day_patterns(r, e, Want::Unwanted)))
+        .named("Unwanted day pattern worked")
+        .penalize(hard!(|r: &Roster, e| multi_day_patterns(
+            r,
+            e,
+            Want::Required
+        )))
+        .named("Required multi-day pattern broken")
+        .reward(soft!(|r: &Roster, e| multi_day_patterns(
+            r,
+            e,
+            Want::Preferred
+        )))
+        .named("Preferred multi-day pattern worked")
+        .penalize(hard!(|r: &Roster, e| multi_day_patterns(
+            r,
+            e,
+            Want::Barred
+        )))
+        .named("Barred multi-day pattern worked")
+        .penalize(soft!(|r: &Roster, e| multi_day_patterns(
+            r,
+            e,
+            Want::Unwanted
+        )))
+        .named("Unwanted multi-day pattern worked")
+        .penalize(hard!(|r: &Roster, e| weekly_rotation(r, e, false)))
+        .named("Required weekly rotation broken")
+        .penalize(soft!(|r: &Roster, e| weekly_rotation(r, e, true)))
+        .named("Preferred weekly rotation broken")
+        .penalize(hard!(|r: &Roster, e| rotation_blocks(r, e, false)))
+        .named("Rotation block longer than required maximum")
+        .penalize(soft!(|r: &Roster, e| rotation_blocks(r, e, true)))
+        .named("Rotation block length outside preferred range")
 }

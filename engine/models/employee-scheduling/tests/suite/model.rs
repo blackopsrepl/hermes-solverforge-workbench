@@ -1,11 +1,9 @@
 //! The model's contract with the workbench host: catalog, demos and the
 //! round trip through the wire format.
 
-mod common;
-
 use std::collections::BTreeSet;
 
-use common::*;
+use crate::common::*;
 use serde_json::json;
 use solverforge::ConstraintSet;
 use solverforge_workbench_employee_scheduling::{EmployeeScheduling, Plan};

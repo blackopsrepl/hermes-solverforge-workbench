@@ -1,9 +1,7 @@
 //! Staffing, skills, risk and availability constraints, each against a
 //! hand-built plan with a known penalty.
 
-mod common;
-
-use common::*;
+use crate::common::*;
 use serde_json::json;
 
 fn two_people() -> Vec<serde_json::Value> {

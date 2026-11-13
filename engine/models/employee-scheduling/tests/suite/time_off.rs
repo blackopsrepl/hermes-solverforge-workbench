@@ -1,8 +1,6 @@
 //! Time-off rules, each against a hand-built plan with a known penalty.
 
-mod common;
-
-use common::*;
+use crate::common::*;
 use serde_json::{json, Value};
 use solverforge_workbench_employee_scheduling::Plan;
 

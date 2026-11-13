@@ -1,8 +1,6 @@
 //! Contract work limits, each against a hand-built plan with a known penalty.
 
-mod common;
-
-use common::*;
+use crate::common::*;
 use serde_json::{json, Value};
 
 /// A plan where every listed employee works under contract `c` with `rules`.
