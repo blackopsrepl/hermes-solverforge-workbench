@@ -1,0 +1,11 @@
+{
+  "solverforge_ui_version": "0.9.1",
+  "solverforge_ui_commit": "94cfd9eef222fc6509ea410f6f7c4e2b90a825b1",
+  "solverforge_ui_repository": "https://github.com/solverforge/solverforge-ui",
+  "files": "static/sf/sf.js and static/sf/sf.css, unmodified",
+  "sha256": {
+    "sf.css": "5d504d904f3bd4c8f01c1453359dcd4dceb125dc94a05db8ee8899a4a00bafec",
+    "sf.js": "8125327fd2ebb1d28657bdaa6a6d2520a9b3a27434fa2685b57e7bf49243d066",
+    "solverforge-ui-LICENSE": "5416115b91952412c8f4c40230090acd00fd36b2c8a50df50b07b1ac1d314b4e"
+  }
+}

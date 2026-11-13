@@ -8,6 +8,7 @@ button the user clicks; that click is the decision. Nothing here deletes.
 
 from __future__ import annotations
 
+import importlib
 import importlib.util
 import json
 import sys
@@ -43,7 +44,7 @@ WRITES = {
     "dataset_create": "workbench_dataset_create",
 }
 STATUS = {"unknown_model": 404, "unknown_dataset": 404, "unknown_run": 404, "unknown_profile": 404,
-          "stale": 409, "busy": 409, "engine_missing": 503, "storage_error": 503}
+          "no_view": 404, "stale": 409, "busy": 409, "engine_missing": 503, "storage_error": 503}
 
 
 def _package():
@@ -85,6 +86,20 @@ def _call(tool: str, args: dict[str, Any]) -> JSONResponse:
 
 
 router = APIRouter()
+
+
+@router.get("/view")
+def view(run: str = "", dataset: str = "") -> JSONResponse:
+    """The schedule of a run or dataset as a self-contained page for the Desktop's sandboxed frame."""
+    package = _package()
+    service = importlib.import_module(f"{package.__name__}.service")
+    views = importlib.import_module(f"{package.__name__}.views")
+    try:
+        timeline = package.workbench(_config).schedule(run_id=run or None, dataset_id=dataset or None)
+    except service.WorkbenchError as exc:
+        return JSONResponse({"ok": False, "code": exc.code, "error": exc.message},
+                            status_code=STATUS.get(exc.code, 400))
+    return JSONResponse({"ok": True, "document": views.document(timeline)})
 
 
 @router.get("/{action}")

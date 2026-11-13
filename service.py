@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 from typing import Any, Callable
 
+from . import views
 from .engine_bin import ENGINE_VERSION, EngineError, StockEngine, call, engine_env
 from .patching import PatchError, apply_patch
 from .store import Store, new_id
@@ -170,7 +171,8 @@ class Workbench:
                 "weights": description.get("weights", False),
                 "constraints": description.get("constraints", []),
                 "profiles": [self.profile_view(p) for p in self.store.profiles(model_id)],
-                "default_profile": (self.profile_record(model_id, None) or {}).get("id")}
+                "default_profile": (self.profile_record(model_id, None) or {}).get("id"),
+                "schedule_view": views.has_view(model_id)}
 
     # ---- datasets -----------------------------------------------------------
 
@@ -467,6 +469,25 @@ class Workbench:
         if with_plan:
             view["plan"] = run.get("plan")
         return view
+
+    def schedule(self, run_id: str | None = None, dataset_id: str | None = None) -> dict[str, Any]:
+        """The schedule view of a run's plan (with its broken rules marked) or of a dataset's input."""
+        if bool(run_id) == bool(dataset_id):
+            raise WorkbenchError("one_source", "give exactly one of run or dataset")
+        if run_id:
+            run = self.run_record(run_id)
+            model_id, plan, analysis = run["model_id"], run.get("plan"), run.get("analysis")
+        else:
+            dataset = self.dataset_record(dataset_id or "")
+            model_id, plan, analysis = dataset["model_id"], dataset["plan"], None
+        if not views.has_view(model_id):
+            raise WorkbenchError("no_view", f"model {model_id} has no schedule view")
+        if not isinstance(plan, dict):
+            raise WorkbenchError("no_plan", f"run {run_id} has no plan yet")
+        try:
+            return views.timeline(model_id, plan, analysis)
+        except views.ViewError as exc:
+            raise WorkbenchError("invalid_plan", str(exc)) from exc
 
     def runs(self, dataset_id: str | None = None, model_id: str | None = None,
              status: str | None = None) -> list[dict[str, Any]]:

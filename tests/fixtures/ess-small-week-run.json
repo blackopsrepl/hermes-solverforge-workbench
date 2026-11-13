@@ -1,0 +1,1983 @@
+{
+ "model_id": "employee-scheduling",
+ "plan": {
+  "contracts": [
+   {
+    "id": "full-time",
+    "rules": [
+     {
+      "kind": "minutesWorked",
+      "level": "required",
+      "max": 2400,
+      "period": "week"
+     },
+     {
+      "kind": "minutesWorked",
+      "level": "preferred",
+      "min": 1440,
+      "period": "week"
+     },
+     {
+      "kind": "consecutiveShifts",
+      "level": "required",
+      "linkMinutes": 600,
+      "max": 1
+     },
+     {
+      "kind": "consecutiveDaysWorked",
+      "level": "required",
+      "max": 5
+     },
+     {
+      "before": {
+       "withTags": [
+        "night"
+       ]
+      },
+      "kind": "nearDayOff",
+      "level": "required",
+      "stance": "unwanted"
+     }
+    ]
+   },
+   {
+    "id": "part-time",
+    "rules": [
+     {
+      "kind": "minutesWorked",
+      "level": "required",
+      "max": 1440,
+      "period": "week"
+     },
+     {
+      "kind": "minutesWorked",
+      "level": "preferred",
+      "min": 480,
+      "period": "week"
+     },
+     {
+      "kind": "consecutiveShifts",
+      "level": "required",
+      "linkMinutes": 600,
+      "max": 1
+     },
+     {
+      "kind": "consecutiveDaysWorked",
+      "level": "required",
+      "max": 5
+     },
+     {
+      "before": {
+       "withTags": [
+        "night"
+       ]
+      },
+      "kind": "nearDayOff",
+      "level": "required",
+      "stance": "unwanted"
+     }
+    ]
+   }
+  ],
+  "employees": [
+   {
+    "contracts": [
+     "full-time"
+    ],
+    "id": "amina",
+    "name": "Amina",
+    "preferredTimes": [
+     {
+      "from": "2027-03-03T07:00",
+      "to": "2027-03-03T15:00"
+     }
+    ],
+    "skills": [
+     "nurse",
+     "senior"
+    ],
+    "unavailable": [
+     {
+      "from": "2027-03-03T00:00",
+      "to": "2027-03-04T00:00"
+     }
+    ]
+   },
+   {
+    "contracts": [
+     "full-time"
+    ],
+    "id": "bruno",
+    "name": "Bruno",
+    "skills": [
+     "nurse",
+     "senior",
+     "wound-care"
+    ],
+    "unavailable": [
+     {
+      "from": "2027-03-07T00:00",
+      "to": "2027-03-08T00:00"
+     }
+    ],
+    "unwantedTimes": [
+     {
+      "from": "2027-03-01T15:00",
+      "to": "2027-03-01T23:00"
+     }
+    ]
+   },
+   {
+    "contracts": [
+     "full-time"
+    ],
+    "id": "chiara",
+    "name": "Chiara",
+    "preferredTimes": [
+     {
+      "from": "2027-03-04T07:00",
+      "to": "2027-03-04T15:00"
+     }
+    ],
+    "skills": [
+     "nurse",
+     "senior"
+    ],
+    "unavailable": [
+     {
+      "from": "2027-03-02T00:00",
+      "to": "2027-03-03T00:00"
+     }
+    ]
+   },
+   {
+    "contracts": [
+     "full-time"
+    ],
+    "id": "dmitri",
+    "name": "Dmitri",
+    "skills": [
+     "nurse",
+     "senior"
+    ],
+    "unavailable": [
+     {
+      "from": "2027-03-07T00:00",
+      "to": "2027-03-08T00:00"
+     }
+    ],
+    "unwantedTimes": [
+     {
+      "from": "2027-03-02T15:00",
+      "to": "2027-03-02T23:00"
+     }
+    ]
+   },
+   {
+    "avoidRisks": [
+     "radiation"
+    ],
+    "contracts": [
+     "full-time"
+    ],
+    "id": "elif",
+    "name": "Elif",
+    "preferredTimes": [
+     {
+      "from": "2027-03-02T07:00",
+      "to": "2027-03-02T15:00"
+     }
+    ],
+    "skills": [
+     "nurse",
+     "wound-care"
+    ],
+    "unavailable": [
+     {
+      "from": "2027-03-02T00:00",
+      "to": "2027-03-03T00:00"
+     }
+    ]
+   },
+   {
+    "contracts": [
+     "full-time"
+    ],
+    "daysOff": [
+     "2027-03-04"
+    ],
+    "id": "farah",
+    "name": "Farah",
+    "skills": [
+     "nurse"
+    ],
+    "unavailable": [
+     {
+      "from": "2027-03-01T00:00",
+      "to": "2027-03-02T00:00"
+     }
+    ],
+    "unwantedTimes": [
+     {
+      "from": "2027-03-01T15:00",
+      "to": "2027-03-01T23:00"
+     }
+    ]
+   },
+   {
+    "contracts": [
+     "full-time"
+    ],
+    "id": "goran",
+    "name": "Goran",
+    "preferredTimes": [
+     {
+      "from": "2027-03-02T07:00",
+      "to": "2027-03-02T15:00"
+     }
+    ],
+    "skills": [
+     "nurse"
+    ],
+    "unavailable": [
+     {
+      "from": "2027-03-07T00:00",
+      "to": "2027-03-08T00:00"
+     }
+    ]
+   },
+   {
+    "contracts": [
+     "part-time"
+    ],
+    "id": "hana",
+    "name": "Hana",
+    "skills": [
+     "nurse",
+     "wound-care"
+    ],
+    "unavailable": [
+     {
+      "from": "2027-03-02T00:00",
+      "to": "2027-03-03T00:00"
+     }
+    ],
+    "unwantedTimes": [
+     {
+      "from": "2027-03-02T15:00",
+      "to": "2027-03-02T23:00"
+     }
+    ]
+   },
+   {
+    "contracts": [
+     "part-time"
+    ],
+    "id": "ivo",
+    "name": "Ivo",
+    "preferredTimes": [
+     {
+      "from": "2027-03-07T07:00",
+      "to": "2027-03-07T15:00"
+     }
+    ],
+    "skills": [
+     "nurse"
+    ],
+    "unavailable": [
+     {
+      "from": "2027-03-05T00:00",
+      "to": "2027-03-06T00:00"
+     }
+    ]
+   },
+   {
+    "contracts": [
+     "part-time"
+    ],
+    "id": "jun",
+    "name": "Jun",
+    "skills": [
+     "nurse"
+    ],
+    "unavailable": [
+     {
+      "from": "2027-03-03T00:00",
+      "to": "2027-03-04T00:00"
+     }
+    ],
+    "unwantedTimes": [
+     {
+      "from": "2027-03-01T15:00",
+      "to": "2027-03-01T23:00"
+     }
+    ]
+   }
+  ],
+  "schedule": {
+   "end": "2027-03-08T00:00",
+   "start": "2027-03-01T00:00",
+   "weekStart": "monday",
+   "weekend": [
+    "saturday",
+    "sunday"
+   ]
+  },
+  "score": {
+   "hard": 0,
+   "medium": 0,
+   "soft": 955
+  },
+  "shifts": [
+   {
+    "employee": "amina",
+    "end": "2027-03-01T15:00",
+    "id": "2027-03-01-early-0",
+    "pinned": true,
+    "preferredSkills": [
+     "wound-care"
+    ],
+    "requiredSkills": [
+     "nurse",
+     "senior"
+    ],
+    "start": "2027-03-01T07:00",
+    "tags": [
+     "early",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "amina",
+    "end": "2027-03-01T15:00",
+    "id": "2027-03-01-early-1",
+    "preferredSkills": [
+     "wound-care"
+    ],
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-01T07:00",
+    "tags": [
+     "early",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": null,
+    "end": "2027-03-01T23:00",
+    "id": "2027-03-01-late-0",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-01T15:00",
+    "tags": [
+     "late",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "elif",
+    "end": "2027-03-01T23:00",
+    "id": "2027-03-01-late-1",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-01T15:00",
+    "tags": [
+     "late",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "dmitri",
+    "end": "2027-03-02T07:00",
+    "id": "2027-03-01-night-0",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "risks": [
+     "radiation"
+    ],
+    "start": "2027-03-01T23:00",
+    "tags": [
+     "night",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "hana",
+    "end": "2027-03-01T13:00",
+    "id": "2027-03-01-support-0",
+    "importance": 2,
+    "optional": true,
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-01T09:00",
+    "tags": [
+     "support",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "bruno",
+    "end": "2027-03-02T15:00",
+    "id": "2027-03-02-early-0",
+    "preferredSkills": [
+     "wound-care"
+    ],
+    "requiredSkills": [
+     "nurse",
+     "senior"
+    ],
+    "start": "2027-03-02T07:00",
+    "tags": [
+     "early",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "goran",
+    "end": "2027-03-02T15:00",
+    "id": "2027-03-02-early-1",
+    "preferredSkills": [
+     "wound-care"
+    ],
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-02T07:00",
+    "tags": [
+     "early",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "jun",
+    "end": "2027-03-02T23:00",
+    "id": "2027-03-02-late-0",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-02T15:00",
+    "tags": [
+     "late",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "ivo",
+    "end": "2027-03-02T23:00",
+    "id": "2027-03-02-late-1",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-02T15:00",
+    "tags": [
+     "late",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "farah",
+    "end": "2027-03-03T07:00",
+    "id": "2027-03-02-night-0",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "risks": [
+     "radiation"
+    ],
+    "start": "2027-03-02T23:00",
+    "tags": [
+     "night",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "amina",
+    "end": "2027-03-02T13:00",
+    "id": "2027-03-02-support-0",
+    "importance": 2,
+    "optional": true,
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-02T09:00",
+    "tags": [
+     "support",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "bruno",
+    "end": "2027-03-03T15:00",
+    "id": "2027-03-03-early-0",
+    "preferredSkills": [
+     "wound-care"
+    ],
+    "requiredSkills": [
+     "nurse",
+     "senior"
+    ],
+    "start": "2027-03-03T07:00",
+    "tags": [
+     "early",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "elif",
+    "end": "2027-03-03T15:00",
+    "id": "2027-03-03-early-1",
+    "preferredSkills": [
+     "wound-care"
+    ],
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-03T07:00",
+    "tags": [
+     "early",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "ivo",
+    "end": "2027-03-03T23:00",
+    "id": "2027-03-03-late-0",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-03T15:00",
+    "tags": [
+     "late",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "dmitri",
+    "end": "2027-03-03T23:00",
+    "id": "2027-03-03-late-1",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-03T15:00",
+    "tags": [
+     "late",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "goran",
+    "end": "2027-03-04T07:00",
+    "id": "2027-03-03-night-0",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "risks": [
+     "radiation"
+    ],
+    "start": "2027-03-03T23:00",
+    "tags": [
+     "night",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "chiara",
+    "end": "2027-03-03T13:00",
+    "id": "2027-03-03-support-0",
+    "importance": 2,
+    "optional": true,
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-03T09:00",
+    "tags": [
+     "support",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "chiara",
+    "end": "2027-03-04T15:00",
+    "id": "2027-03-04-early-0",
+    "preferredSkills": [
+     "wound-care"
+    ],
+    "requiredSkills": [
+     "nurse",
+     "senior"
+    ],
+    "start": "2027-03-04T07:00",
+    "tags": [
+     "early",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "elif",
+    "end": "2027-03-04T15:00",
+    "id": "2027-03-04-early-1",
+    "preferredSkills": [
+     "wound-care"
+    ],
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-04T07:00",
+    "tags": [
+     "early",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "hana",
+    "end": "2027-03-04T23:00",
+    "id": "2027-03-04-late-0",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-04T15:00",
+    "tags": [
+     "late",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "bruno",
+    "end": "2027-03-04T23:00",
+    "id": "2027-03-04-late-1",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-04T15:00",
+    "tags": [
+     "late",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "farah",
+    "end": "2027-03-05T07:00",
+    "id": "2027-03-04-night-0",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "risks": [
+     "radiation"
+    ],
+    "start": "2027-03-04T23:00",
+    "tags": [
+     "night",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "amina",
+    "end": "2027-03-04T13:00",
+    "id": "2027-03-04-support-0",
+    "importance": 2,
+    "optional": true,
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-04T09:00",
+    "tags": [
+     "support",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "chiara",
+    "end": "2027-03-05T15:00",
+    "id": "2027-03-05-early-0",
+    "preferredSkills": [
+     "wound-care"
+    ],
+    "requiredSkills": [
+     "nurse",
+     "senior"
+    ],
+    "start": "2027-03-05T07:00",
+    "tags": [
+     "early",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "elif",
+    "end": "2027-03-05T15:00",
+    "id": "2027-03-05-early-1",
+    "preferredSkills": [
+     "wound-care"
+    ],
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-05T07:00",
+    "tags": [
+     "early",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "dmitri",
+    "end": "2027-03-05T23:00",
+    "id": "2027-03-05-late-0",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-05T15:00",
+    "tags": [
+     "late",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "goran",
+    "end": "2027-03-05T23:00",
+    "id": "2027-03-05-late-1",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-05T15:00",
+    "tags": [
+     "late",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "farah",
+    "end": "2027-03-06T07:00",
+    "id": "2027-03-05-night-0",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "risks": [
+     "radiation"
+    ],
+    "start": "2027-03-05T23:00",
+    "tags": [
+     "night",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "jun",
+    "end": "2027-03-05T13:00",
+    "id": "2027-03-05-support-0",
+    "importance": 2,
+    "optional": true,
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-05T09:00",
+    "tags": [
+     "support",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "bruno",
+    "end": "2027-03-06T15:00",
+    "id": "2027-03-06-early-0",
+    "preferredSkills": [
+     "wound-care"
+    ],
+    "requiredSkills": [
+     "nurse",
+     "senior"
+    ],
+    "start": "2027-03-06T07:00",
+    "tags": [
+     "early",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "dmitri",
+    "end": "2027-03-06T23:00",
+    "id": "2027-03-06-late-0",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-06T15:00",
+    "tags": [
+     "late",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "hana",
+    "end": "2027-03-07T07:00",
+    "id": "2027-03-06-night-0",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "risks": [
+     "radiation"
+    ],
+    "start": "2027-03-06T23:00",
+    "tags": [
+     "night",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "chiara",
+    "end": "2027-03-07T15:00",
+    "id": "2027-03-07-early-0",
+    "preferredSkills": [
+     "wound-care"
+    ],
+    "requiredSkills": [
+     "nurse",
+     "senior"
+    ],
+    "start": "2027-03-07T07:00",
+    "tags": [
+     "early",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "farah",
+    "end": "2027-03-07T23:00",
+    "id": "2027-03-07-late-0",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "start": "2027-03-07T15:00",
+    "tags": [
+     "late",
+     "ward-a"
+    ]
+   },
+   {
+    "employee": "amina",
+    "end": "2027-03-08T07:00",
+    "id": "2027-03-07-night-0",
+    "requiredSkills": [
+     "nurse"
+    ],
+    "risks": [
+     "radiation"
+    ],
+    "start": "2027-03-07T23:00",
+    "tags": [
+     "night",
+     "ward-a"
+    ]
+   }
+  ],
+  "weights": {}
+ },
+ "analysis": [
+  {
+   "level": "medium",
+   "match_count": 1,
+   "matches": [
+    {
+     "entities": [
+      {
+       "text": "Shift { index: 2, id: \"2027-03-01-late-0\", start: \"2027-03-01T15:00\", end: \"2027-03-01T23:00\", employee: None, pinned: false, tags: [\"late\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: [], risks: \u2026",
+       "type": "Shift"
+      }
+     ],
+     "score": "0hard/-1medium/0soft"
+    }
+   ],
+   "name": "Mandatory shift left open",
+   "score": "0hard/-1medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Optional shift left open",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Required skill lacking",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 6,
+   "matches": [
+    {
+     "entities": [
+      {
+       "text": "Shift { index: 0, id: \"2027-03-01-early-0\", start: \"2027-03-01T07:00\", end: \"2027-03-01T15:00\", employee: Some(\"amina\"), pinned: true, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\"), Id(\"senior\")], any_required_skill: false, prefe\u2026",
+       "type": "Shift"
+      }
+     ],
+     "score": "0hard/0medium/-1soft"
+    },
+    {
+     "entities": [
+      {
+       "text": "Shift { index: 1, id: \"2027-03-01-early-1\", start: \"2027-03-01T07:00\", end: \"2027-03-01T15:00\", employee: Some(\"amina\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: \u2026",
+       "type": "Shift"
+      }
+     ],
+     "score": "0hard/0medium/-1soft"
+    },
+    {
+     "entities": [
+      {
+       "text": "Shift { index: 7, id: \"2027-03-02-early-1\", start: \"2027-03-02T07:00\", end: \"2027-03-02T15:00\", employee: Some(\"goran\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: \u2026",
+       "type": "Shift"
+      }
+     ],
+     "score": "0hard/0medium/-1soft"
+    },
+    {
+     "entities": [
+      {
+       "text": "Shift { index: 18, id: \"2027-03-04-early-0\", start: \"2027-03-04T07:00\", end: \"2027-03-04T15:00\", employee: Some(\"chiara\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\"), Id(\"senior\")], any_required_skill: false, pr\u2026",
+       "type": "Shift"
+      }
+     ],
+     "score": "0hard/0medium/-1soft"
+    },
+    {
+     "entities": [
+      {
+       "text": "Shift { index: 24, id: \"2027-03-05-early-0\", start: \"2027-03-05T07:00\", end: \"2027-03-05T15:00\", employee: Some(\"chiara\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\"), Id(\"senior\")], any_required_skill: false, pr\u2026",
+       "type": "Shift"
+      }
+     ],
+     "score": "0hard/0medium/-1soft"
+    },
+    {
+     "entities": [
+      {
+       "text": "Shift { index: 33, id: \"2027-03-07-early-0\", start: \"2027-03-07T07:00\", end: \"2027-03-07T15:00\", employee: Some(\"chiara\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\"), Id(\"senior\")], any_required_skill: false, pr\u2026",
+       "type": "Shift"
+      }
+     ],
+     "score": "0hard/0medium/-1soft"
+    }
+   ],
+   "name": "Preferred skill lacking",
+   "score": "0hard/0medium/-6soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Prohibited risk exposure",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Works while unavailable",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Works outside available hours",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 2,
+   "matches": [
+    {
+     "entities": [
+      {
+       "text": "Shift { index: 7, id: \"2027-03-02-early-1\", start: \"2027-03-02T07:00\", end: \"2027-03-02T15:00\", employee: Some(\"goran\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: \u2026",
+       "type": "Shift"
+      }
+     ],
+     "score": "0hard/0medium/480soft"
+    },
+    {
+     "entities": [
+      {
+       "text": "Shift { index: 18, id: \"2027-03-04-early-0\", start: \"2027-03-04T07:00\", end: \"2027-03-04T15:00\", employee: Some(\"chiara\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\"), Id(\"senior\")], any_required_skill: false, pr\u2026",
+       "type": "Shift"
+      }
+     ],
+     "score": "0hard/0medium/480soft"
+    }
+   ],
+   "name": "Works in preferred hours",
+   "score": "0hard/0medium/960soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Works in unwanted hours",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Preferred employee on shift",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Unwanted employee on shift",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Barred employee on shift",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Shift outside employee's required tags",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Shift has employee's preferred tags",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Travel distance over limit",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Travel distance",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Minutes per period outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Minutes per period outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Minutes in rolling window outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Minutes in rolling window outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Logged minutes per period outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Logged minutes per period outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Days worked per period outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Days worked per period outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Days worked in rolling window outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Days worked in rolling window outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Employee shifts per period outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Employee shifts per period outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Employee shifts in rolling window outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Employee shifts in rolling window outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Weekends worked per period outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Weekends worked per period outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Weekends worked in rolling window outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Weekends worked in rolling window outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Weekend minutes per period outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Weekend minutes per period outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Consecutive weekends worked outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Consecutive weekends worked outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Consecutive days worked outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Consecutive days worked outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Consecutive shifts outside required range",
+   "score": "-1hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Consecutive shifts outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Rest after a run of shifts below required minimum",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Rest after a run of shifts below preferred minimum",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Gap between differing runs below required minimum",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Gap between differing runs below preferred minimum",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Run starts on a disallowed day",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Run starts on an allowed day",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Run ends on a start day",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Compact run of one category",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Days off per period outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Days off per period outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Consecutive days off per period below required minimum",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Consecutive days off per period below preferred minimum",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Consecutive days off in rolling window below required minimum",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Consecutive days off in rolling window below preferred minimum",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Continuous rest in rolling window below required minimum",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Continuous rest in rolling window below preferred minimum",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Consecutive weekends off per period below required minimum",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Consecutive weekends off per period below preferred minimum",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Barred shift next to a requested day off",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Unwanted shift next to a requested day off",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Overlapping shifts",
+   "score": "-480hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Rest between shifts outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Rest between shifts outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Start time spread per period outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Start time spread per period outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Split shifts close together",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Required shift pairing missing",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Preferred shift pairing missing",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Barred shift pairing worked",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Unwanted shift pairing worked",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Required day pattern broken",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Preferred day pattern worked",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Barred day pattern worked",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Unwanted day pattern worked",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Required multi-day pattern broken",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Preferred multi-day pattern worked",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Barred multi-day pattern worked",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Unwanted multi-day pattern worked",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Required weekly rotation broken",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Preferred weekly rotation broken",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Rotation block longer than required maximum",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Rotation block length outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Shift types per period outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Shift types per period outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Distinct tags per period for employee outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Distinct tags per period for employee outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Too little time to change location",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Locations per period outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Locations per period outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Contract cost outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Contract cost",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Employee activated",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Activated employee filled up",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Uneven shift counts",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Uneven time worked",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Published shifts lost by employee",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Unpublished shifts gained by employee",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Gained shifts keep tags of lost ones",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Close replacements keep rule tags",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Lost shift without required close replacement",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Lost shift without preferred close replacement",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Concurrent shifts over limit",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Required partner absent",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Preferred partner present",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Unwanted partner present",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Barred partner present",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Team members split across tags",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Team member without a lead",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Team lead works with the team",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Team shifts per day over limit",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "medium",
+   "match_count": 0,
+   "matches": [],
+   "name": "Required demand under-staffed",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "medium",
+   "match_count": 0,
+   "matches": [],
+   "name": "Required demand over-staffed",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Preferred demand under-staffed",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Preferred demand over-staffed",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Surplus staff unevenly spread over demand",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Shift count per period outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Shift count per period outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Distinct tags per period across schedule outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Distinct tags per period across schedule outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Cost per period outside required range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Cost per period outside preferred range",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Cost per period",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "hard",
+   "match_count": 0,
+   "matches": [],
+   "name": "Alternative shifts worked off count",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Activated employees off target share",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  },
+  {
+   "level": "soft",
+   "match_count": 0,
+   "matches": [],
+   "name": "Published assignment changed",
+   "score": "0hard/0medium/0soft",
+   "weight": 1
+  }
+ ],
+ "score": "-481hard/-1medium/954soft",
+ "moved": "2027-03-01-early-1",
+ "opened": "2027-03-01-late-0"
+}
