@@ -1,0 +1,52 @@
+manifest_version: 2
+name: solverforge-workbench
+version: 0.1.0
+label: SolverForge Workbench
+description: >
+  Optimization models you can configure, solve and build, on your own machine.
+  Stock models for employee scheduling, field service routing, pick-up and
+  delivery and task scheduling run on a SolverForge engine; tune constraint
+  weights and solve settings in profiles, solve datasets in the background,
+  read why every constraint fired, replan from a patch, and compare runs.
+  No account, no network access while solving.
+author: blackopsrepl
+license: Apache-2.0
+homepage: https://github.com/blackopsrepl/hermes-solverforge-workbench
+requires_hermes: ">=0.22.2"
+tags: [optimization, scheduling, routing, solver, solverforge, planning]
+provides_tools:
+  - workbench_status
+  - workbench_models
+  - workbench_model
+  - workbench_dataset_create
+  - workbench_datasets
+  - workbench_dataset
+  - workbench_dataset_update
+  - workbench_dataset_patch
+  - workbench_dataset_delete
+  - workbench_profile_save
+  - workbench_profile_default
+  - workbench_profile_delete
+  - workbench_profile_export
+  - workbench_profile_import
+  - workbench_solve
+  - workbench_evaluate
+  - workbench_run
+  - workbench_runs
+  - workbench_cancel
+  - workbench_explain
+  - workbench_compare
+  - workbench_export
+provides_hooks:
+  - pre_tool_call
+config_schema:
+  binary:
+    type: str
+    default: ""
+    label: Engine binary path
+    description: Leave empty to use the engine installed by `hermes solverforge-workbench install`.
+  parallel_solves:
+    type: int
+    default: 0
+    label: Solves at once
+    description: How many solves run at the same time; 0 picks a quarter of this machine's cores.

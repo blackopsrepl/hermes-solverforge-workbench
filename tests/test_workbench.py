@@ -15,6 +15,7 @@ from pathlib import Path
 
 import pytest
 
+from solverforge_workbench_plugin import tools as tools_module
 from solverforge_workbench_plugin.engine_bin import StockEngine
 from solverforge_workbench_plugin.service import Workbench, WorkbenchError
 from solverforge_workbench_plugin.store import Store
@@ -188,6 +189,24 @@ def test_profiles_export_and_import(wb, tmp_path):
     imported = wb.import_profile(json.loads(path.read_text()), name="Strict copy")
     assert imported["weights"] == {"Shift for the first nurse": 4}
     assert imported["solve"] == {"seconds": 5}
+
+
+def test_tools_return_codes_and_messages_the_agent_can_act_on(wb):
+    table = dict((schema["name"], handler) for schema, handler in tools_module.tool_table(lambda: wb))
+    answer = json.loads(table["workbench_model"]({"model": "nope"}))
+    assert answer == {"ok": False, "code": "unknown_model", "error": "no model is named 'nope'", "models": ["toy"]}
+    created = json.loads(table["workbench_dataset_create"]({"model": "toy", "demo": ""}))
+    assert created["ok"] and created["dataset"]["size"]["shifts"] == 6
+    missing = json.loads(table["workbench_solve"]({}))
+    assert missing["code"] == "missing_argument"
+
+
+def test_every_schema_has_a_handler_and_the_manifest_lists_it():
+    names = [schema["name"] for schema, _ in tools_module.tool_table(lambda: None)]  # type: ignore[arg-type]
+    manifest = (ROOT / "plugin.yaml").read_text()
+    for name in names:
+        assert f"  - {name}\n" in manifest
+    assert len(names) == len(set(names))
 
 
 def test_a_dead_worker_is_reported_instead_of_solving_forever(wb):
