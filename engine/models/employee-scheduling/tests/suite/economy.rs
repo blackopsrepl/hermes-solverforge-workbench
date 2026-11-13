@@ -17,6 +17,7 @@ fn demand_slots_are_staffed() {
             {"level": "preferred", "slots": [
                 {"from": at(0, 8, 0), "to": at(0, 12, 0), "min": 3},
                 {"from": at(2, 22, 0), "to": at(3, 2, 0), "min": 1},
+                {"from": at(0, 9, 0), "to": at(0, 12, 0), "min": 1},
             ]},
         ]},
         "shifts": [
@@ -26,10 +27,15 @@ fn demand_slots_are_staffed() {
             on("d", 2, 7, 15, None, json!({})),
         ],
     })));
-    assert_eq!(score(&plan, "Required demand over-staffed"), hard(-1));
-    assert_eq!(score(&plan, "Required demand under-staffed"), hard(0));
+    assert_eq!(score(&plan, "Required demand over-staffed"), medium(-1));
+    assert_eq!(score(&plan, "Required demand under-staffed"), medium(0));
     // One short on Monday morning, and nobody on Wednesday night.
     assert_eq!(score(&plan, "Preferred demand under-staffed"), soft(-2));
+    // Three staff for a minimum of one from 09:00.
+    assert_eq!(
+        score(&plan, "Surplus staff unevenly spread over demand"),
+        soft(-4)
+    );
 }
 
 #[test]
@@ -88,6 +94,7 @@ fn schedule_cost_activation_and_shares() {
         "scheduleRules": {"costs": [
             {"period": "week", "level": "preferred", "rates": [{"employeeGroup": "temp", "hourly": 30.0}, {"hourly": 20.0}]},
             {"period": "day", "max": 20000, "rates": [{"hourly": 20.0}]},
+            {"period": "week", "level": "preferred", "max": 60000, "rates": [{"hourly": 20.0}]},
         ]},
         "employees": [
             employee("ann", json!({"costGroup": "temp"})),
@@ -104,6 +111,11 @@ fn schedule_cost_activation_and_shares() {
     })));
     // ann and ben 24h at 30, dee 8h at 20.
     assert_eq!(score(&plan, "Cost per period"), soft(-(72000 + 16000)));
+    // 32h at 20 is 64000.
+    assert_eq!(
+        score(&plan, "Cost per period outside preferred range"),
+        soft(-4000)
+    );
     // Tuesday: 24h at 20 is 48000, 28000 over.
     assert_eq!(
         score(&plan, "Cost per period outside required range"),
@@ -133,7 +145,8 @@ fn fairness_balances_load_with_history() {
         ],
     })));
     // Shifts: ann 3² + bob 1²; night minutes: bob 8h².
-    assert_eq!(score(&plan, "Unfair workload"), soft(-(9 + 1 + 64)));
+    assert_eq!(score(&plan, "Uneven shift counts"), soft(-10));
+    assert_eq!(score(&plan, "Uneven time worked"), soft(-64));
 }
 
 #[test]
@@ -153,10 +166,26 @@ fn published_shifts_taken_away() {
             on("far", 2, 12, 20, Some("ann"), json!({})),
         ],
     })));
-    // "lost" is made good by "swap"; "gone" is not by "far".
-    assert_eq!(score(&plan, "Published shift reassigned"), soft(-5));
+    assert_eq!(score(&plan, "Published assignment changed"), soft(-2));
+    assert_eq!(score(&plan, "Published shifts lost by employee"), soft(-2));
+    // ann gains "swap" and "far", bob gains "lost".
     assert_eq!(
-        score(&plan, "Published shift reassigned against rule"),
+        score(&plan, "Unpublished shifts gained by employee"),
+        soft(-3)
+    );
+    assert_eq!(
+        score(&plan, "Gained shifts keep tags of lost ones"),
+        soft(1)
+    );
+    // "lost" is made good by "swap", keeping icu; "gone" is not by "far".
+    assert_eq!(score(&plan, "Close replacements keep rule tags"), soft(1));
+    assert_eq!(
+        score(&plan, "Lost shift without preferred close replacement"),
+        soft(-5)
+    );
+    // The required rule has no window, so nothing replaces "lost".
+    assert_eq!(
+        score(&plan, "Lost shift without required close replacement"),
         hard(-1)
     );
 }
@@ -172,6 +201,7 @@ fn economy_rules_are_validated() {
         "scheduleRules": {
             "demand": [{"slots": [{"from": at(0, 8, 0), "to": at(0, 7, 0), "min": 1}]}],
             "fairness": [{"balance": "shifts", "history": {"zed": 1}}],
+            "costs": [{"period": "week", "rates": [{"hourly": 1.0}]}],
         },
         "shifts": [on("s", 0, 7, 15, None, json!({"alternativeOf": "nope", "published": "zed"}))],
     })));

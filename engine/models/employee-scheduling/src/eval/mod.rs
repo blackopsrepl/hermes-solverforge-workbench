@@ -10,7 +10,8 @@ mod together;
 mod windows;
 
 pub use economy::{
-    activation, alternatives_off, demand, disruption, fill_up, share_gap, unfairness,
+    activation, alternatives_off, demand, fill_up, gained_tags_kept, replacement_tags_kept,
+    share_gap, shifts_gained, shifts_lost, unfairness, unreplaced, Coverage,
 };
 pub use members::{
     ByChoice, ByDay, ByShare, ByWindow, Members, MembersAccumulator, MembersCollector, Row,

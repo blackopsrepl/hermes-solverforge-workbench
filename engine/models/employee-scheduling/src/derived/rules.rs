@@ -252,7 +252,10 @@ pub struct TeamInfo {
 pub enum GlobalKind {
     Shifts,
     DistinctTags,
+    /// Cost against a range.
     Cost,
+    /// Cost to minimise, without a range.
+    CostTotal,
 }
 
 /// One period of a schedule-wide rule.

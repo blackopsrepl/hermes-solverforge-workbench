@@ -35,7 +35,7 @@ fn add_windows(
             return;
         }
     }
-    if template.min.is_none() && template.max.is_none() && template.kind != GlobalKind::Cost {
+    if template.min.is_none() && template.max.is_none() && template.kind != GlobalKind::CostTotal {
         b.error("rule_limit_missing", format!("{what} needs a min or a max"));
         return;
     }
@@ -85,8 +85,21 @@ pub fn compile_schedule_rules(
                 cents: super::contracts::cents(rate.hourly),
             })
             .collect();
+        let preferred = rule.level == Level::Preferred;
+        let total = rule.min.is_none() && rule.max.is_none();
+        if total && !preferred {
+            b.error(
+                "rule_limit_missing",
+                format!("{what} is required, so it needs a min or a max"),
+            );
+            continue;
+        }
         let template = GlobalWindow {
-            kind: GlobalKind::Cost,
+            kind: if total {
+                GlobalKind::CostTotal
+            } else {
+                GlobalKind::Cost
+            },
             preferred: rule.level == Level::Preferred,
             weight: rule.weight.max(0),
             start: 0,

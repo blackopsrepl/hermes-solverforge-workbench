@@ -180,6 +180,8 @@ pub struct Derived {
     pub slots: Vec<Slot>,
     /// Slot indexes by the plan day they start on.
     pub slots_by_day: Vec<Vec<u32>>,
+    /// Whether any shift carries a published employee.
+    pub replanning: bool,
     /// Target shares of activated employees, by share group.
     pub shares: Vec<i64>,
 }

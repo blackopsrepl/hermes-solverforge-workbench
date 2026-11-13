@@ -65,7 +65,7 @@ pub fn window_deviation(
             used.dedup();
             used.len() as i64
         }
-        GlobalKind::Cost => members
+        GlobalKind::Cost | GlobalKind::CostTotal => members
             .iter(d)
             .filter(|(_, e, _)| {
                 rule.employees
@@ -84,7 +84,7 @@ pub fn window_deviation(
             })
             .sum(),
     };
-    if kind == GlobalKind::Cost && rule.min.is_none() && rule.max.is_none() {
+    if kind == GlobalKind::CostTotal {
         return value * rule.weight;
     }
     outside(value, rule.min, rule.max) * rule.weight

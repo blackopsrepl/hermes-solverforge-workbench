@@ -565,6 +565,7 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
             .iter()
             .map(|a| (a.count, a.at_most))
             .collect(),
+        replanning: plan.shifts.iter().any(|s| s.published.is_some()),
         shares,
         teams,
         origin: origin_day,

@@ -13,7 +13,9 @@ const VARIETY: &str = "Shift variety";
 const TOGETHER: &str = "Working together";
 const TRAVEL: &str = "Travel and locations";
 const DEMAND: &str = "Demand";
-const COST: &str = "Cost and fairness";
+const COST: &str = "Cost and activation";
+const FAIRNESS: &str = "Fairness";
+const REPLANNING: &str = "Replanning";
 
 const fn info(
     name: &'static str,
@@ -137,20 +139,28 @@ pub fn catalog() -> Vec<ConstraintInfo> {
         info("Too little time to change location", TRAVEL, Hard, "Successive shifts at different locations leave less time between them than required; costs the missing minutes."),
         info("Locations per period outside required range", TRAVEL, Hard, "An employee works at more (or fewer) distinct locations in a period than required."),
         info("Locations per period outside preferred range", TRAVEL, Soft, "An employee works at more (or fewer) distinct locations in a period than preferred."),
-        info("Required demand under-staffed", DEMAND, Hard, "A required demand slot has fewer covering staff than its minimum; costs each missing person."),
-        info("Required demand over-staffed", DEMAND, Hard, "A required demand slot has more covering staff than its maximum; costs each extra person."),
         info("Preferred demand under-staffed", DEMAND, Soft, "A preferred demand slot has fewer covering staff than its minimum; costs each missing person."),
         info("Preferred demand over-staffed", DEMAND, Soft, "A preferred demand slot has more covering staff than its maximum; costs each extra person."),
         info("Alternative shifts worked off count", DEMAND, Hard, "A group of alternative shifts has more (or fewer) of its versions worked than asked."),
         info("Contract cost outside required range", COST, Hard, "An employee's pay for a period, overtime tiers included, falls outside a required range; costs the distance in cents."),
         info("Contract cost", COST, Soft, "An employee's pay for a period, overtime tiers included, in cents (or its distance from a preferred range)."),
         info("Cost per period outside required range", COST, Hard, "The pay of matching assignments across employees in a period falls outside a required range; costs the distance in cents."),
-        info("Cost per period", COST, Soft, "The pay of matching assignments across employees in a period, in cents (or its distance from a preferred range)."),
         info("Employee activated", COST, Soft, "An employee works at least one shift, at their cost group's activation cost."),
         info("Activated employee filled up", COST, Soft, "Rewards the square of the shifts worked by employees of fill-up cost groups, so work concentrates on fewer people."),
         info("Activated employees off target share", COST, Soft, "Activated employees per cost group stray from the groups' target shares; costs each employee off target."),
-        info("Unfair workload", COST, Soft, "The square of each employee's load (history included) under a fairness rule, so a fixed total spreads evenly."),
-        info("Published shift reassigned against rule", COST, Hard, "A shift published to an employee is taken away without an equivalent replacement, against a required disruption rule."),
-        info("Published shift reassigned", COST, Soft, "A shift published to an employee is taken away without an equivalent replacement."),
+        info("Required demand under-staffed", DEMAND, Medium, "A required demand slot has fewer covering staff than its minimum; costs each missing person."),
+        info("Required demand over-staffed", DEMAND, Medium, "A required demand slot has more covering staff than its maximum; costs each extra person."),
+        info("Surplus staff unevenly spread over demand", DEMAND, Soft, "The square of the staff beyond each slot's minimum, so surplus spreads evenly over the day."),
+        info("Cost per period outside preferred range", COST, Soft, "The pay of matching assignments across employees in a period falls outside a preferred range; costs the distance in cents."),
+        info("Cost per period", COST, Soft, "The pay of matching assignments across employees in a period, in cents, to keep it low."),
+        info("Uneven shift counts", FAIRNESS, Soft, "The square of each employee's shift count (history included) under a fairness rule, so shifts spread evenly."),
+        info("Uneven time worked", FAIRNESS, Soft, "The square of each employee's hours (history included) under a fairness rule, so time worked spreads evenly."),
+        info("Published assignment changed", REPLANNING, Soft, "A shift no longer goes to the employee it was published to."),
+        info("Published shifts lost by employee", REPLANNING, Soft, "An employee loses shifts published to them, times their priority."),
+        info("Unpublished shifts gained by employee", REPLANNING, Soft, "An employee gets shifts that were not published to them, times their priority."),
+        info("Gained shifts keep tags of lost ones", REPLANNING, Soft, "Rewards each tag a gained shift shares with a shift the employee lost."),
+        info("Close replacements keep rule tags", REPLANNING, Soft, "Rewards each rule tag a close replacement keeps from the shift it replaces."),
+        info("Lost shift without required close replacement", REPLANNING, Hard, "An employee loses a shift in a required disruption rule's scope with no close replacement."),
+        info("Lost shift without preferred close replacement", REPLANNING, Soft, "An employee loses a shift in a preferred disruption rule's scope with no close replacement."),
     ]
 }

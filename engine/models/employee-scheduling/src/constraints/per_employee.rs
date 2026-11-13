@@ -6,9 +6,10 @@ use solverforge::prelude::*;
 use crate::derived::{Measure, Want};
 use crate::domain::{Employee, Plan, Shift};
 use crate::eval::{
-    activation, day_patterns, day_runs, disruption, fill_up, gaps, location_change_shortfall,
-    multi_day_patterns, near_day_off, overlap_minutes, pairings, rotation_blocks, rules,
-    shift_runs, unfairness, weekly_rotation, window_penalty, Roster, RosterCollector,
+    activation, day_patterns, day_runs, fill_up, gained_tags_kept, gaps, location_change_shortfall,
+    multi_day_patterns, near_day_off, overlap_minutes, pairings, replacement_tags_kept,
+    rotation_blocks, rules, shift_runs, shifts_gained, shifts_lost, unfairness, unreplaced,
+    weekly_rotation, window_penalty, Roster, RosterCollector,
 };
 
 type Score = HardMediumSoftScore;
@@ -71,12 +72,22 @@ fn economy() -> impl ConstraintSet<Plan, Score> {
         .named("Employee activated")
         .reward(soft!(fill_up))
         .named("Activated employee filled up")
-        .penalize(soft!(unfairness))
-        .named("Unfair workload")
-        .penalize(hard!(|r: &Roster, e| disruption(r, e, false)))
-        .named("Published shift reassigned against rule")
-        .penalize(soft!(|r: &Roster, e| disruption(r, e, true)))
-        .named("Published shift reassigned")
+        .penalize(soft!(|r: &Roster, e| unfairness(r, e, false)))
+        .named("Uneven shift counts")
+        .penalize(soft!(|r: &Roster, e| unfairness(r, e, true)))
+        .named("Uneven time worked")
+        .penalize(soft!(shifts_lost))
+        .named("Published shifts lost by employee")
+        .penalize(soft!(shifts_gained))
+        .named("Unpublished shifts gained by employee")
+        .reward(soft!(gained_tags_kept))
+        .named("Gained shifts keep tags of lost ones")
+        .reward(soft!(replacement_tags_kept))
+        .named("Close replacements keep rule tags")
+        .penalize(hard!(|r: &Roster, e| unreplaced(r, e, false)))
+        .named("Lost shift without required close replacement")
+        .penalize(soft!(|r: &Roster, e| unreplaced(r, e, true)))
+        .named("Lost shift without preferred close replacement")
 }
 
 fn work_limits() -> impl ConstraintSet<Plan, Score> {

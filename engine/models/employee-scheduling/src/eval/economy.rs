@@ -3,10 +3,21 @@
 use super::{Members, Roster};
 use crate::derived::{Derived, ShiftInfo};
 
-/// Staff short of (`under`) or beyond (`!under`) the demand slots starting
-/// on `day`, for slots of the given level. A shift covers a slot when it
-/// spans all of it.
-pub fn demand(m: &Members, day: usize, under: bool, preferred: bool) -> i64 {
+/// What to measure on demand slots.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Coverage {
+    /// Staff short of the minimum.
+    Under,
+    /// Staff beyond the maximum.
+    Over,
+    /// Square of the staff beyond the minimum, any level: minimising the sum
+    /// spreads surplus staff evenly over the slots.
+    Surplus,
+}
+
+/// Coverage of the demand slots starting on `day`, for slots of the given
+/// level. A shift covers a slot when it spans all of it.
+pub fn demand(m: &Members, day: usize, coverage: Coverage, preferred: bool) -> i64 {
     let Some(d) = m.derived() else {
         return 0;
     };
@@ -16,7 +27,7 @@ pub fn demand(m: &Members, day: usize, under: bool, preferred: bool) -> i64 {
     let mut total = 0;
     for &index in slots {
         let slot = &d.slots[index as usize];
-        if slot.preferred != preferred {
+        if coverage != Coverage::Surplus && slot.preferred != preferred {
             continue;
         }
         let staff = m
@@ -31,10 +42,10 @@ pub fn demand(m: &Members, day: usize, under: bool, preferred: bool) -> i64 {
                         .is_none_or(|f| f.accepts(&d.employees[*e].tags))
             })
             .count() as i64;
-        total += if under {
-            slot.min.map_or(0, |min| (min - staff).max(0))
-        } else {
-            slot.max.map_or(0, |max| (staff - max).max(0))
+        total += match coverage {
+            Coverage::Under => slot.min.map_or(0, |min| (min - staff).max(0)),
+            Coverage::Over => slot.max.map_or(0, |max| (staff - max).max(0)),
+            Coverage::Surplus => slot.min.map_or(0, |min| (staff - min).max(0).pow(2)),
         };
     }
     total
@@ -90,16 +101,17 @@ pub fn fill_up(roster: &Roster, e: usize) -> i64 {
     n * n
 }
 
-/// Sum over the employee's fairness rules of the squared load (history
-/// plus planned): minimising the sum of squares spreads a fixed total
-/// evenly. Minutes count in hours.
-pub fn unfairness(roster: &Roster, e: usize) -> i64 {
+/// Sum over the employee's fairness rules balancing minutes (or shifts) of
+/// the squared load, history included: minimising the sum of squares
+/// spreads a fixed total evenly. Minutes count in hours.
+pub fn unfairness(roster: &Roster, e: usize, minutes: bool) -> i64 {
     let Some(d) = roster.derived() else {
         return 0;
     };
     d.employees[e]
         .fairness
         .iter()
+        .filter(|rule| rule.minutes == minutes)
         .map(|rule| {
             let planned: i64 = in_horizon(roster, d)
                 .filter(|(_, info)| rule.shifts.accepts(&info.tags))
@@ -115,60 +127,121 @@ pub fn unfairness(roster: &Roster, e: usize) -> i64 {
         .sum()
 }
 
-/// Published shifts of the employee that the plan takes away and no new
-/// shift makes good, weighted per disruption rule of the given level. A new
-/// shift makes good a lost one when its start and end are within the rule's
-/// minutes of it and it keeps the rule's tags.
-pub fn disruption(roster: &Roster, e: usize, preferred: bool) -> i64 {
+/// The employee's published shifts the plan takes away, and the shifts it
+/// gives them that were not published to them (only when replanning).
+fn lost_and_gained<'a>(
+    roster: &'a Roster,
+    d: &'a Derived,
+    e: usize,
+) -> (Vec<&'a ShiftInfo>, Vec<&'a ShiftInfo>) {
+    if !d.replanning {
+        return (Vec::new(), Vec::new());
+    }
+    let assigned = roster.indexes();
+    let lost = d.employees[e]
+        .published_shifts
+        .iter()
+        .filter(|s| !assigned.contains(s))
+        .map(|&s| &d.shifts[s as usize])
+        .filter(|info| info.in_horizon)
+        .collect();
+    let gained = in_horizon(roster, d)
+        .filter(|(_, info)| info.published != Some(e as u32))
+        .map(|(_, info)| info)
+        .collect();
+    (lost, gained)
+}
+
+/// Published shifts the employee loses, times their priority.
+pub fn shifts_lost(roster: &Roster, e: usize) -> i64 {
     let Some(d) = roster.derived() else {
         return 0;
     };
-    let employee = &d.employees[e];
-    if employee.published_shifts.is_empty() {
+    lost_and_gained(roster, d, e).0.len() as i64 * d.employees[e].priority
+}
+
+/// Shifts the employee gains that were not published to them, times their
+/// priority.
+pub fn shifts_gained(roster: &Roster, e: usize) -> i64 {
+    let Some(d) = roster.derived() else {
+        return 0;
+    };
+    lost_and_gained(roster, d, e).1.len() as i64 * d.employees[e].priority
+}
+
+/// Tags of gained shifts that some lost shift of the employee carried.
+pub fn gained_tags_kept(roster: &Roster, e: usize) -> i64 {
+    let Some(d) = roster.derived() else {
+        return 0;
+    };
+    let (lost, gained) = lost_and_gained(roster, d, e);
+    if lost.is_empty() {
         return 0;
     }
-    let assigned: Vec<u32> = roster.indexes().to_vec();
-    let mut total = 0;
-    for rule in employee
+    gained
+        .iter()
+        .flat_map(|g| g.tags.iter())
+        .filter(|tag| lost.iter().any(|l| l.tags.binary_search(tag).is_ok()))
+        .count() as i64
+}
+
+/// Per scoped disruption rule of the given level: the weight of lost
+/// matching shifts no gained shift replaces, and the kept tags of those
+/// that are replaced. A gained shift replaces a lost one when its start and
+/// end are within the rule's minutes of it and it keeps the rule's tags.
+fn scoped(roster: &Roster, e: usize, level: Option<bool>) -> (i64, i64) {
+    let Some(d) = roster.derived() else {
+        return (0, 0);
+    };
+    let (lost, gained) = lost_and_gained(roster, d, e);
+    if lost.is_empty() {
+        return (0, 0);
+    }
+    let (mut missing, mut kept) = (0, 0);
+    for rule in d.employees[e]
         .disruption
         .iter()
-        .filter(|r| r.preferred == preferred)
+        .filter(|r| level.is_none_or(|preferred| r.preferred == preferred))
     {
-        let mut spare: Vec<&ShiftInfo> = roster
-            .iter(d)
-            .filter(|(s, info)| {
-                info.in_horizon
-                    && info.published != Some(e as u32)
-                    && rule.shifts.accepts(&info.tags)
-                    && !employee.published_shifts.contains(&(*s as u32))
-            })
-            .map(|(_, info)| info)
+        let mut spare: Vec<&ShiftInfo> = gained
+            .iter()
+            .copied()
+            .filter(|info| rule.shifts.accepts(&info.tags))
             .collect();
-        for &s in &employee.published_shifts {
-            let lost = &d.shifts[s as usize];
-            if !lost.in_horizon || !rule.shifts.accepts(&lost.tags) || assigned.contains(&s) {
-                continue;
-            }
+        for old in lost.iter().filter(|info| rule.shifts.accepts(&info.tags)) {
+            let keep: Vec<u32> = rule
+                .keep_tags
+                .iter()
+                .copied()
+                .filter(|t| old.tags.binary_search(t).is_ok())
+                .collect();
             let replacement = rule.within.and_then(|within| {
                 spare.iter().position(|new| {
-                    (new.start - lost.start).abs() <= within
-                        && (new.end - lost.end).abs() <= within
-                        && rule
-                            .keep_tags
-                            .iter()
-                            .filter(|t| lost.tags.binary_search(t).is_ok())
-                            .all(|t| new.tags.binary_search(t).is_ok())
+                    (new.start - old.start).abs() <= within
+                        && (new.end - old.end).abs() <= within
+                        && keep.iter().all(|t| new.tags.binary_search(t).is_ok())
                 })
             });
             match replacement {
                 Some(at) => {
                     spare.swap_remove(at);
+                    kept += keep.len() as i64;
                 }
-                None => total += rule.weight,
+                None => missing += rule.weight,
             }
         }
     }
-    total
+    (missing, kept)
+}
+
+/// Weighted lost shifts without a close replacement, per level.
+pub fn unreplaced(roster: &Roster, e: usize, preferred: bool) -> i64 {
+    scoped(roster, e, Some(preferred)).0
+}
+
+/// Rule tags kept by close replacements of lost shifts.
+pub fn replacement_tags_kept(roster: &Roster, e: usize) -> i64 {
+    scoped(roster, e, None).1
 }
 
 /// Distance of activated employees per cost group from the groups' target

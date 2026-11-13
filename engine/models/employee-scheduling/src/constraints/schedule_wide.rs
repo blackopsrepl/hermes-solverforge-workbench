@@ -7,7 +7,7 @@ use crate::derived::{GlobalKind, Want};
 use crate::domain::{Choice, Day, Plan, Whole, Window};
 use crate::eval::{
     alternatives_off, colleagues, concurrency_excess, demand, share_gap, teams, window_deviation,
-    ByChoice, ByDay, ByShare, ByWindow, Members, MembersCollector, Row, TeamScore,
+    ByChoice, ByDay, ByShare, ByWindow, Coverage, Members, MembersCollector, Row, TeamScore,
 };
 
 type Score = HardMediumSoftScore;
@@ -86,18 +86,22 @@ fn by_day() -> impl ConstraintSet<Plan, Score> {
             Score::of_hard(teams(m, *day, TeamScore::ShiftsPerDay))
         }))
         .named("Team shifts per day over limit")
-        .penalize(hard_weight(|day: &usize, m: &Members| {
-            Score::of_hard(demand(m, *day, true, false))
-        }))
+        .penalize(|day: &usize, m: &Members| {
+            Score::of(0, demand(m, *day, Coverage::Under, false), 0)
+        })
         .named("Required demand under-staffed")
-        .penalize(hard_weight(|day: &usize, m: &Members| {
-            Score::of_hard(demand(m, *day, false, false))
-        }))
+        .penalize(|day: &usize, m: &Members| {
+            Score::of(0, demand(m, *day, Coverage::Over, false), 0)
+        })
         .named("Required demand over-staffed")
-        .penalize(|day: &usize, m: &Members| Score::of_soft(demand(m, *day, true, true)))
+        .penalize(|day: &usize, m: &Members| Score::of_soft(demand(m, *day, Coverage::Under, true)))
         .named("Preferred demand under-staffed")
-        .penalize(|day: &usize, m: &Members| Score::of_soft(demand(m, *day, false, true)))
+        .penalize(|day: &usize, m: &Members| Score::of_soft(demand(m, *day, Coverage::Over, true)))
         .named("Preferred demand over-staffed")
+        .penalize(|day: &usize, m: &Members| {
+            Score::of_soft(demand(m, *day, Coverage::Surplus, false))
+        })
+        .named("Surplus staff unevenly spread over demand")
 }
 
 fn by_window() -> impl ConstraintSet<Plan, Score> {
@@ -130,5 +134,9 @@ fn by_window() -> impl ConstraintSet<Plan, Score> {
         }))
         .named("Cost per period outside required range")
         .penalize(|w: &usize, m: &Members| Score::of_soft(window_deviation(m, *w, G::Cost, true)))
+        .named("Cost per period outside preferred range")
+        .penalize(|w: &usize, m: &Members| {
+            Score::of_soft(window_deviation(m, *w, G::CostTotal, true))
+        })
         .named("Cost per period")
 }
