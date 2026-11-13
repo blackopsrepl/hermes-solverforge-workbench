@@ -1,15 +1,12 @@
-use solverforge::prelude::*;
+use super::{fit, per_employee, replanning, schedule_wide, staffing, Constraints};
 
-use super::{fit, per_employee, replanning, schedule_wide, staffing};
-use crate::domain::Plan;
-
-/// Every constraint of the model.
-pub fn define_constraints() -> impl ConstraintSet<Plan, HardMediumSoftScore> {
-    (
+/// Every constraint of the model, behind the short [`Constraints`] type.
+pub fn define_constraints() -> Constraints {
+    Constraints::new((
         staffing::constraints(),
         fit::constraints(),
         per_employee::constraints(),
         schedule_wide::constraints(),
         replanning::constraints(),
-    )
+    ))
 }

@@ -2,6 +2,7 @@
 
 mod assignment;
 mod define;
+mod erased;
 mod fit;
 mod per_employee;
 mod replanning;
@@ -9,3 +10,4 @@ mod schedule_wide;
 mod staffing;
 
 pub use define::define_constraints;
+pub use erased::Constraints;
