@@ -4,9 +4,11 @@ import { createElement as h } from 'react'
 
 let fixture = {}
 export const opened = []
+export const navigated = []
 export const setFixture = value => {
   fixture = value
   opened.length = 0
+  navigated.length = 0
 }
 
 const box = name => ({ children, title, description, variant }) =>
@@ -28,7 +30,7 @@ export const queryClient = { invalidateQueries() {} }
 export const useMutation = () => ({ mutate() {}, isPending: false })
 export const host = {
   notify() {},
-  navigate() {},
+  navigate: path => navigated.push(path),
   openWorkspace: (id, options) => {
     opened.push({ id, ...options })
     return () => {}

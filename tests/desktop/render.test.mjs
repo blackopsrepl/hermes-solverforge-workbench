@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
-import { opened, setFixture } from '@hermes/plugin-sdk'
+import { navigated, opened, setFixture } from '@hermes/plugin-sdk'
 import { createElement as h } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 
@@ -14,7 +14,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 const here = dirname(fileURLToPath(import.meta.url))
 mkdirSync(join(here, '.build'), { recursive: true })
 cpSync(join(here, '../../desktop/plugin.js'), join(here, '.build/plugin.mjs'))
-const { default: plugin, Workbench, RunView, ScoreChart, StatusChip, parseScore, openBeside } = await import('./.build/plugin.mjs')
+const { default: plugin, Workbench, RunView, ScoreChart, StatusChip, parseScore, openBeside, openPage } = await import('./.build/plugin.mjs')
 
 const real = Object.fromEntries(
   readdirSync(join(here, 'fixtures')).map(f => [f.replace('.json', ''), JSON.parse(readFileSync(join(here, 'fixtures', f), 'utf8'))])
@@ -65,7 +65,7 @@ test('the chat card of an evaluated plan lists only what costs score', () => {
   assert.match(page, /infeasible/)
   assert.match(page, /What costs score .*Unassigned shift hard 6 -6 hard \/ 0 soft/)
   assert.doesNotMatch(page, /Shift for the first nurse/)
-  assert.match(page, /Open in the workbench/)
+  assert.match(page, /Open in the Workbench/)
 })
 
 test('a card with a malformed run id renders nothing', () => {
@@ -120,6 +120,15 @@ test('the workbench opens beside the chat on the right', () => {
   assert.deepEqual(opened[0].dock, { pane: 'workspace', pos: 'right' })
 })
 
+test('the chip, the palette and chat cards open the Workbench section at the asked view', () => {
+  setFixture(real)
+  openPage({ view: 'run', id: real.run.run.id })
+  const page = text(render(h(Workbench, {})))
+  assert.match(page, /completed 0 hard \/ 0 soft/)
+  assert.equal(opened.length, 0)
+  assert.deepEqual(navigated, ['/workbench'])
+})
+
 test('every surface registers', () => {
-  assert.deepEqual(items.map(i => i.id), ['run-card', 'page', 'nav', 'chip', 'open', 'runs'])
+  assert.deepEqual(items.map(i => i.id), ['run-card', 'page', 'nav', 'chip', 'open', 'runs', 'beside'])
 })

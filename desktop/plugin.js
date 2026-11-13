@@ -1,8 +1,8 @@
 /**
  * SolverForge Workbench — Desktop half.
  *
- * Surfaces: the Workbench page (models, datasets, runs, compare) with its
- * sidebar row, the same surface beside the chat, a ::workbench{run="…"} card
+ * Surfaces: the Workbench section (models, datasets, runs, compare) with its
+ * own sidebar row and page, the same surface beside the chat on request, a ::workbench{run="…"} card
  * in the transcript, a status-bar chip while solves run, and palette
  * commands. Every byte comes from this package's backend
  * (dashboard/plugin_api.py) through ctx.rest. The only writes are solve,
@@ -25,7 +25,7 @@ import {
   useMutation,
   useQuery
 } from '@hermes/plugin-sdk'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { jsx, jsxs } from 'react/jsx-runtime'
 
 const ID = 'solverforge-workbench'
@@ -366,7 +366,7 @@ export function RunView({ id, compact = false, go }) {
         run.initial_score && run.initial_score !== run.score ? e('span', { style: faint }, `from ${run.initial_score}`) : null,
         run.feasible === 1 ? e(Badge, { variant: 'success' }, 'feasible') : run.feasible === 0 ? e(Badge, { variant: 'destructive' }, 'infeasible') : null,
         live ? e(Button, { size: 'xs', variant: 'outline', disabled: cancel.isPending, onClick: () => cancel.mutate({ run: run.id }) }, 'Stop') : null,
-        compact ? e(Button, { size: 'xs', variant: 'text', onClick: () => openBeside({ view: 'run', id: run.id }) }, 'Open in the workbench') : null),
+        compact ? e(Button, { size: 'xs', variant: 'text', onClick: () => openPage({ view: 'run', id: run.id }) }, 'Open in the Workbench') : null),
       e('div', { style: faint }, `${run.kind} of ${run.dataset_id} · ${run.model_id} · ${run.id}`),
       run.error ? e('div', { role: 'alert', style: muted }, run.error.message,
         run.error.issues ? e('ul', { style: { margin: '4px 0', paddingLeft: 18 } }, run.error.issues.map((i, n) => e('li', { key: n }, `${i.severity || ''} ${i.code}: ${i.message}`))) : null) : null,
@@ -422,8 +422,23 @@ const TABS = [
   { id: 'runs', label: 'Runs' }
 ]
 
-export function Workbench({ start = { view: 'models' } }) {
-  const [stack, setStack] = useState([start])
+// Requests to show a view in the Workbench section, from the chip, the palette or a chat card.
+let requested = null
+const listeners = new Set()
+export function openPage(start = { view: 'models' }) {
+  requested = start
+  for (const listener of listeners) listener(start)
+  host.navigate(ROUTE)
+}
+
+export function Workbench({ start }) {
+  const [stack, setStack] = useState(() => [start || requested || { view: 'models' }])
+  useEffect(() => {
+    if (start) return undefined
+    const listener = next => setStack([next])
+    listeners.add(listener)
+    return () => listeners.delete(listener)
+  }, [start])
   const here = stack[stack.length - 1]
   const go = next => setStack([...stack, next])
   const tab = TABS.some(t => t.id === here.view) ? here.view : null
@@ -477,7 +492,7 @@ export function StatusChip() {
   if (!data || !(data.solving || data.queued)) return null
   const label = `⚙ ${data.solving} solving${data.queued ? ` · ${data.queued} queued` : ''}`
   return e('button', {
-    type: 'button', title: 'Show the workbench runs', onClick: () => openBeside({ view: 'runs' }),
+    type: 'button', title: 'Show the Workbench runs', onClick: () => openPage({ view: 'runs' }),
     style: { ...tone('--ui-accent', '0.6875rem'), padding: '0 6px', height: '100%', background: 'none', border: 0, cursor: 'pointer' }
   }, label)
 }
@@ -505,8 +520,9 @@ export default {
       { id: 'page', area: ROUTES_AREA, title: 'Workbench', data: { path: ROUTE }, render: () => jsx(Workbench, {}) },
       { id: 'nav', area: SIDEBAR_NAV_AREA, data: { path: ROUTE, label: 'Workbench', codicon: 'beaker' } },
       { id: 'chip', area: STATUSBAR_AREAS.right, order: 127, render: () => jsx(StatusChip, {}) },
-      { id: 'open', area: PALETTE_AREA, data: { id: `${ID}.open`, label: 'Workbench: open beside the chat', keywords: ['optimize', 'solver', 'models', 'schedule'], run: () => openBeside() } },
-      { id: 'runs', area: PALETTE_AREA, data: { id: `${ID}.runs`, label: 'Workbench: runs', keywords: ['solve', 'runs', 'score'], run: () => openBeside({ view: 'runs' }) } }
+      { id: 'open', area: PALETTE_AREA, data: { id: `${ID}.open`, label: 'Workbench: open', keywords: ['optimize', 'solver', 'models', 'schedule'], run: () => openPage() } },
+      { id: 'runs', area: PALETTE_AREA, data: { id: `${ID}.runs`, label: 'Workbench: runs', keywords: ['solve', 'runs', 'score'], run: () => openPage({ view: 'runs' }) } },
+      { id: 'beside', area: PALETTE_AREA, data: { id: `${ID}.beside`, label: 'Workbench: open beside the chat', keywords: ['optimize', 'solver', 'side', 'pane'], run: () => openBeside() } }
     ])
   }
 }
