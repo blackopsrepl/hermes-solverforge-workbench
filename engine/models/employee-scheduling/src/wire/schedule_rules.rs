@@ -28,7 +28,8 @@ pub struct ScheduleRules {
     pub fairness: Vec<FairnessRule>,
 }
 
-/// The cost of assignments in a period must stay in `[min, max]` (currency units).
+/// The cost of assignments in a period must stay in `[min, max]`, in
+/// currency units; penalties count cents.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CostRule {

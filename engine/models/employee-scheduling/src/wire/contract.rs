@@ -168,7 +168,8 @@ pub struct Rule {
     /// `travel`: least minutes between two shifts at different locations.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub min_change_minutes: Option<i64>,
-    /// `cost`: hourly rate up to `baseMinutes` per period.
+    /// `cost`: hourly rate up to `baseMinutes` per period; `min` and `max`
+    /// are in currency units, penalties count cents.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hourly: Option<f64>,
     /// `cost`: minutes per period paid at `hourly`; the rest is overtime.

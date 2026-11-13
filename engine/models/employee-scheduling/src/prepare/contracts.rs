@@ -272,8 +272,12 @@ fn compile_rule(b: &mut Builder, calendar: &Calendar, rule: &Rule, what: &str, o
             weight: rule.weight,
             shifts,
             windows: windows.0,
-            min: rule.min,
-            max: if needs_min { None } else { rule.max },
+            min: rule.min.map(|v| if cost.is_some() { v * 100 } else { v }),
+            max: if needs_min {
+                None
+            } else {
+                rule.max.map(|v| if cost.is_some() { v * 100 } else { v })
+            },
             cost,
             whole_shift: rule.whole_shift,
             weekdays: if rule.weekdays.is_empty() {

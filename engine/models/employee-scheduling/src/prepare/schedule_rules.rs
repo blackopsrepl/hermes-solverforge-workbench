@@ -107,8 +107,9 @@ pub fn compile_schedule_rules(
             employees,
             tags: Vec::new(),
             rates,
-            min: rule.min,
-            max: rule.max,
+            // Limits are in currency units, costs in cents.
+            min: rule.min.map(|v| v * 100),
+            max: rule.max.map(|v| v * 100),
         };
         add_windows(
             b,

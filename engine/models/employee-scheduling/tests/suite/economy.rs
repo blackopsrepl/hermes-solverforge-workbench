@@ -68,7 +68,7 @@ fn contract_cost_with_overtime_tiers() {
         "contracts": [{"id": "c", "rules": [
             {"kind": "cost", "period": "week", "level": "preferred", "hourly": 20.0, "baseMinutes": 600,
              "overtime": [{"hourly": 30.0, "minutes": 120}, {"hourly": 40.0}]},
-            {"kind": "cost", "period": "week", "hourly": 20.0, "max": 25000},
+            {"kind": "cost", "period": "week", "hourly": 20.0, "max": 250},
         ]}],
         "employees": [employee("ann", json!({"contracts": ["c"]}))],
         "shifts": [
@@ -93,8 +93,8 @@ fn schedule_cost_activation_and_shares() {
         ],
         "scheduleRules": {"costs": [
             {"period": "week", "level": "preferred", "rates": [{"employeeGroup": "temp", "hourly": 30.0}, {"hourly": 20.0}]},
-            {"period": "day", "max": 20000, "rates": [{"hourly": 20.0}]},
-            {"period": "week", "level": "preferred", "max": 60000, "rates": [{"hourly": 20.0}]},
+            {"period": "day", "max": 200, "rates": [{"hourly": 20.0}]},
+            {"period": "week", "level": "preferred", "max": 600, "rates": [{"hourly": 20.0}]},
         ]},
         "employees": [
             employee("ann", json!({"costGroup": "temp"})),
@@ -245,7 +245,7 @@ fn economy_scores_incrementally_like_in_full() {
         "alternatives": [{"id": "alt0", "count": 2}, {"id": "alt1", "count": 1, "atMost": true}, {"id": "alt2", "count": 1}],
         "scheduleRules": {
             "demand": [{"slots": slots}],
-            "costs": [{"period": "day", "level": "preferred", "max": 40000, "rates": [{"shiftGroup": "late", "hourly": 25.0}, {"hourly": 20.0}]}],
+            "costs": [{"period": "day", "level": "preferred", "max": 400, "rates": [{"shiftGroup": "late", "hourly": 25.0}, {"hourly": 20.0}]}],
             "fairness": [{"balance": "minutes", "history": {"dee": 600}}, {"balance": "shifts", "withTags": ["late"]}],
         },
         "employees": [
