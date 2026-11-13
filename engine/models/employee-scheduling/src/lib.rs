@@ -6,6 +6,7 @@ pub mod constraints;
 pub mod demo;
 pub mod derived;
 pub mod domain;
+pub mod eval;
 mod kpis;
 mod model;
 pub mod prepare;

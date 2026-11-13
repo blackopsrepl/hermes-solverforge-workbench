@@ -4,10 +4,13 @@ use std::sync::Arc;
 
 use solverforge_workbench_host::Issue;
 
-use super::Builder;
+use std::collections::HashMap;
+
+use super::contracts::{compile, Compiled};
+use super::{Builder, Calendar};
 use crate::derived::{Ctx, Derived, EmployeeInfo, ShiftInfo};
 use crate::domain::Plan;
-use crate::time::{parse_date_time, DAY};
+use crate::time::{overlap, parse_date_time, DAY};
 
 /// Longest shift, in calendar days touched, that the day buckets support.
 pub const MAX_SHIFT_DAYS: i64 = 3;
@@ -82,6 +85,81 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
         }
     }
 
+    let mut weekend_mask = 0u8;
+    for day in &plan.schedule.weekend {
+        weekend_mask |= 1 << day.number();
+    }
+    let weekend_first = (0..7u8)
+        .find(|&w| weekend_mask & (1 << w) != 0 && weekend_mask & (1 << ((w + 6) % 7)) == 0)
+        .unwrap_or(5);
+    if weekend_mask != 0 && weekend_mask != 0x7f {
+        let len = weekend_mask.count_ones() as u8;
+        let run = (0..len).fold(0u8, |m, k| m | 1 << ((weekend_first + k) % 7));
+        if run != weekend_mask {
+            b.error(
+                "weekend_not_consecutive",
+                "the weekend days must follow each other".into(),
+            );
+        }
+    }
+
+    let h_start = horizon_start - b.origin_minutes;
+    let h_end = horizon_end - b.origin_minutes;
+    let days = (latest - b.origin_minutes + DAY - 1).div_euclid(DAY);
+    let mut custom = HashMap::new();
+    for period in &plan.schedule.periods {
+        if matches!(
+            period.id.as_str(),
+            "day" | "week" | "month" | "year" | "schedule"
+        ) {
+            b.error(
+                "custom_period_reserved",
+                format!(
+                    "custom period {:?} reuses a built-in period name",
+                    period.id
+                ),
+            );
+        }
+        let mut windows = Vec::new();
+        for range in &period.ranges {
+            let what = || format!("custom period {}", period.id);
+            let (Some(from), Some(to)) = (b.day(&range.from, what), b.day(&range.to, what)) else {
+                continue;
+            };
+            if to < from {
+                b.error(
+                    "period_range_reversed",
+                    format!(
+                        "custom period {} has a range ending before it starts",
+                        period.id
+                    ),
+                );
+                continue;
+            }
+            windows.push((from * DAY, (to + 1) * DAY));
+        }
+        windows.sort_unstable();
+        custom.insert(period.id.clone(), windows);
+    }
+    let calendar = Calendar {
+        origin: origin_day,
+        days,
+        horizon_start: h_start,
+        horizon_end: h_end,
+        week_start: plan.schedule.week_start.number(),
+        custom,
+    };
+    let mut contracts: HashMap<String, Compiled> = HashMap::new();
+    for contract in &plan.contracts {
+        let compiled = compile(&mut b, &calendar, contract);
+        if contracts.insert(contract.id.clone(), compiled).is_some() {
+            b.error(
+                "duplicate_contract",
+                format!("contract id {:?} is used more than once", contract.id),
+            );
+        }
+    }
+
     let employees: Vec<EmployeeInfo> = plan
         .employees
         .iter()
@@ -96,7 +174,38 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
                     ),
                 );
             }
+            let mut rules = Compiled::default();
+            for id in &employee.contracts {
+                match contracts.get(id) {
+                    Some(contract) => rules.extend_scaled(contract, employee.priority.max(1)),
+                    None => b.error(
+                        "unknown_contract",
+                        format!("{what} names contract {id:?}, which does not exist"),
+                    ),
+                }
+            }
+            let mut requested_off: Vec<i64> = employee
+                .days_off
+                .iter()
+                .filter_map(|date| b.day(date, || format!("{what} day off")))
+                .collect();
+            requested_off.sort_unstable();
+            requested_off.dedup();
+            let logged_before = employee
+                .logged_before
+                .iter()
+                .filter_map(|entry| {
+                    let day = b.day(&entry.date, || format!("{what} logged minutes"))?;
+                    Some((day, entry.minutes))
+                })
+                .collect();
             EmployeeInfo {
+                window_rules: rules.windows,
+                day_runs: rules.day_runs,
+                shift_runs: rules.shift_runs,
+                near_day_off: rules.near_day_off,
+                requested_off,
+                logged_before,
                 tags: b.tag_set(&employee.tags),
                 priority: employee.priority.max(1),
                 skills: b.grants(&employee.skills, &what),
@@ -111,8 +220,6 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
         })
         .collect();
 
-    let h_start = horizon_start - b.origin_minutes;
-    let h_end = horizon_end - b.origin_minutes;
     let mut shifts = Vec::with_capacity(plan.shifts.len());
     for shift in plan.shifts.iter_mut() {
         let what = format!("shift {}", shift.id);
@@ -159,6 +266,31 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
             );
             shift.pinned = true;
         }
+        let mut break_minutes = 0;
+        for brk in &shift.breaks {
+            let from = b.minutes(&brk.from, || format!("{what} break"));
+            let to = b.minutes(&brk.to, || format!("{what} break"));
+            if let (Some(from), Some(to)) = (from, to) {
+                if to <= from || from < start || to > end {
+                    b.error(
+                        "break_outside_shift",
+                        format!("{what} has a break that is empty or outside the shift"),
+                    );
+                }
+                break_minutes += overlap(from, to, start, end);
+            }
+        }
+        let minutes = (end - start - break_minutes).max(0);
+        if shift.logged_minutes.is_some_and(|m| m < 0) {
+            b.error(
+                "negative_logged_minutes",
+                format!("{what} has negative logged minutes"),
+            );
+        }
+        let weekend_minutes = (day..=last_day)
+            .filter(|&d| weekend_mask & (1 << crate::time::weekday(origin_day + d)) != 0)
+            .map(|d| overlap(d * DAY, (d + 1) * DAY, start, end))
+            .sum();
         let tags = b.tag_set(&shift.tags);
         let preferred_employees = b.employee_list(&shift.preferred_employees, || {
             format!("{what} preferred employees")
@@ -182,6 +314,9 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
             end,
             day,
             last_day,
+            minutes,
+            logged: shift.logged_minutes.unwrap_or(minutes).max(0),
+            weekend_minutes,
             tags,
             required_skills: b.needs(&shift.required_skills),
             any_required_skill: shift.any_required_skill,
@@ -196,18 +331,14 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
         });
     }
 
-    let mut weekend_mask = 0u8;
-    for day in &plan.schedule.weekend {
-        weekend_mask |= 1 << day.number();
-    }
-
     let derived = Derived {
         origin: origin_day,
         horizon_start: h_start,
         horizon_end: h_end,
-        days: (latest - b.origin_minutes + DAY - 1).div_euclid(DAY),
+        days,
         week_start: plan.schedule.week_start.number(),
         weekend_mask,
+        weekend_first,
         names: std::mem::take(&mut b.name_list),
         shifts,
         employees,

@@ -3,6 +3,7 @@
 mod assignment;
 mod define;
 mod fit;
+mod per_employee;
 mod staffing;
 
 pub use define::define_constraints;

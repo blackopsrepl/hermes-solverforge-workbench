@@ -1,5 +1,7 @@
 //! The derived fact tables.
 
+use super::{DayRunRule, NearDayOffRule, ShiftRunRule, WindowRule};
+
 /// Tag ids as a sorted, deduplicated list.
 pub type TagSet = Vec<u32>;
 
@@ -69,6 +71,12 @@ pub struct ShiftInfo {
     /// Day of the start, and of the last minute.
     pub day: i64,
     pub last_day: i64,
+    /// Minutes worked: length minus breaks.
+    pub minutes: i64,
+    /// Minutes logged for logged-time rules.
+    pub logged: i64,
+    /// Minutes worked on weekend days.
+    pub weekend_minutes: i64,
     pub tags: TagSet,
     pub required_skills: Vec<Need>,
     pub any_required_skill: bool,
@@ -95,6 +103,14 @@ pub struct EmployeeInfo {
     pub available_only: Vec<Span>,
     pub preferred_times: Vec<Span>,
     pub unwanted_times: Vec<Span>,
+    pub window_rules: Vec<WindowRule>,
+    pub day_runs: Vec<DayRunRule>,
+    pub shift_runs: Vec<ShiftRunRule>,
+    pub near_day_off: Vec<NearDayOffRule>,
+    /// Requested days off, as sorted plan days.
+    pub requested_off: Vec<i64>,
+    /// Minutes logged before the data, by plan day.
+    pub logged_before: Vec<(i64, i64)>,
 }
 
 /// All derived facts of one plan.
@@ -111,6 +127,8 @@ pub struct Derived {
     pub week_start: u8,
     /// Bit `n` set when weekday `n` is a weekend day.
     pub weekend_mask: u8,
+    /// Weekday a weekend starts on.
+    pub weekend_first: u8,
     /// Tag, skill and risk names by id.
     pub names: Vec<String>,
     pub shifts: Vec<ShiftInfo>,
@@ -125,5 +143,19 @@ impl Derived {
 
     pub fn is_weekend(&self, day: i64) -> bool {
         self.weekend_mask & (1 << self.weekday(day)) != 0
+    }
+
+    /// The plan day a weekend day's weekend starts on.
+    pub fn weekend_of(&self, day: i64) -> i64 {
+        let back = (i64::from(self.weekday(day)) - i64::from(self.weekend_first)).rem_euclid(7);
+        day - back
+    }
+
+    /// Plan days `[from, to)` covering plan minutes `[start, end)`.
+    pub fn day_range(start: i64, end: i64) -> (i64, i64) {
+        (
+            start.div_euclid(crate::time::DAY),
+            (end - 1).div_euclid(crate::time::DAY) + 1,
+        )
     }
 }

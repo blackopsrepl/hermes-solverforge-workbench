@@ -3,7 +3,9 @@
 use super::rng::Rng;
 use crate::domain::{Employee, Plan, Shift};
 use crate::time::{format_date, format_date_time, parse_date, DAY};
-use crate::wire::{Schedule, SkillRef, TimeSpan, Weekday};
+use crate::wire::{
+    Contract, Level, Rule, RuleKind, Schedule, ShiftFilter, SkillRef, Stance, TimeSpan, Weekday,
+};
 
 const FIRST_DAY: &str = "2027-03-01";
 const NAMES: [&str; 10] = [
@@ -35,7 +37,13 @@ pub fn small_week() -> Plan {
             let mut employee = Employee::new(name.to_lowercase());
             employee.name = Some((*name).to_owned());
             employee.skills.push(SkillRef::Id("nurse".into()));
-            if n < 3 {
+            employee
+                .contracts
+                .push(if n < 7 { "full-time" } else { "part-time" }.into());
+            if n == 5 {
+                employee.days_off.push(format_date(first + 3));
+            }
+            if n < 4 {
                 employee.skills.push(SkillRef::Id("senior".into()));
             }
             if n % 3 == 1 {
@@ -104,9 +112,64 @@ pub fn small_week() -> Plan {
             weekend: vec![Weekday::Saturday, Weekday::Sunday],
             periods: Vec::new(),
         },
+        contracts: contracts(),
         employees,
         shifts,
         weights: Default::default(),
         score: None,
     }
+}
+
+fn rule(kind: RuleKind) -> Rule {
+    Rule::new(kind)
+}
+
+/// Full-time and part-time contracts with rest and weekly hour limits.
+fn contracts() -> Vec<Contract> {
+    let rest = Rule {
+        max: Some(1),
+        link_minutes: Some(600),
+        ..rule(RuleKind::ConsecutiveShifts)
+    };
+    let streak = Rule {
+        max: Some(5),
+        ..rule(RuleKind::ConsecutiveDaysWorked)
+    };
+    let near_off = Rule {
+        stance: Some(Stance::Unwanted),
+        before: Some(ShiftFilter {
+            with_tags: vec!["night".into()],
+            ..Default::default()
+        }),
+        ..rule(RuleKind::NearDayOff)
+    };
+    let weekly = |min: i64, max: i64| {
+        vec![
+            Rule {
+                period: Some("week".into()),
+                max: Some(max),
+                ..rule(RuleKind::MinutesWorked)
+            },
+            Rule {
+                period: Some("week".into()),
+                level: Level::Preferred,
+                min: Some(min),
+                ..rule(RuleKind::MinutesWorked)
+            },
+        ]
+    };
+    let mut full = weekly(1440, 2400);
+    full.extend([rest.clone(), streak.clone(), near_off.clone()]);
+    let mut part = weekly(480, 1440);
+    part.extend([rest, streak, near_off]);
+    vec![
+        Contract {
+            id: "full-time".into(),
+            rules: full,
+        },
+        Contract {
+            id: "part-time".into(),
+            rules: part,
+        },
+    ]
 }
