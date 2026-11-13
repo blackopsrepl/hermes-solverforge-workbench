@@ -34,3 +34,10 @@ for k, v in out.items():  # every fixture is a successful tool answer
     assert v['ok'], (k, v)
     Path(f'tests/desktop/fixtures/{k}.json').write_text(json.dumps(v, indent=1) + '\n')
 print({k: len(json.dumps(v)) for k, v in out.items()})
+
+# The roster page the backend serves for the employee scheduling run in tests/fixtures.
+from solverforge_workbench_plugin import views  # noqa: E402
+
+run = json.loads(Path('tests/fixtures/ess-small-week-run.json').read_text())
+page = views.document(views.timeline(run['model_id'], run['plan'], run['analysis']))
+Path('tests/desktop/fixtures/view.json').write_text(json.dumps({'ok': True, 'document': page}) + '\n')

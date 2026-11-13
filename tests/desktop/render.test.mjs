@@ -129,6 +129,20 @@ test('the chip, the palette and chat cards open the Workbench section at the ask
   assert.deepEqual(navigated, ['/workbench'])
 })
 
+test('a model with a schedule view draws the run as a schedule in a sandboxed frame', () => {
+  const model = structuredClone(real.model)
+  model.model.schedule_view = true
+  setFixture({ ...real, model })
+  const html = render(h(RunView, { id: real.run.run.id }))
+  assert.match(text(html), /Schedule/)
+  assert.match(html, /<iframe title="Schedule" data-length="\d{6,}"/)
+})
+
+test('a model without one shows no schedule', () => {
+  setFixture(real)
+  assert.doesNotMatch(render(h(RunView, { id: real.run.run.id })), /<iframe/)
+})
+
 test('every surface registers', () => {
   assert.deepEqual(items.map(i => i.id), ['run-card', 'page', 'nav', 'chip', 'open', 'runs', 'beside'])
 })

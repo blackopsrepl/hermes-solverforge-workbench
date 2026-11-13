@@ -17,6 +17,7 @@ import {
   host,
   PALETTE_AREA,
   queryClient,
+  SandboxedFrame,
   ROUTES_AREA,
   SegmentedControl,
   SIDEBAR_NAV_AREA,
@@ -326,6 +327,7 @@ function DatasetView({ id, go }) {
         e(Button, { size: 'xs', disabled: solve.isPending, onClick: () => solve.mutate(body) }, solve.isPending ? 'Queuing…' : 'Solve'),
         e(Button, { size: 'xs', variant: 'outline', disabled: evaluate.isPending, onClick: () => evaluate.mutate(body) }, 'Evaluate as is'),
         selected.length >= 2 ? e(Button, { size: 'xs', variant: 'secondary', onClick: () => go({ view: 'compare', id: selected.join(',') }) }, `Compare ${selected.length}`) : null),
+      e(DatasetSchedule, { dataset }),
       dataset.runs.length
         ? e(RunsTable, { runs: dataset.runs, go, selected,
             onSelect: run => setSelected(selected.includes(run) ? selected.filter(r => r !== run) : [...selected, run]) })
@@ -334,12 +336,39 @@ function DatasetView({ id, go }) {
   })
 }
 
+function DatasetSchedule({ dataset }) {
+  const [shown, setShown] = useState(false)
+  if (!useHasSchedule(dataset.model_id)) return null
+  return e('div', { style: section },
+    e('div', null, e(Button, { size: 'xs', variant: 'text', onClick: () => setShown(!shown) }, shown ? 'Hide the input schedule' : 'Show the input schedule')),
+    shown ? e(Schedule, { dataset: dataset.id }) : null)
+}
+
 function ProfilePicker({ model, value, onChange }) {
   const query = useRead('model', { model })
   const profiles = query.data && query.data.ok ? query.data.model.profiles : []
   return e('select', { value, style: input, 'aria-label': 'Profile', onChange: event => onChange(event.target.value) },
     e('option', { value: '' }, 'Default profile'),
     profiles.map(p => e('option', { key: p.id, value: p.id }, p.name)))
+}
+
+/** The plan drawn as a schedule (solverforge-ui's timeline) in a sandboxed frame. */
+export function Schedule({ run, dataset, version, height = 560 }) {
+  const query = useRead('view', { run, dataset, v: version })
+  const data = query.data
+  if (query.isLoading) return e('div', { style: muted }, 'Drawing the schedule…')
+  if (!data || data.ok === false) return e('div', { style: faint }, errorText(data, 'The schedule could not be drawn.'))
+  return e(SandboxedFrame, {
+    src: 'data:text/html;charset=utf-8,' + encodeURIComponent(data.document),
+    sandbox: 'allow-scripts',
+    title: 'Schedule',
+    style: { width: '100%', height, border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, display: 'block', background: '#fff' }
+  })
+}
+
+function useHasSchedule(model) {
+  const query = useRead('model', { model })
+  return Boolean(query.data && query.data.ok && query.data.model.schedule_view)
 }
 
 function Matches({ item }) {
@@ -356,7 +385,7 @@ function Matches({ item }) {
 
 export function RunView({ id, compact = false, go }) {
   const [open, setOpen] = useState(null)
-  const query = useRead('run', { run: id, max_matches: 10 }, {
+    const query = useRead('run', { run: id, max_matches: 10 }, {
     refetchInterval: q => (q && q.state && q.state.data && q.state.data.run && LIVE.includes(q.state.data.run.status) ? 1_500 : false)
   })
   const cancel = useAction('cancel')
@@ -364,6 +393,7 @@ export function RunView({ id, compact = false, go }) {
     const live = LIVE.includes(run.status)
     const costing = (run.analysis || []).filter(c => parseScore(c.score).some(p => p.value !== 0))
     const rows = compact ? costing : run.analysis || []
+    const drawable = !compact && run.status !== 'queued' && run.model_id
     return e(
       'div', { style: section, 'data-run': run.id },
       e('div', { style: bar },
@@ -383,6 +413,7 @@ export function RunView({ id, compact = false, go }) {
               e('div', { style: faint }, k.label),
               e('div', { style: { fontWeight: 600, fontVariantNumeric: 'tabular-nums' } }, `${Number(k.value).toLocaleString()} ${k.unit || ''}`))))
         : null,
+      drawable ? e(RunSchedule, { run }) : null,
       rows.length
         ? e(Table, {
             columns: [{ id: 'name', label: compact ? 'What costs score' : 'Constraint' }, { id: 'level', label: 'Level' }, { id: 'count', label: 'Matches', num: true }, { id: 'score', label: 'Score', num: true }],
@@ -397,6 +428,12 @@ export function RunView({ id, compact = false, go }) {
       go && run.dataset_id ? e('div', null, e(Button, { size: 'xs', variant: 'text', onClick: () => go({ view: 'dataset', id: run.dataset_id }) }, 'Dataset and its runs')) : null
     )
   })
+}
+
+function RunSchedule({ run }) {
+  if (!useHasSchedule(run.model_id)) return null
+  // The score names the plan: a better plan redraws, an unchanged one keeps its frame.
+  return e('div', { style: section }, e(Sub, null, 'Schedule'), e(Schedule, { run: run.id, version: `${run.status}:${run.score}` }))
 }
 
 function CompareView({ ids }) {

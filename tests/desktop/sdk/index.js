@@ -16,6 +16,7 @@ const box = name => ({ children, title, description, variant }) =>
 
 export const Badge = ({ children, variant }) => h('span', { 'data-c': 'Badge', 'data-variant': variant }, children)
 export const EmptyState = box('EmptyState')
+export const SandboxedFrame = ({ src, title }) => h('iframe', { title, 'data-length': src.length })
 export const Button = ({ children, disabled }) => h('button', { disabled }, children)
 export const SegmentedControl = ({ options, value }) =>
   h('nav', null, options.map(o => h('b', { key: o.id, 'data-on': o.id === value }, o.label)))
