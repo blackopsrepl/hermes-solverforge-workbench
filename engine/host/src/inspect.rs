@@ -62,7 +62,7 @@ pub fn demo<M: Model, W: Write>(request: &Request, out: &mut Output<W>) -> Resul
         )
         .with_detail(json!({ "demos": demos }))
     })?;
-    out.event("demo", json!({ "id": id, "plan": plan }));
+    out.event("demo", json!({ "id": id, "plan": M::present(&plan) }));
     Ok(())
 }
 

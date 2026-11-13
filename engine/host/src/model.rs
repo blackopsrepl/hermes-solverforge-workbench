@@ -36,6 +36,11 @@ pub trait Model: 'static {
     fn prepare(_plan: &mut Self::Plan) -> Vec<Issue> {
         Vec::new()
     }
+    /// The plan as JSON for the caller. Models whose wire format names related
+    /// records by id instead of by index override this.
+    fn present(plan: &Self::Plan) -> serde_json::Value {
+        serde_json::to_value(plan).unwrap_or_default()
+    }
     /// The plan's `#[constraint_weights]` field, when the model has one.
     fn weights_mut(_plan: &mut Self::Plan) -> Option<&mut ConstraintWeights> {
         None

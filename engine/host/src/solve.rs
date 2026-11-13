@@ -61,7 +61,7 @@ pub fn solve<M: Model, W: Write>(
             SolverEvent::BestSolution { metadata, solution } => {
                 if due(&mut last_best, BEST_INTERVAL) {
                     let mut fields = progress::<M>(&metadata);
-                    fields["plan"] = serde_json::to_value(&solution).unwrap_or_default();
+                    fields["plan"] = M::present(&solution);
                     out.event("best", fields);
                 }
             }
@@ -156,7 +156,7 @@ fn finish<M: Model, W: Write>(
     max_matches: &usize,
 ) {
     let kpis: Vec<Kpi> = M::kpis(&solution);
-    let plan = serde_json::to_value(&solution).unwrap_or_default();
+    let plan = M::present(&solution);
     let analysis = analyze::<M>(solution, *max_matches);
     out.event(
         "done",
