@@ -8,6 +8,8 @@ const AVAILABILITY: &str = "Availability";
 const LIMITS: &str = "Work limits";
 const TIME_OFF: &str = "Time off";
 const PATTERNS: &str = "Rotations and patterns";
+const ASSIGNMENT: &str = "Shift assignment";
+const VARIETY: &str = "Shift variety";
 
 const fn info(
     name: &'static str,
@@ -104,5 +106,19 @@ pub fn catalog() -> Vec<ConstraintInfo> {
         info("Preferred weekly rotation broken", PATTERNS, Soft, "A week mixes rotation groups or does not move on to the next group, against a preferred rotation."),
         info("Rotation block longer than required maximum", PATTERNS, Hard, "A block of days in one rotation group runs longer than required; costs the extra days."),
         info("Rotation block length outside preferred range", PATTERNS, Soft, "A block of days in one rotation group is shorter or longer than preferred; costs the distance."),
+        info("Preferred employee on shift", ASSIGNMENT, Soft, "Rewards a shift worked by one of the employees it prefers."),
+        info("Unwanted employee on shift", ASSIGNMENT, Soft, "A shift is worked by an employee it would rather not have."),
+        info("Barred employee on shift", ASSIGNMENT, Hard, "A shift is worked by an employee it bars."),
+        info("Concurrent shifts over limit", ASSIGNMENT, Hard, "More matching shifts run at once than a concurrency rule allows; costs the excess at each shift start."),
+        info("Shift count per period outside required range", ASSIGNMENT, Hard, "Assigned matching shifts across all employees in a period fall outside a required range; costs the distance."),
+        info("Shift count per period outside preferred range", ASSIGNMENT, Soft, "Assigned matching shifts across all employees in a period fall outside a preferred range; costs the distance."),
+        info("Shift outside employee's required tags", VARIETY, Hard, "An employee who only works certain shifts is given another kind."),
+        info("Shift has employee's preferred tags", VARIETY, Soft, "Rewards a shift of a kind the employee likes."),
+        info("Shift types per period outside required range", VARIETY, Hard, "The shifts of a category an employee works in a period fall outside a required range; costs the distance per category."),
+        info("Shift types per period outside preferred range", VARIETY, Soft, "The shifts of a category an employee works in a period fall outside a preferred range; costs the distance per category."),
+        info("Distinct tags per period for employee outside required range", VARIETY, Hard, "An employee works more (or fewer) distinct tags of some types in a period than required."),
+        info("Distinct tags per period for employee outside preferred range", VARIETY, Soft, "An employee works more (or fewer) distinct tags of some types in a period than preferred."),
+        info("Distinct tags per period across schedule outside required range", VARIETY, Hard, "All assigned shifts of a period staff more (or fewer) distinct tags of some types than required."),
+        info("Distinct tags per period across schedule outside preferred range", VARIETY, Soft, "All assigned shifts of a period staff more (or fewer) distinct tags of some types than preferred."),
     ]
 }

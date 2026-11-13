@@ -6,4 +6,5 @@ mod fit;
 mod model;
 mod patterns;
 mod time_off;
+mod variety;
 mod work_limits;

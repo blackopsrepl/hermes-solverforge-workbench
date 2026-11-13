@@ -2,14 +2,15 @@
 
 use serde::{Deserialize, Serialize};
 
-/// Which shifts a rule, span or pattern step looks at, by their tags.
+/// Which shifts (or employees) a rule, span or pattern step looks at, by
+/// their tags.
 ///
-/// Empty `with_tags` matches every shift. With `match_all` a shift must carry
+/// Empty `with_tags` matches everything. With `match_all` a record must carry
 /// every tag of `with_tags` (and is excluded only when it carries every tag of
 /// `without_tags`); otherwise one tag is enough.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct ShiftFilter {
+pub struct TagFilter {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub with_tags: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -28,7 +29,7 @@ pub struct TimeSpan {
     pub to: String,
     /// Only shifts that pass this filter are affected.
     #[serde(default, flatten)]
-    pub shifts: ShiftFilter,
+    pub shifts: TagFilter,
     /// Importance of the span for soft scoring; 1 by default.
     #[serde(default = "one", skip_serializing_if = "is_one")]
     pub weight: i64,
@@ -161,4 +162,12 @@ mod tests {
         assert_eq!(skills[0].id(), "nurse");
         assert_eq!(skills[1].level(), 2);
     }
+}
+
+/// A tag and the type it belongs to, for rules that count distinct tags of a type.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct TagType {
+    pub id: String,
+    #[serde(rename = "type")]
+    pub kind: String,
 }

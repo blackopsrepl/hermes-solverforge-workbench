@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use super::{Level, ShiftFilter, Stance, Weekday};
+use super::{Level, Stance, TagFilter, Weekday};
 
 /// A named set of rules.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -62,6 +62,10 @@ pub enum RuleKind {
     MultiDayPattern,
     /// Groups of shifts worked in turn: by week, or in blocks of days.
     Rotation,
+    /// Shifts of each category per period.
+    ShiftTypes,
+    /// Distinct tags of some types worked per period.
+    DistinctTags,
 }
 
 /// One limit of a contract.
@@ -79,7 +83,7 @@ pub struct Rule {
     pub weight: i64,
     /// Shifts the rule counts; every shift by default.
     #[serde(default, flatten)]
-    pub shifts: ShiftFilter,
+    pub shifts: TagFilter,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub period: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -96,7 +100,8 @@ pub struct Rule {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub weekdays: Vec<Weekday>,
     /// `consecutiveDaysWorked`: tags naming run categories; a change of
-    /// category ends a run. A shift carries at most one of them.
+    /// category ends a run. `shiftTypes`: the categories counted per period.
+    /// A shift carries at most one of them.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub categories: Vec<String>,
     /// `consecutiveDaysWorked`: weekdays a run may start on.
@@ -126,13 +131,13 @@ pub struct Rule {
     pub within_minutes: Option<i64>,
     /// `dailyPairing`: the shift that goes with the rule's shifts.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub paired: Option<ShiftFilter>,
+    pub paired: Option<TagFilter>,
     /// `dailyPairing`: days from the rule's shift to the paired shift; 0 by default.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub day_offset: Option<i64>,
     /// `dayPattern`: shifts of one day, one filter per step.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub steps: Vec<ShiftFilter>,
+    pub steps: Vec<TagFilter>,
     /// `dayPattern`: the steps must happen in this order.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub ordered: bool,
@@ -141,19 +146,22 @@ pub struct Rule {
     pub days: Vec<PatternDay>,
     /// `rotation`: the groups rotated through, in order.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub groups: Vec<ShiftFilter>,
+    pub groups: Vec<TagFilter>,
     /// `rotation`: `weekly` (a new group each week) or `blocks` (blocks of
     /// days limited by `min`/`max`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cycle: Option<Cycle>,
+    /// `distinctTags`: tag types whose distinct tags are counted.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tag_types: Vec<String>,
     /// `nearDayOff`: shifts to avoid on the day before a requested day off;
     /// `restBetween`, `splitShifts`: the earlier shift of a pair.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub before: Option<ShiftFilter>,
+    pub before: Option<TagFilter>,
     /// `nearDayOff`: shifts to avoid on the day after a requested day off;
     /// `restBetween`, `splitShifts`: the later shift of a pair.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub after: Option<ShiftFilter>,
+    pub after: Option<TagFilter>,
 }
 
 impl Rule {
@@ -163,7 +171,7 @@ impl Rule {
             kind,
             level: Level::Required,
             weight: 1,
-            shifts: ShiftFilter::default(),
+            shifts: TagFilter::default(),
             period: None,
             rolling_days: None,
             min: None,
@@ -188,6 +196,7 @@ impl Rule {
             days: Vec::new(),
             groups: Vec::new(),
             cycle: None,
+            tag_types: Vec::new(),
         }
     }
 }
@@ -199,7 +208,7 @@ pub struct PatternDay {
     /// `true`: a matching shift starts that day; `false`: none does.
     pub work: bool,
     #[serde(default, flatten)]
-    pub shifts: ShiftFilter,
+    pub shifts: TagFilter,
 }
 
 /// How a rotation cycles.

@@ -91,6 +91,43 @@ impl Derived {
         (info.end - info.start) - covered
     }
 
+    fn listed(list: &[u32], employee: usize) -> i64 {
+        i64::from(list.binary_search(&(employee as u32)).is_ok())
+    }
+
+    /// 1 when the shift lists the employee as preferred.
+    pub fn preferred_employee(&self, shift: usize, employee: usize) -> i64 {
+        Self::listed(&self.shifts[shift].preferred_employees, employee)
+    }
+
+    /// 1 when the shift lists the employee as unwanted.
+    pub fn unwanted_employee(&self, shift: usize, employee: usize) -> i64 {
+        Self::listed(&self.shifts[shift].unwanted_employees, employee)
+    }
+
+    /// 1 when the shift bars the employee.
+    pub fn barred_employee(&self, shift: usize, employee: usize) -> i64 {
+        Self::listed(&self.shifts[shift].barred_employees, employee)
+    }
+
+    /// 1 when the employee only works certain shifts and this is not one.
+    pub fn outside_required_shifts(&self, shift: usize, employee: usize) -> i64 {
+        let tags = &self.shifts[shift].tags;
+        self.employees[employee]
+            .required_shifts
+            .as_ref()
+            .map_or(0, |filter| i64::from(!filter.accepts(tags)))
+    }
+
+    /// 1 when the shift is one the employee likes.
+    pub fn inside_preferred_shifts(&self, shift: usize, employee: usize) -> i64 {
+        let tags = &self.shifts[shift].tags;
+        self.employees[employee]
+            .preferred_shifts
+            .as_ref()
+            .map_or(0, |filter| i64::from(filter.accepts(tags)))
+    }
+
     /// Minutes of the shift inside preferred times, times each span's weight.
     pub fn preferred_minutes(&self, shift: usize, employee: usize) -> i64 {
         self.span_minutes(&self.employees[employee].preferred_times, shift, true)

@@ -7,7 +7,7 @@ use solverforge_workbench_host::Issue;
 
 use crate::derived::{Grant, Need, Span, TagMatch, TagSet};
 use crate::time::{parse_date, parse_date_time, DAY};
-use crate::wire::{ShiftFilter, SkillRef, TimeSpan};
+use crate::wire::{SkillRef, TagFilter, TimeSpan};
 
 /// State shared by the preparation passes.
 pub struct Builder {
@@ -18,6 +18,8 @@ pub struct Builder {
     pub origin_minutes: i64,
     pub employee_ids: HashMap<String, usize>,
     pub shift_ids: HashMap<String, usize>,
+    /// Tag ids by tag type.
+    pub tag_types: HashMap<String, Vec<u32>>,
 }
 
 impl Builder {
@@ -29,6 +31,7 @@ impl Builder {
             origin_minutes: 0,
             employee_ids: HashMap::new(),
             shift_ids: HashMap::new(),
+            tag_types: HashMap::new(),
         }
     }
 
@@ -58,7 +61,24 @@ impl Builder {
         set
     }
 
-    pub fn tag_match(&mut self, filter: &ShiftFilter) -> TagMatch {
+    /// Sorted ids of every tag of `types`; reports unknown types.
+    pub fn tags_of_types(&mut self, types: &[String], what: &str) -> Vec<u32> {
+        let mut out = Vec::new();
+        for kind in types {
+            match self.tag_types.get(kind) {
+                Some(tags) => out.extend(tags),
+                None => self.error(
+                    "unknown_tag_type",
+                    format!("{what} names tag type {kind:?}, which no tag has"),
+                ),
+            }
+        }
+        out.sort_unstable();
+        out.dedup();
+        out
+    }
+
+    pub fn tag_match(&mut self, filter: &TagFilter) -> TagMatch {
         TagMatch {
             with: self.tag_set(&filter.with_tags),
             without: self.tag_set(&filter.without_tags),

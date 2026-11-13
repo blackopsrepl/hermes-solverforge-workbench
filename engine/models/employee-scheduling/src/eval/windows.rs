@@ -157,6 +157,27 @@ fn window_deviation(
             longest = longest.max(end - cursor);
             outside(longest, min, None)
         }
+        Measure::ShiftTypes => rule
+            .tags
+            .iter()
+            .map(|category| {
+                let n = inside()
+                    .iter()
+                    .filter(|i| i.tags.binary_search(category).is_ok())
+                    .count() as i64;
+                outside(n, min, max)
+            })
+            .sum(),
+        Measure::DistinctTags => {
+            let used = distinct(
+                inside()
+                    .iter()
+                    .flat_map(|i| i.tags.iter())
+                    .filter(|tag| rule.tags.binary_search(tag).is_ok())
+                    .map(|&tag| i64::from(tag)),
+            );
+            outside(used.len() as i64, min, max)
+        }
         Measure::StartSpread => {
             let times: Vec<i64> = inside().iter().map(|i| i.start.rem_euclid(DAY)).collect();
             match (times.iter().min(), times.iter().max()) {

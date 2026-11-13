@@ -51,7 +51,7 @@ macro_rules! rosters {
 }
 
 pub fn constraints() -> impl ConstraintSet<Plan, Score> {
-    (work_limits(), time_off_and_patterns())
+    (work_limits(), time_off_and_patterns(), variety_and_more())
 }
 
 fn work_limits() -> impl ConstraintSet<Plan, Score> {
@@ -222,4 +222,17 @@ fn time_off_and_patterns() -> impl ConstraintSet<Plan, Score> {
         .named("Rotation block longer than required maximum")
         .penalize(soft!(|r: &Roster, e| rotation_blocks(r, e, true)))
         .named("Rotation block length outside preferred range")
+}
+
+fn variety_and_more() -> impl ConstraintSet<Plan, Score> {
+    use Measure as M;
+    rosters!()
+        .penalize(hard!(window(M::ShiftTypes, false, false)))
+        .named("Shift types per period outside required range")
+        .penalize(soft!(window(M::ShiftTypes, false, true)))
+        .named("Shift types per period outside preferred range")
+        .penalize(hard!(window(M::DistinctTags, false, false)))
+        .named("Distinct tags per period for employee outside required range")
+        .penalize(soft!(window(M::DistinctTags, false, true)))
+        .named("Distinct tags per period for employee outside preferred range")
 }

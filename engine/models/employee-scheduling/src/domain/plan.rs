@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 use solverforge::prelude::*;
 
-use super::{Employee, Shift};
-use crate::wire::{Contract, Schedule};
+use super::{Day, Employee, Shift, Window};
+use crate::wire::{Contract, Schedule, ScheduleRules, TagType};
 
 /// An employee scheduling dataset and, once solved, its assignments.
 #[planning_solution(
@@ -13,16 +13,31 @@ use crate::wire::{Contract, Schedule};
 #[serde(rename_all = "camelCase")]
 pub struct Plan {
     pub schedule: Schedule,
+    /// Tag types, for rules that count distinct tags of a type.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<TagType>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub contracts: Vec<Contract>,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub schedule_rules: ScheduleRules,
     #[problem_fact_collection]
     pub employees: Vec<Employee>,
     #[planning_entity_collection]
     pub shifts: Vec<Shift>,
+    #[problem_fact_collection]
+    #[serde(skip)]
+    pub days: Vec<Day>,
+    #[problem_fact_collection]
+    #[serde(skip)]
+    pub windows: Vec<Window>,
     #[constraint_weights]
     #[serde(default)]
     pub weights: ConstraintWeights,
     #[planning_score]
     #[serde(default)]
     pub score: Option<HardMediumSoftScore>,
+}
+
+fn is_default<T: Default + PartialEq>(value: &T) -> bool {
+    *value == T::default()
 }

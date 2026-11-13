@@ -18,5 +18,16 @@ pub fn constraints() -> impl ConstraintSet<Plan, Score> {
         ),
         bonus("Works in preferred hours", Derived::preferred_minutes),
         soft("Works in unwanted hours", Derived::unwanted_minutes),
+        bonus("Preferred employee on shift", Derived::preferred_employee),
+        soft("Unwanted employee on shift", Derived::unwanted_employee),
+        hard("Barred employee on shift", Derived::barred_employee),
+        hard(
+            "Shift outside employee's required tags",
+            Derived::outside_required_shifts,
+        ),
+        bonus(
+            "Shift has employee's preferred tags",
+            Derived::inside_preferred_shifts,
+        ),
     )
 }

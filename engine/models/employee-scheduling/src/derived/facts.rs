@@ -1,14 +1,14 @@
 //! The derived fact tables.
 
 use super::{
-    DayPatternRule, DayRunRule, GapRule, MultiDayRule, NearDayOffRule, PairingRule, RotationRule,
-    ShiftRunRule, WindowRule,
+    Concurrency, DayPatternRule, DayRunRule, GapRule, GlobalWindow, MultiDayRule, NearDayOffRule,
+    PairingRule, RotationRule, ShiftRunRule, WindowRule,
 };
 
 /// Tag ids as a sorted, deduplicated list.
 pub type TagSet = Vec<u32>;
 
-/// A compiled [`ShiftFilter`](crate::wire::ShiftFilter).
+/// A compiled [`TagFilter`](crate::wire::TagFilter).
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct TagMatch {
     pub with: TagSet,
@@ -110,6 +110,8 @@ pub struct EmployeeInfo {
     pub day_runs: Vec<DayRunRule>,
     pub shift_runs: Vec<ShiftRunRule>,
     pub near_day_off: Vec<NearDayOffRule>,
+    pub required_shifts: Option<TagMatch>,
+    pub preferred_shifts: Option<TagMatch>,
     /// Filters of shifts allowed to overlap each other.
     pub overlap_allowed: Vec<TagMatch>,
     pub gaps: Vec<GapRule>,
@@ -143,6 +145,11 @@ pub struct Derived {
     pub names: Vec<String>,
     pub shifts: Vec<ShiftInfo>,
     pub employees: Vec<EmployeeInfo>,
+    /// Periods of schedule-wide rules.
+    pub windows: Vec<GlobalWindow>,
+    /// Windows each shift counts toward, by shift index.
+    pub shift_windows: Vec<Vec<u32>>,
+    pub concurrency: Vec<Concurrency>,
 }
 
 impl Derived {

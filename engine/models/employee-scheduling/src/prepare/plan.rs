@@ -7,9 +7,10 @@ use solverforge_workbench_host::Issue;
 use std::collections::HashMap;
 
 use super::contracts::{compile, Compiled};
+use super::schedule_rules::compile_schedule_rules;
 use super::{Builder, Calendar};
 use crate::derived::{Ctx, Derived, EmployeeInfo, ShiftInfo};
-use crate::domain::Plan;
+use crate::domain::{Day, Plan, Window};
 use crate::time::{overlap, parse_date_time, DAY};
 
 /// Longest shift, in calendar days touched, that the day buckets support.
@@ -141,6 +142,10 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
         windows.sort_unstable();
         custom.insert(period.id.clone(), windows);
     }
+    for tag in &plan.tags {
+        let id = b.intern(&tag.id);
+        b.tag_types.entry(tag.kind.clone()).or_default().push(id);
+    }
     let calendar = Calendar {
         origin: origin_day,
         days,
@@ -212,6 +217,8 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
                 rotations: rules.rotations,
                 requested_off,
                 logged_before,
+                required_shifts: employee.required_shifts.as_ref().map(|f| b.tag_match(f)),
+                preferred_shifts: employee.preferred_shifts.as_ref().map(|f| b.tag_match(f)),
                 tags: b.tag_set(&employee.tags),
                 priority: employee.priority.max(1),
                 skills: b.grants(&employee.skills, &what),
@@ -337,7 +344,13 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
         });
     }
 
+    let (windows, shift_windows, concurrency) =
+        compile_schedule_rules(&mut b, &calendar, &plan.schedule_rules, &shifts);
+
     let derived = Derived {
+        windows,
+        shift_windows,
+        concurrency,
         origin: origin_day,
         horizon_start: h_start,
         horizon_end: h_end,
@@ -356,5 +369,17 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
     for shift in &mut plan.shifts {
         shift.ctx = ctx.clone();
     }
+    plan.days = (0..ctx.days.max(0) as usize)
+        .map(|index| Day {
+            index,
+            ctx: ctx.clone(),
+        })
+        .collect();
+    plan.windows = (0..ctx.windows.len())
+        .map(|index| Window {
+            index,
+            ctx: ctx.clone(),
+        })
+        .collect();
     b.issues
 }

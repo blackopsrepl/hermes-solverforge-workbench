@@ -4,6 +4,7 @@ mod assignment;
 mod define;
 mod fit;
 mod per_employee;
+mod schedule_wide;
 mod staffing;
 
 pub use define::define_constraints;

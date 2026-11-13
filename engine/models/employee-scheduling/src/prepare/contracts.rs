@@ -97,6 +97,8 @@ fn window_kind(kind: RuleKind) -> Option<(Measure, Window)> {
         K::ConsecutiveMinutesOff => (Measure::MinutesOff, Window::Rolling),
         K::ConsecutiveWeekendsOff => (Measure::ConsecutiveWeekendsOff, Window::Period),
         K::StartSpread => (Measure::StartSpread, Window::Period),
+        K::ShiftTypes => (Measure::ShiftTypes, Window::Period),
+        K::DistinctTags => (Measure::DistinctTags, Window::Period),
         _ => return None,
     })
 }
@@ -205,7 +207,20 @@ fn compile_rule(b: &mut Builder, calendar: &Calendar, rule: &Rule, what: &str, o
             b.error("rule_limit_missing", format!("{what} needs {needed}"));
             return;
         }
+        let tags = match measure {
+            Measure::ShiftTypes => b.tag_set(&rule.categories),
+            Measure::DistinctTags => b.tags_of_types(&rule.tag_types, what),
+            _ => Vec::new(),
+        };
+        if matches!(measure, Measure::ShiftTypes | Measure::DistinctTags) && tags.is_empty() {
+            b.error(
+                "rule_needs_categories",
+                format!("{what} needs categories or tag types with tags"),
+            );
+            return;
+        }
         out.windows.push(WindowRule {
+            tags,
             measure,
             preferred,
             rolling: windows.1,

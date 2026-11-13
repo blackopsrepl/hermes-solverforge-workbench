@@ -4,7 +4,7 @@ use super::rng::Rng;
 use crate::domain::{Employee, Plan, Shift};
 use crate::time::{format_date, format_date_time, parse_date, DAY};
 use crate::wire::{
-    Contract, Level, Rule, RuleKind, Schedule, ShiftFilter, SkillRef, Stance, TimeSpan, Weekday,
+    Contract, Level, Rule, RuleKind, Schedule, SkillRef, Stance, TagFilter, TimeSpan, Weekday,
 };
 
 const FIRST_DAY: &str = "2027-03-01";
@@ -112,9 +112,13 @@ pub fn small_week() -> Plan {
             weekend: vec![Weekday::Saturday, Weekday::Sunday],
             periods: Vec::new(),
         },
+        tags: Vec::new(),
         contracts: contracts(),
+        schedule_rules: Default::default(),
         employees,
         shifts,
+        days: Vec::new(),
+        windows: Vec::new(),
         weights: Default::default(),
         score: None,
     }
@@ -137,7 +141,7 @@ fn contracts() -> Vec<Contract> {
     };
     let near_off = Rule {
         stance: Some(Stance::Unwanted),
-        before: Some(ShiftFilter {
+        before: Some(TagFilter {
             with_tags: vec!["night".into()],
             ..Default::default()
         }),

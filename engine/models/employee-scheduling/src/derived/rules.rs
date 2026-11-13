@@ -18,6 +18,8 @@ pub enum Measure {
     MinutesOff,
     ConsecutiveWeekendsOff,
     StartSpread,
+    ShiftTypes,
+    DistinctTags,
 }
 
 /// A limit evaluated over a list of windows.
@@ -36,6 +38,8 @@ pub struct WindowRule {
     pub whole_shift: bool,
     /// Weekdays that count for `DaysOff` (bit 0 = Monday).
     pub weekdays: u8,
+    /// `ShiftTypes`: category tags; `DistinctTags`: the tags counted. Sorted.
+    pub tags: Vec<u32>,
 }
 
 /// Limits on runs of consecutive worked days.
@@ -136,6 +140,38 @@ pub struct RotationRule {
     pub weeks: Vec<(i64, i64)>,
     pub min: Option<i64>,
     pub max: Option<i64>,
+}
+
+/// What a schedule-wide window counts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GlobalKind {
+    Shifts,
+    DistinctTags,
+}
+
+/// One period of a schedule-wide rule.
+#[derive(Debug, Clone)]
+pub struct GlobalWindow {
+    pub kind: GlobalKind,
+    pub preferred: bool,
+    pub weight: i64,
+    pub start: i64,
+    pub end: i64,
+    /// Only shifts of employees passing this filter count.
+    pub employees: Option<TagMatch>,
+    /// `DistinctTags`: the tags counted, sorted.
+    pub tags: Vec<u32>,
+    pub min: Option<i64>,
+    pub max: Option<i64>,
+}
+
+/// At most `max` matching shifts at any moment of `[from, to)`.
+#[derive(Debug, Clone)]
+pub struct Concurrency {
+    pub max: i64,
+    pub shifts: TagMatch,
+    pub from: i64,
+    pub to: i64,
 }
 
 /// Deviation of `value` from `[min, max]`.
