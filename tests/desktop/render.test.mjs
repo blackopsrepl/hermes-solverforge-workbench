@@ -55,7 +55,7 @@ test('a solved run shows its score, the gain, feasibility, KPIs and every constr
   assert.match(page, /completed 0 hard \/ 0 soft from -6hard\/0soft feasible/)
   assert.match(page, /Assigned shifts 6 shifts/)
   assert.match(page, /Unassigned shift hard 0/)
-  assert.match(page, /Score over 2\.0 s · hard/)
+  assert.match(page, /Score over 2\.0 s · bands top to bottom: hard/)
 })
 
 test('the chat card of an evaluated plan lists only what costs score', () => {

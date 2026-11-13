@@ -75,7 +75,7 @@ function ScoreText({ score }) {
 const STATUS_VARIANT = { completed: 'success', incomplete: 'warn', failed: 'destructive', invalid: 'destructive', solving: 'default', queued: 'muted' }
 const StatusBadge = ({ status }) => e(Badge, { variant: STATUS_VARIANT[status] || 'outline' }, status)
 
-/** Score over time, one line per level that ever goes below zero, each on its own scale. */
+/** Score over time: one band per level that changes, each on its own scale, hard on top. */
 export function ScoreChart({ points, width = 520, height = 120 }) {
   if (!points || points.length < 2) return null
   const series = {}
@@ -86,6 +86,7 @@ export function ScoreChart({ points, width = 520, height = 120 }) {
   const lines = Object.entries(series).filter(([, values]) => values.some(([, v]) => v !== values[0][1]))
   if (!lines.length) return null
   const pad = 6
+  const band = height / lines.length
   return e(
     'figure',
     { style: { margin: 0 } },
@@ -93,18 +94,21 @@ export function ScoreChart({ points, width = 520, height = 120 }) {
       'svg',
       { role: 'img', 'aria-label': 'Score over time', viewBox: `0 0 ${width} ${height}`, width: '100%', height,
         preserveAspectRatio: 'none', style: { display: 'block' } },
-      lines.map(([level, values]) => {
+      lines.map(([level, values], n) => {
         const low = Math.min(...values.map(([, v]) => v))
         const high = Math.max(...values.map(([, v]) => v))
         const span = high - low || 1
+        const top = n * band
         const d = values
-          .map(([t, v], i) => `${i ? 'L' : 'M'}${(pad + (t / end) * (width - 2 * pad)).toFixed(1)},${(pad + ((high - v) / span) * (height - 2 * pad)).toFixed(1)}`)
+          .map(([t, v], i) => `${i ? 'L' : 'M'}${(pad + (t / end) * (width - 2 * pad)).toFixed(1)},${(top + pad + ((high - v) / span) * (band - 2 * pad)).toFixed(1)}`)
           .join('')
-        return e('path', { key: level, d, fill: 'none', stroke: levelColor(level), strokeWidth: 1.5, vectorEffect: 'non-scaling-stroke' })
+        return e('g', { key: level },
+          n ? e('line', { x1: 0, x2: width, y1: top, y2: top, stroke: 'var(--ui-stroke-tertiary)', strokeWidth: 1, vectorEffect: 'non-scaling-stroke' }) : null,
+          e('path', { d, fill: 'none', stroke: levelColor(level), strokeWidth: 1.5, vectorEffect: 'non-scaling-stroke' }))
       })
     ),
     e('figcaption', { style: faint },
-      `Score over ${(end / 1000).toFixed(1)} s · ${lines.map(([level]) => level).join(', ')}`)
+      `Score over ${(end / 1000).toFixed(1)} s · bands top to bottom: ${lines.map(([level]) => level).join(', ')}`)
   )
 }
 
@@ -145,10 +149,12 @@ const Title = ({ children }) => e('h2', { style: { margin: 0, fontSize: '0.95rem
 const Sub = ({ children }) => e('h3', { style: { margin: '6px 0 0', fontSize: '0.8rem', fontWeight: 600 } }, children)
 
 function Table({ columns, rows, onRow }) {
+  // Fixed layout with set widths keeps a column at one place across stacked tables.
+  const fixed = columns.some(c => c.width)
   return e(
     'table',
-    { style: table },
-    e('thead', null, e('tr', null, columns.map(c => e('th', { key: c.id, style: c.num ? { ...head, textAlign: 'right' } : head }, c.label)))),
+    { style: fixed ? { ...table, tableLayout: 'fixed' } : table },
+    e('thead', null, e('tr', null, columns.map(c => e('th', { key: c.id, style: { ...(c.num ? { ...head, textAlign: 'right' } : head), ...(c.width ? { width: c.width } : {}) } }, c.label)))),
     e('tbody', null, rows.map(row =>
       e('tr', { key: row.key, style: onRow ? rowLink : undefined, onClick: onRow ? () => onRow(row) : undefined },
         columns.map(c => e('td', { key: c.id, style: c.num ? num : cell }, row[c.id])))
@@ -250,7 +256,7 @@ function ModelView({ id, go }) {
       groups.map(g => e('div', { key: g.name, style: section },
         e(Sub, null, `${g.name} · ${g.items.length}`),
         e(Table, {
-          columns: [{ id: 'name', label: 'Constraint' }, { id: 'level', label: 'Level' }, { id: 'weight', label: 'Weight', num: true }],
+          columns: [{ id: 'name', label: 'Constraint' }, { id: 'level', label: 'Level', width: 96 }, { id: 'weight', label: 'Weight', num: true, width: 104 }],
           rows: g.items.map(c => ({
             key: c.name,
             name: e('div', null, c.name, c.description ? e('div', { style: faint }, c.description) : null),
@@ -388,7 +394,7 @@ export function RunView({ id, compact = false, go }) {
             onRow: row => setOpen(open === row.key ? null : row.key)
           })
         : live ? e('div', { style: muted }, 'Solving…') : null,
-      go && run.dataset_id ? e(Button, { size: 'xs', variant: 'text', onClick: () => go({ view: 'dataset', id: run.dataset_id }) }, 'Dataset and its runs') : null
+      go && run.dataset_id ? e('div', null, e(Button, { size: 'xs', variant: 'text', onClick: () => go({ view: 'dataset', id: run.dataset_id }) }, 'Dataset and its runs')) : null
     )
   })
 }
