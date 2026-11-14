@@ -1,0 +1,67 @@
+name: plugin release
+
+# Publishes the plugin's own release for a vX.Y.Z tag. The plugin installs from the
+# tag itself (`hermes plugins install blackopsrepl/hermes-solverforge-workbench`);
+# this release is where people read what changed and which engine it pins. It is
+# only created when the checksums pinned in engine_bin.py match the SHA256SUMS of
+# the engine release they point to.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag matches the plugin version
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          grep -q "^version: $version$" plugin.yaml
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          engine="$(sed -n 's/^ENGINE_VERSION = "\(.*\)"$/\1/p' engine_bin.py)"
+          echo "engine=$engine" >> "$GITHUB_OUTPUT"
+          # Links for the release notes, built here so the notes hold no URL with a
+          # template inside it (the catalog's install scanner flags those).
+          echo "engine_url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/engine-v$engine" >> "$GITHUB_OUTPUT"
+          echo "readme_url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/$GITHUB_REF_NAME/README.md" >> "$GITHUB_OUTPUT"
+      - name: Pinned checksums match the engine release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ENGINE: ${{ steps.version.outputs.engine }}
+        run: |
+          gh release download "engine-v$ENGINE" --repo "$GITHUB_REPOSITORY" --pattern SHA256SUMS
+          python3 - <<'PY'
+          import ast, pathlib
+          tree = ast.parse(pathlib.Path("engine_bin.py").read_text())
+          pinned = next(ast.literal_eval(n.value) for n in tree.body
+                        if isinstance(n, ast.AnnAssign) and getattr(n.target, "id", "") == "CHECKSUMS")
+          published = {}
+          for line in pathlib.Path("SHA256SUMS").read_text().splitlines():
+              digest, name = line.split()
+              published[name.lstrip("*")] = digest
+          pinned_by_asset = {f"solverforge-workbench-{t}{'.exe' if 'windows' in t else ''}": d for t, d in pinned.items()}
+          assert pinned_by_asset == published, f"pinned {pinned_by_asset} != released {published}"
+          print(f"{len(pinned)} pinned checksums match")
+          PY
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: SolverForge Workbench ${{ steps.version.outputs.version }}
+          make_latest: "true"
+          body: |
+            ```sh
+            hermes plugins install blackopsrepl/hermes-solverforge-workbench --enable
+            hermes solverforge-workbench install
+            ```
+
+            The second command downloads [the engine ${{ steps.version.outputs.engine }}](${{ steps.version.outputs.engine_url }})
+            for your platform and checks it against the SHA-256 pinned in this release.
+            See the [README](${{ steps.version.outputs.readme_url }}) to get started.
+          generate_release_notes: true
