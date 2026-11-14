@@ -45,6 +45,21 @@ def test_a_shift_the_engine_names_in_a_costly_match_is_marked_with_the_rule():
     assert "breaks: Mandatory shift left open" in item["meta"]
 
 
+def test_a_rule_over_an_employees_whole_roster_marks_their_row_not_every_shift():
+    # The engine justifies a per-employee rule by the employee and every shift
+    # they work; only two of Amina's shifts overlap.
+    view = views.timeline("employee-scheduling", FIXTURE["plan"], FIXTURE["analysis"])
+    amina = lanes(view)["employee:amina"]
+    # Her two costliest broken rules (-480 each) by name, then a count for the
+    # cheaper one (-1).
+    assert [b["label"] for b in amina["badges"]][:3] == [
+        "Minutes per period outside required range", "Overlapping shifts", "+1 more"]
+    assert amina["badges"][0]["style"] == views.BROKEN_BADGE["hard"]
+    assert len(amina["badges"]) <= views.MAX_LANE_BADGES
+    assert all("Overlapping shifts" not in item["meta"] for item in amina["items"])
+    assert all(item["tone"] != "red" for item in amina["items"])
+
+
 def test_time_off_and_preferences_are_drawn_behind_the_shifts():
     view = views.timeline("employee-scheduling", FIXTURE["plan"], FIXTURE["analysis"])
     amina = lanes(view)["employee:amina"]

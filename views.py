@@ -27,9 +27,17 @@ UNAVAILABLE = {"background": "rgba(75, 85, 99, 0.16)", "border": "#6b7280", "ove
                "text": "#374151"}
 RATHER_NOT = {"background": "rgba(156, 163, 175, 0.12)", "border": "#9ca3af", "overlay": "rgba(156, 163, 175, 0.12)",
               "text": "#4b5563"}
-# A shift named in an entity text of an analysis match, as the engine prints it.
+# A shift or an employee named in an entity text of an analysis match, as the engine prints it.
 SHIFT_IN_MATCH = re.compile(r'Shift \{ index: \d+, id: "((?:[^"\\]|\\.)*)"')
+EMPLOYEE_IN_MATCH = re.compile(r'Employee \{ index: \d+, id: "((?:[^"\\]|\\.)*)"')
 MAX_FLAGGED_MATCHES = 100
+# Lane badges for rules an employee's roster breaks as a whole.
+BROKEN_BADGE = {
+    "hard": {"bg": "rgba(220, 38, 38, 0.12)", "border": "1px solid #dc2626", "color": "#b91c1c"},
+    "medium": {"bg": "rgba(225, 29, 72, 0.08)", "border": "1px solid #fb7185", "color": "#be123c"},
+}
+MAX_LANE_RULES = 2
+MAX_LANE_BADGES = 4
 
 
 class ViewError(ValueError):
@@ -48,19 +56,58 @@ def _hhmm(minute: int, start: datetime) -> str:
     return (start + timedelta(minutes=minute)).strftime("%H:%M")
 
 
-def _flags(analysis: list[dict[str, Any]] | None) -> dict[str, list[tuple[str, str]]]:
-    """Shift id -> [(level, constraint)] for every hard or medium match that costs score."""
-    flags: dict[str, list[tuple[str, str]]] = {}
+Flags = dict[str, list[tuple[str, str]]]
+SCORE_PART = re.compile(r"(-?\d+)(hard|medium|soft)")
+
+
+def _cost(score: Any, level: str) -> int:
+    """How much a match costs at its level, as a positive number."""
+    parts = {name: int(value) for value, name in SCORE_PART.findall(str(score))}
+    return -parts.get(level, 0)
+
+
+def _flags(analysis: list[dict[str, Any]] | None) -> tuple[Flags, dict[str, list[tuple[str, str, int]]]]:
+    """(shift id, employee id) -> [(level, constraint)] for every hard or medium match that costs score.
+
+    A match justified by an employee comes from a rule over that employee's
+    whole roster: it names every shift they work, so it marks the employee,
+    not each shift. A match without an employee marks the shifts it names.
+    """
+    shifts: Flags = {}
+    employees: dict[str, list[tuple[str, str, int]]] = {}
     for item in analysis or []:
         if item.get("level") not in ("hard", "medium"):
             continue
         for match in (item.get("matches") or [])[:MAX_FLAGGED_MATCHES]:
             if not str(match.get("score", "")).startswith("-") and "/-" not in str(match.get("score", "")):
                 continue
-            for entity in match.get("entities") or []:
-                for shift_id in SHIFT_IN_MATCH.findall(entity.get("text", "")):
-                    flags.setdefault(shift_id, []).append((item["level"], item["name"]))
-    return flags
+            texts = [str(entity.get("text", "")) for entity in match.get("entities") or []]
+            named = [e for text in texts for e in EMPLOYEE_IN_MATCH.findall(text)]
+            for employee_id in named:
+                employees.setdefault(employee_id, []).append(
+                    (item["level"], item["name"], _cost(match.get("score"), item["level"])))
+            if named:
+                continue
+            for text in texts:
+                for shift_id in SHIFT_IN_MATCH.findall(text):
+                    shifts.setdefault(shift_id, []).append((item["level"], item["name"]))
+    return shifts, employees
+
+
+def _rule_badges(broken: list[tuple[str, str, int]]) -> list[dict[str, Any]]:
+    """Badges naming the rules an employee's roster breaks: hard ones first, then the costliest."""
+    level_of: dict[str, str] = {}
+    cost_of: dict[str, int] = {}
+    for level, name, cost in broken:
+        level_of[name] = level
+        cost_of[name] = cost_of.get(name, 0) + cost
+    names = sorted(level_of, key=lambda name: (level_of[name] != "hard", -cost_of[name], name))
+    badges = [{"label": name, "style": BROKEN_BADGE[level_of[name]]} for name in names[:MAX_LANE_RULES]]
+    if len(names) > MAX_LANE_RULES:
+        rest = names[MAX_LANE_RULES:]
+        worst = "hard" if any(level_of[name] == "hard" for name in rest) else "medium"
+        badges.append({"label": f"+{len(rest)} more", "style": BROKEN_BADGE[worst]})
+    return badges
 
 
 def roster(plan: dict[str, Any], analysis: list[dict[str, Any]] | None = None) -> dict[str, Any]:
@@ -74,7 +121,7 @@ def roster(plan: dict[str, Any], analysis: list[dict[str, Any]] | None = None) -
     day0 = start.replace(hour=0, minute=0, second=0, microsecond=0)
     span_days = max(1, -(-int((end_at - day0) / timedelta(minutes=1)) // DAY))
     weekend = {str(d).lower() for d in schedule.get("weekend") or ("saturday", "sunday")}
-    flags = _flags(analysis)
+    flags, employee_flags = _flags(analysis)
 
     tones: dict[str, str] = dict(TAG_TONES)
     def tone_of(tags: list[str]) -> str:
@@ -147,7 +194,9 @@ def roster(plan: dict[str, Any], analysis: list[dict[str, Any]] | None = None) -
             "id": f"employee:{employee_id}",
             "label": str(employee.get("name") or employee_id),
             "mode": "detailed",
-            "badges": [{"label": str(s if isinstance(s, str) else s.get("id"))} for s in (employee.get("skills") or [])][:3],
+            "badges": (_rule_badges(employee_flags.get(employee_id, [])) + [
+                {"label": str(s if isinstance(s, str) else s.get("id"))} for s in (employee.get("skills") or [])
+            ])[:MAX_LANE_BADGES],
             "stats": [{"label": "Shifts", "value": len(items)}, {"label": "Hours", "value": round(minutes / 60, 1)}],
             "overlays": overlays(employee),
             "items": items,
@@ -163,7 +212,8 @@ def roster(plan: dict[str, Any], analysis: list[dict[str, Any]] | None = None) -
     return {
         "title": "Roster",
         "subtitle": f"{len(shifts)} shifts · {len(plan.get('employees') or [])} employees · "
-                    f"{len(open_shifts)} open · red: breaks a hard rule · rose: a medium one · grey: time off",
+                    f"{len(open_shifts)} open · red: breaks a hard rule, on a shift or an employee's row · "
+                    "rose: a medium one · grey: time off",
         "label": "Employee",
         "model": {
             "axis": {"startMinute": 0, "endMinute": span_days * DAY, "days": days, "ticks": ticks,
