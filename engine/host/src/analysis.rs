@@ -3,7 +3,7 @@
 use serde::Serialize;
 use solverforge::{PlanningSolution, ScoreDirector};
 
-use crate::model::{ConstraintInfo, Level, Model};
+use crate::model::{ConstraintInfo, EntityName, Level, Model};
 
 /// Most characters kept from one entity's display text.
 const MAX_ENTITY_TEXT: usize = 240;
@@ -35,7 +35,8 @@ pub struct MatchReport {
 pub struct EntityReport {
     #[serde(rename = "type")]
     pub type_name: String,
-    pub text: String,
+    #[serde(flatten)]
+    pub name: EntityName,
 }
 
 /// Scores `plan` under its own constraint weights.
@@ -44,8 +45,9 @@ pub fn analyze<M: Model>(mut plan: M::Plan, max_matches: usize) -> Analysis {
     let catalog = M::catalog();
     let mut director = ScoreDirector::new_weighted(plan, M::constraints());
     let score = director.calculate_score();
-    let constraints = director
-        .constraint_analyses()
+    let analyses = director.constraint_analyses();
+    let plan = director.working_solution();
+    let constraints = analyses
         .into_iter()
         .map(|analysis| {
             let name = analysis.constraint_ref.full_name();
@@ -62,9 +64,16 @@ pub fn analyze<M: Model>(mut plan: M::Plan, max_matches: usize) -> Analysis {
                         .justification
                         .entities
                         .iter()
-                        .map(|entity| EntityReport {
-                            type_name: short_type(&entity.type_name).to_string(),
-                            text: clip(&entity.display),
+                        .map(|entity| {
+                            let type_name = short_type(&entity.type_name);
+                            EntityReport {
+                                type_name: type_name.to_string(),
+                                name: M::name_entity(plan, type_name, &entity.display)
+                                    .unwrap_or_else(|| EntityName {
+                                        id: None,
+                                        label: clip(&entity.display),
+                                    }),
+                            }
                         })
                         .collect(),
                 })

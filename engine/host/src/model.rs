@@ -53,6 +53,23 @@ pub trait Model: 'static {
     fn kpis(_plan: &Self::Plan) -> Vec<Kpi> {
         Vec::new()
     }
+    /// Names an entity a constraint match blames: its record id in the
+    /// model's wire format and a label people read. Analysis knows an entity
+    /// only by its type name (`Shift`) and its `Debug` text, which the
+    /// planning macros derive; the model reads the text it owns. `None`
+    /// reports the type and the text unchanged.
+    fn name_entity(_plan: &Self::Plan, _type_name: &str, _debug: &str) -> Option<EntityName> {
+        None
+    }
+}
+
+/// An entity named in a constraint match, as the caller shows it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct EntityName {
+    /// The record's id in the model's wire format, when it has one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    pub label: String,
 }
 
 /// Catalog entry for one constraint, keyed by its full name.

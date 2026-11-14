@@ -1,7 +1,7 @@
 //! The employee scheduling model as a workbench model.
 
 use solverforge::{ConstraintSet, ConstraintWeights, HardMediumSoftScore, SolverManager};
-use solverforge_workbench_host::{ConstraintInfo, Issue, Kpi, Model};
+use solverforge_workbench_host::{ConstraintInfo, EntityName, Issue, Kpi, Model};
 
 use crate::domain::Plan;
 
@@ -45,5 +45,8 @@ impl Model for EmployeeScheduling {
     }
     fn kpis(plan: &Plan) -> Vec<Kpi> {
         crate::kpis::kpis(plan)
+    }
+    fn name_entity(plan: &Plan, type_name: &str, debug: &str) -> Option<EntityName> {
+        crate::names::name_entity(plan, type_name, debug)
     }
 }
