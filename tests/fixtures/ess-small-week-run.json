@@ -377,7 +377,7 @@
     ]
    },
    {
-    "employee": "hana",
+    "employee": "chiara",
     "end": "2027-03-01T23:00",
     "id": "2027-03-01-late-1",
     "requiredSkills": [
@@ -390,7 +390,7 @@
     ]
    },
    {
-    "employee": "ivo",
+    "employee": "jun",
     "end": "2027-03-02T07:00",
     "id": "2027-03-01-night-0",
     "requiredSkills": [
@@ -406,7 +406,7 @@
     ]
    },
    {
-    "employee": "jun",
+    "employee": "goran",
     "end": "2027-03-01T13:00",
     "id": "2027-03-01-support-0",
     "importance": 2,
@@ -454,7 +454,7 @@
     ]
    },
    {
-    "employee": "farah",
+    "employee": "ivo",
     "end": "2027-03-02T23:00",
     "id": "2027-03-02-late-0",
     "requiredSkills": [
@@ -467,7 +467,7 @@
     ]
    },
    {
-    "employee": "amina",
+    "employee": "farah",
     "end": "2027-03-02T23:00",
     "id": "2027-03-02-late-1",
     "requiredSkills": [
@@ -496,7 +496,7 @@
     ]
    },
    {
-    "employee": "jun",
+    "employee": "amina",
     "end": "2027-03-02T13:00",
     "id": "2027-03-02-support-0",
     "importance": 2,
@@ -528,7 +528,7 @@
     ]
    },
    {
-    "employee": "hana",
+    "employee": "elif",
     "end": "2027-03-03T15:00",
     "id": "2027-03-03-early-1",
     "preferredSkills": [
@@ -544,7 +544,7 @@
     ]
    },
    {
-    "employee": "elif",
+    "employee": "ivo",
     "end": "2027-03-03T23:00",
     "id": "2027-03-03-late-0",
     "requiredSkills": [
@@ -586,7 +586,7 @@
     ]
    },
    {
-    "employee": "ivo",
+    "employee": "chiara",
     "end": "2027-03-03T13:00",
     "id": "2027-03-03-support-0",
     "importance": 2,
@@ -647,7 +647,7 @@
     ]
    },
    {
-    "employee": "amina",
+    "employee": "elif",
     "end": "2027-03-04T23:00",
     "id": "2027-03-04-late-1",
     "requiredSkills": [
@@ -660,7 +660,7 @@
     ]
    },
    {
-    "employee": "goran",
+    "employee": "farah",
     "end": "2027-03-05T07:00",
     "id": "2027-03-04-night-0",
     "requiredSkills": [
@@ -676,7 +676,7 @@
     ]
    },
    {
-    "employee": "jun",
+    "employee": "amina",
     "end": "2027-03-04T13:00",
     "id": "2027-03-04-support-0",
     "importance": 2,
@@ -708,7 +708,7 @@
     ]
    },
    {
-    "employee": "elif",
+    "employee": "hana",
     "end": "2027-03-05T15:00",
     "id": "2027-03-05-early-1",
     "preferredSkills": [
@@ -724,7 +724,7 @@
     ]
    },
    {
-    "employee": "farah",
+    "employee": "dmitri",
     "end": "2027-03-05T23:00",
     "id": "2027-03-05-late-0",
     "requiredSkills": [
@@ -737,7 +737,7 @@
     ]
    },
    {
-    "employee": "dmitri",
+    "employee": "chiara",
     "end": "2027-03-05T23:00",
     "id": "2027-03-05-late-1",
     "requiredSkills": [
@@ -766,7 +766,7 @@
     ]
    },
    {
-    "employee": "jun",
+    "employee": "goran",
     "end": "2027-03-05T13:00",
     "id": "2027-03-05-support-0",
     "importance": 2,
@@ -798,7 +798,7 @@
     ]
    },
    {
-    "employee": "hana",
+    "employee": "elif",
     "end": "2027-03-06T23:00",
     "id": "2027-03-06-late-0",
     "requiredSkills": [
@@ -811,7 +811,7 @@
     ]
    },
    {
-    "employee": "chiara",
+    "employee": "farah",
     "end": "2027-03-07T07:00",
     "id": "2027-03-06-night-0",
     "requiredSkills": [
@@ -827,7 +827,7 @@
     ]
    },
    {
-    "employee": "amina",
+    "employee": "chiara",
     "end": "2027-03-07T15:00",
     "id": "2027-03-07-early-0",
     "preferredSkills": [
@@ -844,7 +844,7 @@
     ]
    },
    {
-    "employee": "farah",
+    "employee": "hana",
     "end": "2027-03-07T23:00",
     "id": "2027-03-07-late-0",
     "requiredSkills": [
@@ -857,7 +857,7 @@
     ]
    },
    {
-    "employee": "chiara",
+    "employee": "amina",
     "end": "2027-03-08T07:00",
     "id": "2027-03-07-night-0",
     "requiredSkills": [
@@ -883,7 +883,8 @@
     {
      "entities": [
       {
-       "text": "Shift { index: 2, id: \"2027-03-01-late-0\", start: \"2027-03-01T15:00\", end: \"2027-03-01T23:00\", employee: None, pinned: false, tags: [\"late\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: [], risks: \u2026",
+       "id": "2027-03-01-late-0",
+       "label": "Mon 1 Mar 15:00\u201323:00 late",
        "type": "Shift"
       }
      ],
@@ -917,7 +918,8 @@
     {
      "entities": [
       {
-       "text": "Shift { index: 0, id: \"2027-03-01-early-0\", start: \"2027-03-01T07:00\", end: \"2027-03-01T15:00\", employee: Some(\"amina\"), pinned: true, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\"), Id(\"senior\")], any_required_skill: false, prefe\u2026",
+       "id": "2027-03-01-early-0",
+       "label": "Mon 1 Mar 07:00\u201315:00 early",
        "type": "Shift"
       }
      ],
@@ -926,7 +928,8 @@
     {
      "entities": [
       {
-       "text": "Shift { index: 1, id: \"2027-03-01-early-1\", start: \"2027-03-01T07:00\", end: \"2027-03-01T15:00\", employee: Some(\"amina\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: \u2026",
+       "id": "2027-03-01-early-1",
+       "label": "Mon 1 Mar 07:00\u201315:00 early",
        "type": "Shift"
       }
      ],
@@ -935,7 +938,8 @@
     {
      "entities": [
       {
-       "text": "Shift { index: 7, id: \"2027-03-02-early-1\", start: \"2027-03-02T07:00\", end: \"2027-03-02T15:00\", employee: Some(\"goran\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: \u2026",
+       "id": "2027-03-02-early-1",
+       "label": "Tue 2 Mar 07:00\u201315:00 early",
        "type": "Shift"
       }
      ],
@@ -944,7 +948,8 @@
     {
      "entities": [
       {
-       "text": "Shift { index: 19, id: \"2027-03-04-early-1\", start: \"2027-03-04T07:00\", end: \"2027-03-04T15:00\", employee: Some(\"chiara\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills\u2026",
+       "id": "2027-03-04-early-1",
+       "label": "Thu 4 Mar 07:00\u201315:00 early",
        "type": "Shift"
       }
      ],
@@ -953,7 +958,8 @@
     {
      "entities": [
       {
-       "text": "Shift { index: 33, id: \"2027-03-07-early-0\", start: \"2027-03-07T07:00\", end: \"2027-03-07T15:00\", employee: Some(\"amina\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\"), Id(\"senior\")], any_required_skill: false, pre\u2026",
+       "id": "2027-03-07-early-0",
+       "label": "Sun 7 Mar 07:00\u201315:00 early",
        "type": "Shift"
       }
      ],
@@ -995,7 +1001,8 @@
     {
      "entities": [
       {
-       "text": "Shift { index: 7, id: \"2027-03-02-early-1\", start: \"2027-03-02T07:00\", end: \"2027-03-02T15:00\", employee: Some(\"goran\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: \u2026",
+       "id": "2027-03-02-early-1",
+       "label": "Tue 2 Mar 07:00\u201315:00 early",
        "type": "Shift"
       }
      ],
@@ -1004,7 +1011,8 @@
     {
      "entities": [
       {
-       "text": "Shift { index: 19, id: \"2027-03-04-early-1\", start: \"2027-03-04T07:00\", end: \"2027-03-04T15:00\", employee: Some(\"chiara\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills\u2026",
+       "id": "2027-03-04-early-1",
+       "label": "Thu 4 Mar 07:00\u201315:00 early",
        "type": "Shift"
       }
      ],
@@ -1081,70 +1089,18 @@
   },
   {
    "level": "hard",
-   "match_count": 1,
-   "matches": [
-    {
-     "entities": [
-      {
-       "text": "Employee { index: 0, id: \"amina\", name: Some(\"Amina\"), tags: [], priority: 1, skills: [Id(\"nurse\"), Id(\"senior\")], avoid_risks: [], unavailable: [TimeSpan { from: \"2027-03-03T00:00\", to: \"2027-03-04T00:00\", shifts: TagFilter { with_tags: []\u2026",
-       "type": "Employee"
-      },
-      {
-       "text": "Shift { index: 0, id: \"2027-03-01-early-0\", start: \"2027-03-01T07:00\", end: \"2027-03-01T15:00\", employee: Some(\"amina\"), pinned: true, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\"), Id(\"senior\")], any_required_skill: false, prefe\u2026",
-       "type": "Shift"
-      },
-      {
-       "text": "Shift { index: 1, id: \"2027-03-01-early-1\", start: \"2027-03-01T07:00\", end: \"2027-03-01T15:00\", employee: Some(\"amina\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: \u2026",
-       "type": "Shift"
-      },
-      {
-       "text": "Shift { index: 9, id: \"2027-03-02-late-1\", start: \"2027-03-02T15:00\", end: \"2027-03-02T23:00\", employee: Some(\"amina\"), pinned: false, tags: [\"late\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: []\u2026",
-       "type": "Shift"
-      },
-      {
-       "text": "Shift { index: 21, id: \"2027-03-04-late-1\", start: \"2027-03-04T15:00\", end: \"2027-03-04T23:00\", employee: Some(\"amina\"), pinned: false, tags: [\"late\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: [\u2026",
-       "type": "Shift"
-      },
-      {
-       "text": "Shift { index: 28, id: \"2027-03-05-night-0\", start: \"2027-03-05T23:00\", end: \"2027-03-06T07:00\", employee: Some(\"amina\"), pinned: false, tags: [\"night\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills:\u2026",
-       "type": "Shift"
-      },
-      {
-       "text": "Shift { index: 33, id: \"2027-03-07-early-0\", start: \"2027-03-07T07:00\", end: \"2027-03-07T15:00\", employee: Some(\"amina\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\"), Id(\"senior\")], any_required_skill: false, pre\u2026",
-       "type": "Shift"
-      }
-     ],
-     "score": "-480hard/0medium/0soft"
-    }
-   ],
+   "match_count": 0,
+   "matches": [],
    "name": "Minutes per period outside required range",
-   "score": "-480hard/0medium/0soft",
+   "score": "0hard/0medium/0soft",
    "weight": 1
   },
   {
    "level": "soft",
-   "match_count": 1,
-   "matches": [
-    {
-     "entities": [
-      {
-       "text": "Employee { index: 4, id: \"elif\", name: Some(\"Elif\"), tags: [], priority: 1, skills: [Id(\"nurse\"), Id(\"wound-care\")], avoid_risks: [\"radiation\"], unavailable: [TimeSpan { from: \"2027-03-02T00:00\", to: \"2027-03-03T00:00\", shifts: TagFilter { \u2026",
-       "type": "Employee"
-      },
-      {
-       "text": "Shift { index: 14, id: \"2027-03-03-late-0\", start: \"2027-03-03T15:00\", end: \"2027-03-03T23:00\", employee: Some(\"elif\"), pinned: false, tags: [\"late\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: []\u2026",
-       "type": "Shift"
-      },
-      {
-       "text": "Shift { index: 25, id: \"2027-03-05-early-1\", start: \"2027-03-05T07:00\", end: \"2027-03-05T15:00\", employee: Some(\"elif\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: \u2026",
-       "type": "Shift"
-      }
-     ],
-     "score": "0hard/0medium/-480soft"
-    }
-   ],
+   "match_count": 0,
+   "matches": [],
    "name": "Minutes per period outside preferred range",
-   "score": "0hard/0medium/-480soft",
+   "score": "0hard/0medium/0soft",
    "weight": 1
   },
   {
@@ -1330,31 +1286,38 @@
     {
      "entities": [
       {
-       "text": "Employee { index: 0, id: \"amina\", name: Some(\"Amina\"), tags: [], priority: 1, skills: [Id(\"nurse\"), Id(\"senior\")], avoid_risks: [], unavailable: [TimeSpan { from: \"2027-03-03T00:00\", to: \"2027-03-04T00:00\", shifts: TagFilter { with_tags: []\u2026",
+       "id": "amina",
+       "label": "Amina",
        "type": "Employee"
       },
       {
-       "text": "Shift { index: 0, id: \"2027-03-01-early-0\", start: \"2027-03-01T07:00\", end: \"2027-03-01T15:00\", employee: Some(\"amina\"), pinned: true, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\"), Id(\"senior\")], any_required_skill: false, prefe\u2026",
+       "id": "2027-03-01-early-0",
+       "label": "Mon 1 Mar 07:00\u201315:00 early",
        "type": "Shift"
       },
       {
-       "text": "Shift { index: 1, id: \"2027-03-01-early-1\", start: \"2027-03-01T07:00\", end: \"2027-03-01T15:00\", employee: Some(\"amina\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: \u2026",
+       "id": "2027-03-01-early-1",
+       "label": "Mon 1 Mar 07:00\u201315:00 early",
        "type": "Shift"
       },
       {
-       "text": "Shift { index: 9, id: \"2027-03-02-late-1\", start: \"2027-03-02T15:00\", end: \"2027-03-02T23:00\", employee: Some(\"amina\"), pinned: false, tags: [\"late\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: []\u2026",
+       "id": "2027-03-02-support-0",
+       "label": "Tue 2 Mar 09:00\u201313:00 support",
        "type": "Shift"
       },
       {
-       "text": "Shift { index: 21, id: \"2027-03-04-late-1\", start: \"2027-03-04T15:00\", end: \"2027-03-04T23:00\", employee: Some(\"amina\"), pinned: false, tags: [\"late\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: [\u2026",
+       "id": "2027-03-04-support-0",
+       "label": "Thu 4 Mar 09:00\u201313:00 support",
        "type": "Shift"
       },
       {
-       "text": "Shift { index: 28, id: \"2027-03-05-night-0\", start: \"2027-03-05T23:00\", end: \"2027-03-06T07:00\", employee: Some(\"amina\"), pinned: false, tags: [\"night\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills:\u2026",
+       "id": "2027-03-05-night-0",
+       "label": "Fri 5 Mar 23:00\u201307:00 night",
        "type": "Shift"
       },
       {
-       "text": "Shift { index: 33, id: \"2027-03-07-early-0\", start: \"2027-03-07T07:00\", end: \"2027-03-07T15:00\", employee: Some(\"amina\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\"), Id(\"senior\")], any_required_skill: false, pre\u2026",
+       "id": "2027-03-07-night-0",
+       "label": "Sun 7 Mar 23:00\u201307:00 night",
        "type": "Shift"
       }
      ],
@@ -1540,31 +1503,38 @@
     {
      "entities": [
       {
-       "text": "Employee { index: 0, id: \"amina\", name: Some(\"Amina\"), tags: [], priority: 1, skills: [Id(\"nurse\"), Id(\"senior\")], avoid_risks: [], unavailable: [TimeSpan { from: \"2027-03-03T00:00\", to: \"2027-03-04T00:00\", shifts: TagFilter { with_tags: []\u2026",
+       "id": "amina",
+       "label": "Amina",
        "type": "Employee"
       },
       {
-       "text": "Shift { index: 0, id: \"2027-03-01-early-0\", start: \"2027-03-01T07:00\", end: \"2027-03-01T15:00\", employee: Some(\"amina\"), pinned: true, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\"), Id(\"senior\")], any_required_skill: false, prefe\u2026",
+       "id": "2027-03-01-early-0",
+       "label": "Mon 1 Mar 07:00\u201315:00 early",
        "type": "Shift"
       },
       {
-       "text": "Shift { index: 1, id: \"2027-03-01-early-1\", start: \"2027-03-01T07:00\", end: \"2027-03-01T15:00\", employee: Some(\"amina\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: \u2026",
+       "id": "2027-03-01-early-1",
+       "label": "Mon 1 Mar 07:00\u201315:00 early",
        "type": "Shift"
       },
       {
-       "text": "Shift { index: 9, id: \"2027-03-02-late-1\", start: \"2027-03-02T15:00\", end: \"2027-03-02T23:00\", employee: Some(\"amina\"), pinned: false, tags: [\"late\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: []\u2026",
+       "id": "2027-03-02-support-0",
+       "label": "Tue 2 Mar 09:00\u201313:00 support",
        "type": "Shift"
       },
       {
-       "text": "Shift { index: 21, id: \"2027-03-04-late-1\", start: \"2027-03-04T15:00\", end: \"2027-03-04T23:00\", employee: Some(\"amina\"), pinned: false, tags: [\"late\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills: [\u2026",
+       "id": "2027-03-04-support-0",
+       "label": "Thu 4 Mar 09:00\u201313:00 support",
        "type": "Shift"
       },
       {
-       "text": "Shift { index: 28, id: \"2027-03-05-night-0\", start: \"2027-03-05T23:00\", end: \"2027-03-06T07:00\", employee: Some(\"amina\"), pinned: false, tags: [\"night\", \"ward-a\"], required_skills: [Id(\"nurse\")], any_required_skill: false, preferred_skills:\u2026",
+       "id": "2027-03-05-night-0",
+       "label": "Fri 5 Mar 23:00\u201307:00 night",
        "type": "Shift"
       },
       {
-       "text": "Shift { index: 33, id: \"2027-03-07-early-0\", start: \"2027-03-07T07:00\", end: \"2027-03-07T15:00\", employee: Some(\"amina\"), pinned: false, tags: [\"early\", \"ward-a\"], required_skills: [Id(\"nurse\"), Id(\"senior\")], any_required_skill: false, pre\u2026",
+       "id": "2027-03-07-night-0",
+       "label": "Sun 7 Mar 23:00\u201307:00 night",
        "type": "Shift"
       }
      ],
@@ -2088,7 +2058,7 @@
    "weight": 1
   }
  ],
- "score": "-961hard/-1medium/475soft",
+ "score": "-481hard/-1medium/955soft",
  "moved": "2027-03-01-early-1",
  "opened": "2027-03-01-late-0"
 }

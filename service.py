@@ -508,7 +508,7 @@ class Workbench:
         return self.run_brief(self.store.run(run_id, with_plan=False))  # type: ignore[arg-type]
 
     def explain(self, run_id: str, constraint: str = "", entity: str = "", limit: int = 20) -> dict[str, Any]:
-        """Matches of one constraint, or every match that involves an entity text."""
+        """Matches of one constraint, or every match that names an entity by its id or in its label."""
         run = self.run_record(run_id)
         analysis = run.get("analysis") or []
         if constraint:
@@ -519,10 +519,13 @@ class Workbench:
             return {"run_id": run_id, "constraints": [_trim(found[0], limit)]}
         if entity:
             needle = entity.lower()
+
+            def names(e: dict[str, Any]) -> bool:
+                return str(e.get("id", "")).lower() == needle or needle in str(e.get("label", "")).lower()
+
             hits = []
             for item in analysis:
-                matches = [m for m in item.get("matches", [])
-                           if any(needle in e.get("text", "").lower() for e in m.get("entities", []))]
+                matches = [m for m in item.get("matches", []) if any(names(e) for e in m.get("entities", []))]
                 if matches:
                     hits.append({**_trim(item, 0), "matches": matches[:limit]})
             return {"run_id": run_id, "entity": entity, "constraints": hits}

@@ -2,8 +2,8 @@
  "ok": true,
  "runs": [
   {
-   "id": "0b9478d7a3e7",
-   "dataset_id": "133ea968ace5",
+   "id": "5c8fcef2c7fc",
+   "dataset_id": "29ea2a26dcaf",
    "model_id": "toy",
    "kind": "solve",
    "status": "completed",
@@ -12,14 +12,14 @@
    "initial_score": "-6hard/0soft",
    "score": "0hard/0soft",
    "feasible": 1,
-   "created_at": "2026-11-14T11:25:37.573+00:00",
-   "started_at": "2026-11-14T11:25:37.637+00:00",
-   "finished_at": "2026-11-14T11:25:39.657+00:00",
+   "created_at": "2026-11-14T12:58:33.020+00:00",
+   "started_at": "2026-11-14T12:58:33.082+00:00",
+   "finished_at": "2026-11-14T12:58:35.102+00:00",
    "error": null
   },
   {
-   "id": "7ee0ce9348a7",
-   "dataset_id": "133ea968ace5",
+   "id": "f671a1f598cd",
+   "dataset_id": "29ea2a26dcaf",
    "model_id": "toy",
    "kind": "evaluate",
    "status": "completed",
@@ -28,9 +28,9 @@
    "initial_score": "-6hard/0soft",
    "score": "-6hard/0soft",
    "feasible": 0,
-   "created_at": "2026-11-14T11:25:37.560+00:00",
+   "created_at": "2026-11-14T12:58:33.007+00:00",
    "started_at": null,
-   "finished_at": "2026-11-14T11:25:37.567+00:00",
+   "finished_at": "2026-11-14T12:58:33.014+00:00",
    "error": null
   }
  ]

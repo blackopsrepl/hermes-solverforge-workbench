@@ -129,7 +129,8 @@ SCHEMAS: list[dict[str, Any]] = [
           {"run": {"type": "string"}}, ["run"]),
     _tool("solverforge_workbench_explain",
           "Why a plan scores as it does: the matches of one constraint, or every match involving an entity "
-          "(an employee, shift, visit... named by text such as its id). With neither, lists every constraint "
+          "(an employee, shift, visit... given by its id or by words of its label, such as a name). With neither, "
+          "lists every constraint "
           "that costs or earns score.",
           {"run": {"type": "string"}, "constraint": {"type": "string"}, "entity": {"type": "string"},
            "limit": {"type": "integer", "minimum": 1, "maximum": 200}}, ["run"]),

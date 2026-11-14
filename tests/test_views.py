@@ -50,14 +50,20 @@ def test_a_rule_over_an_employees_whole_roster_marks_their_row_not_every_shift()
     # they work; only two of Amina's shifts overlap.
     view = views.timeline("employee-scheduling", FIXTURE["plan"], FIXTURE["analysis"])
     amina = lanes(view)["employee:amina"]
-    # Her two costliest broken rules (-480 each) by name, then a count for the
-    # cheaper one (-1).
-    assert [b["label"] for b in amina["badges"]][:3] == [
-        "Minutes per period outside required range", "Overlapping shifts", "+1 more"]
+    # Her broken rules, costliest first: the overlap (-480), then the run it makes (-1).
+    assert [b["label"] for b in amina["badges"]][:2] == [
+        "Overlapping shifts", "Consecutive shifts outside required range"]
     assert amina["badges"][0]["style"] == views.BROKEN_BADGE["hard"]
     assert len(amina["badges"]) <= views.MAX_LANE_BADGES
     assert all("Overlapping shifts" not in item["meta"] for item in amina["items"])
     assert all(item["tone"] != "red" for item in amina["items"])
+
+
+def test_lane_badges_put_hard_rules_first_then_the_costliest_and_count_the_rest():
+    badges = views._rule_badges([("medium", "Late", 900), ("hard", "Rest", 1), ("hard", "Overlap", 480),
+                                 ("hard", "Rest", 2)])
+    assert [b["label"] for b in badges] == ["Overlap", "Rest", "+1 more"]
+    assert badges[2]["style"] == views.BROKEN_BADGE["medium"]
 
 
 def test_time_off_and_preferences_are_drawn_behind_the_shifts():

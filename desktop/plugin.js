@@ -500,7 +500,7 @@ function Matches({ item }) {
   }
   return e('ul', { style: { margin: '4px 0', paddingLeft: 18, ...muted } },
     item.matches.map((m, i) => e('li', { key: i },
-      e(ScoreText, { score: m.score }), ' · ', m.entities.map(x => `${x.type} ${x.text}`).join(' ↔ '))),
+      e(ScoreText, { score: m.score }), ' · ', m.entities.map(x => x.label).join(' · '))),
     item.match_count > item.matches.length ? e('li', { style: faint }, `… ${item.match_count - item.matches.length} more`) : null)
 }
 

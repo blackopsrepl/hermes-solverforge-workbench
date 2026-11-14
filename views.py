@@ -27,9 +27,6 @@ UNAVAILABLE = {"background": "rgba(75, 85, 99, 0.16)", "border": "#6b7280", "ove
                "text": "#374151"}
 RATHER_NOT = {"background": "rgba(156, 163, 175, 0.12)", "border": "#9ca3af", "overlay": "rgba(156, 163, 175, 0.12)",
               "text": "#4b5563"}
-# A shift or an employee named in an entity text of an analysis match, as the engine prints it.
-SHIFT_IN_MATCH = re.compile(r'Shift \{ index: \d+, id: "((?:[^"\\]|\\.)*)"')
-EMPLOYEE_IN_MATCH = re.compile(r'Employee \{ index: \d+, id: "((?:[^"\\]|\\.)*)"')
 MAX_FLAGGED_MATCHES = 100
 # Lane badges for rules an employee's roster breaks as a whole.
 BROKEN_BADGE = {
@@ -81,16 +78,16 @@ def _flags(analysis: list[dict[str, Any]] | None) -> tuple[Flags, dict[str, list
         for match in (item.get("matches") or [])[:MAX_FLAGGED_MATCHES]:
             if not str(match.get("score", "")).startswith("-") and "/-" not in str(match.get("score", "")):
                 continue
-            texts = [str(entity.get("text", "")) for entity in match.get("entities") or []]
-            named = [e for text in texts for e in EMPLOYEE_IN_MATCH.findall(text)]
+            entities = match.get("entities") or []
+            named = [str(e["id"]) for e in entities if e.get("type") == "Employee" and e.get("id")]
             for employee_id in named:
                 employees.setdefault(employee_id, []).append(
                     (item["level"], item["name"], _cost(match.get("score"), item["level"])))
             if named:
                 continue
-            for text in texts:
-                for shift_id in SHIFT_IN_MATCH.findall(text):
-                    shifts.setdefault(shift_id, []).append((item["level"], item["name"]))
+            for entity in entities:
+                if entity.get("type") == "Shift" and entity.get("id"):
+                    shifts.setdefault(str(entity["id"]), []).append((item["level"], item["name"]))
     return shifts, employees
 
 
