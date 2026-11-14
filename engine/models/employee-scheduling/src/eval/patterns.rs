@@ -128,6 +128,9 @@ pub fn day_patterns(roster: &Roster, e: usize, want: Want) -> i64 {
     let Some(d) = roster.derived() else {
         return 0;
     };
+    if !d.employees[e].day_patterns.iter().any(|r| r.want == want) {
+        return 0;
+    }
     let items = infos(roster, d);
     let mut days: Vec<&[&ShiftInfo]> = Vec::new();
     let mut from = 0;
@@ -168,6 +171,9 @@ pub fn multi_day_patterns(roster: &Roster, e: usize, want: Want) -> i64 {
     let Some(d) = roster.derived() else {
         return 0;
     };
+    if !d.employees[e].multi_day.iter().any(|r| r.want == want) {
+        return 0;
+    }
     let items = infos(roster, d);
     let worked = |day: i64, filter: &TagMatch| {
         let lo = items.partition_point(|s| s.day < day);

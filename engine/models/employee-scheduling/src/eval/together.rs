@@ -2,17 +2,11 @@
 //! bucket from the shifts that start on that day.
 
 use super::Members;
-use crate::derived::{Derived, ShiftInfo, Want};
+use crate::derived::{ShiftInfo, Want};
 use crate::time::overlap;
-
-type Item<'a> = (usize, usize, &'a ShiftInfo);
 
 fn meets(a: &ShiftInfo, b: &ShiftInfo) -> bool {
     overlap(a.start, a.end, b.start, b.end) > 0
-}
-
-fn items<'a>(m: &'a Members, d: &'a Derived) -> Vec<Item<'a>> {
-    m.iter(d).collect()
 }
 
 /// Pairing scores for stance `want` over shifts starting on `day`: a missing
@@ -22,9 +16,9 @@ pub fn colleagues(m: &Members, day: usize, want: Want) -> i64 {
     let Some(d) = m.derived() else {
         return 0;
     };
-    let all = items(m, d);
+    let all = || m.iter(d);
     let mut total = 0;
-    for &(s, a, info) in all.iter().filter(|(_, _, i)| i.day == day as i64) {
+    for (s, a, info) in all().filter(|(_, _, i)| i.day == day as i64) {
         let employee = &d.employees[a];
         for rule in employee.colleagues.iter().filter(|r| r.want == want) {
             if !rule.on_tags.is_empty()
@@ -35,7 +29,7 @@ pub fn colleagues(m: &Members, day: usize, want: Want) -> i64 {
             {
                 continue;
             }
-            let together = all.iter().any(|&(t, b, other)| {
+            let together = all().any(|(t, b, other)| {
                 t != s && rule.partners.binary_search(&(b as u32)).is_ok() && meets(info, other)
             });
             let hit = match want {
@@ -75,15 +69,14 @@ pub fn teams(m: &Members, day: usize, score: TeamScore) -> i64 {
     if d.teams.is_empty() {
         return 0;
     }
-    let all = items(m, d);
+    let all = || m.iter(d);
     let day = day as i64;
     let mut total = 0;
     if score == TeamScore::ShiftsPerDay {
         for team in d.teams.iter().filter(|t| t.max_shifts_per_day.is_some()) {
             let max = team.max_shifts_per_day.unwrap_or(i64::MAX);
             for tag in &team.tags {
-                let mut times: Vec<(i64, i64)> = all
-                    .iter()
+                let mut times: Vec<(i64, i64)> = all()
                     .filter(|(_, e, i)| {
                         i.day == day
                             && team.everyone.binary_search(&(*e as u32)).is_ok()
@@ -98,11 +91,11 @@ pub fn teams(m: &Members, day: usize, score: TeamScore) -> i64 {
         }
         return total;
     }
-    for &(s, a, info) in all.iter().filter(|(_, _, i)| i.day == day) {
+    for (s, a, info) in all().filter(|(_, _, i)| i.day == day) {
         for &t in &d.employees[a].teams {
             let team = &d.teams[t as usize];
             let is_lead = team.leads.binary_search(&(a as u32)).is_ok();
-            let others = all.iter().filter(|&&(o, b, other)| {
+            let others = all().filter(|&(o, b, other)| {
                 o != s
                     && b != a
                     && team.everyone.binary_search(&(b as u32)).is_ok()
@@ -120,7 +113,7 @@ pub fn teams(m: &Members, day: usize, score: TeamScore) -> i64 {
                         })
                     };
                     total += others
-                        .filter(|&&(o, _, other)| {
+                        .filter(|&(o, _, other)| {
                             (other.start, o) > (info.start, s) && !shared(other)
                         })
                         .count() as i64;
@@ -128,7 +121,7 @@ pub fn teams(m: &Members, day: usize, score: TeamScore) -> i64 {
                 TeamScore::HelperWithoutLead => {
                     let mut others = others;
                     if !is_lead
-                        && !others.any(|&(_, b, _)| team.leads.binary_search(&(b as u32)).is_ok())
+                        && !others.any(|(_, b, _)| team.leads.binary_search(&(b as u32)).is_ok())
                     {
                         total += 1;
                     }
