@@ -452,9 +452,12 @@ fn contracts() -> Value {
                 "locationsWorked",
                 json!({"period": "week", "level": "preferred", "max": 1}),
             ),
+            // A published roster is a promise: changing someone's shift weighs as
+            // much as a large fairness or cost gain, so a replan keeps the
+            // published week unless a rule or an absence forces a change.
             rule(
                 "disruption",
-                json!({"level": "preferred", "withinMinutes": 120, "keepTags": ["ward-a", "ward-b", "ward-c"]}),
+                json!({"level": "preferred", "weight": 10000, "withinMinutes": 120, "keepTags": ["ward-a", "ward-b", "ward-c"]}),
             ),
             rule(
                 "dailyPairing",

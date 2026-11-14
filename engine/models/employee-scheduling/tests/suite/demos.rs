@@ -76,25 +76,23 @@ fn the_large_demo_scores_incrementally_like_in_full() {
 
 #[test]
 fn the_large_demos_published_week_is_one_a_plan_could_have_made() {
-    let open = assigned(|_, _| None);
-    let mut published = open.clone();
-    let index: std::collections::HashMap<String, usize> = published
-        .employees
-        .iter()
-        .enumerate()
-        .map(|(n, employee)| (employee.id.clone(), n))
-        .collect();
+    let published = EmployeeScheduling::demo("LARGE_MONTH").expect("large demo");
+    let ids: Vec<&str> = published.employees.iter().map(|e| e.id.as_str()).collect();
     let mut count = 0;
-    for shift in published.shifts.iter_mut().filter(|s| !s.pinned) {
-        if let Some(employee) = shift.published.as_ref() {
-            shift.employee_idx = Some(index[employee]);
+    for shift in published.shifts.iter().filter(|s| !s.pinned) {
+        if let Some(employee) = shift.published.as_deref() {
+            // The demo starts from the roster as published, as a replan does.
+            assert_eq!(shift.employee_idx.map(|e| ids[e]), Some(employee));
             count += 1;
+        } else {
+            assert_eq!(shift.employee_idx, None);
         }
     }
     // Every fourth shift of the first week, less any no one could take.
     assert!(count >= 30, "only {count} shifts were published");
-    // Giving every published shift to its employee breaks no hard rule that
-    // leaving them open does not already break.
+    // The published week breaks no hard rule that leaving it open does not
+    // already break.
+    let open = assigned(|_, _| None);
     assert!(
         total(&published).hard() >= total(&open).hard(),
         "published {} vs open {}",

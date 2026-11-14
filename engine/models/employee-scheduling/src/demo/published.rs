@@ -4,7 +4,8 @@
 //! preference, whose assignment adds no hard violation to the assignments
 //! published so far. The model scores every try itself, so the demo copies
 //! none of its rules: whatever a real plan could not have published, this
-//! cannot publish either.
+//! cannot publish either. The dataset keeps each published assignment, as a
+//! real replan starts from the roster people were given.
 
 use serde_json::{json, Value};
 use solverforge::ScoreDirector;
@@ -13,7 +14,7 @@ use crate::constraints::define_constraints;
 use crate::domain::Plan;
 use crate::prepare::prepare;
 
-/// Records `published` on each shift in `shifts` (indices into the dataset's
+/// Publishes and assigns each shift in `shifts` (indices into the dataset's
 /// shifts), trying the employees `order` lists for it. A shift no employee can
 /// take without breaking a hard rule stays unpublished.
 pub fn publish(
@@ -37,6 +38,7 @@ pub fn publish(
                 hard = score.hard();
                 taken[employee] += 1;
                 dataset["shifts"][shift]["published"] = json!(ids[employee]);
+                dataset["shifts"][shift]["employee"] = json!(ids[employee]);
                 break;
             }
             director.do_change(0, shift, |plan: &mut Plan| {

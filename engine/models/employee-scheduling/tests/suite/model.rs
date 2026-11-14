@@ -51,11 +51,11 @@ fn every_demo_round_trips_through_its_wire_format() {
             json,
             "{id} reads back unchanged"
         );
-        // Only deliberately pinned shifts start assigned.
+        // Only pinned shifts and the roster already published start assigned.
         for shift in &plan.shifts {
             assert_eq!(
                 shift.employee_idx.is_some(),
-                shift.pinned,
+                shift.pinned || shift.published.is_some(),
                 "{id} shift {}",
                 shift.id
             );
