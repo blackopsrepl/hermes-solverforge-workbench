@@ -12,9 +12,14 @@ type = "local_search"
 type = "late_acceptance"
 late_acceptance_size = 400
 
+# Each step takes the best of 16 accepted moves. Taking the first one let late
+# acceptance wander: while medium work was still being filled, nearly any soft
+# regression passed, published shifts included. On the hospital month this is
+# about 35% better soft score in the same time; at 64 the gain stops and at 256
+# steps get too slow to finish the medium work.
 [phases.forager]
 type = "accepted_count"
-limit = 1
+limit = 16
 
 [phases.move_selector]
 type = "union_move_selector"
