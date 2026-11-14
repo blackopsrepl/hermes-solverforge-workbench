@@ -73,3 +73,32 @@ fn the_large_demo_exercises_every_constraint() {
 fn the_large_demo_scores_incrementally_like_in_full() {
     assert_incremental_matches_full(scrambled(4), 300, 77);
 }
+
+#[test]
+fn the_large_demos_published_week_is_one_a_plan_could_have_made() {
+    let open = assigned(|_, _| None);
+    let mut published = open.clone();
+    let index: std::collections::HashMap<String, usize> = published
+        .employees
+        .iter()
+        .enumerate()
+        .map(|(n, employee)| (employee.id.clone(), n))
+        .collect();
+    let mut count = 0;
+    for shift in published.shifts.iter_mut().filter(|s| !s.pinned) {
+        if let Some(employee) = shift.published.as_ref() {
+            shift.employee_idx = Some(index[employee]);
+            count += 1;
+        }
+    }
+    // Every fourth shift of the first week, less any no one could take.
+    assert!(count >= 30, "only {count} shifts were published");
+    // Giving every published shift to its employee breaks no hard rule that
+    // leaving them open does not already break.
+    assert!(
+        total(&published).hard() >= total(&open).hard(),
+        "published {} vs open {}",
+        total(&published),
+        total(&open)
+    );
+}

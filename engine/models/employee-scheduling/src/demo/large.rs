@@ -6,6 +6,7 @@
 
 use serde_json::{json, Value};
 
+use super::published;
 use super::rng::Rng;
 use crate::domain::Plan;
 use crate::time::{format_date, format_date_time, parse_date, DAY};
@@ -56,7 +57,7 @@ fn dataset() -> Value {
         .map(|d| json!({"id": format!("clinic-{}", format_date(first + d)), "count": 1}))
         .collect();
 
-    json!({
+    let mut dataset = json!({
         "schedule": {
             "start": at(first, 0),
             "end": at(first + days, 0),
@@ -84,7 +85,49 @@ fn dataset() -> Value {
         "scheduleRules": schedule_rules(first, days),
         "employees": employees,
         "shifts": shifts,
-    })
+    });
+    publish_first_week(&mut dataset, first);
+    dataset
+}
+
+/// The first week was published from an earlier plan: every fourth of its
+/// shifts went to staff, home ward first, spread over the team, and only where
+/// the model finds no hard rule broken. The pinned shifts are published too.
+fn publish_first_week(dataset: &mut Value, first: i64) {
+    let week_end = at(first + 7, 0);
+    let shifts = dataset["shifts"].as_array().expect("shifts");
+    let chosen: Vec<usize> = shifts
+        .iter()
+        .enumerate()
+        .filter(|(n, shift)| {
+            n.is_multiple_of(4)
+                && shift["start"]
+                    .as_str()
+                    .is_some_and(|start| start < week_end.as_str())
+                && shift.get("alternativeOf").is_none()
+                && shift.get("published").is_none()
+        })
+        .map(|(n, _)| n)
+        .collect();
+    let ward_of = |shift: &Value| {
+        shift["tags"]
+            .as_array()
+            .and_then(|tags| {
+                tags.iter()
+                    .filter_map(Value::as_str)
+                    .find(|tag| WARDS.contains(tag))
+            })
+            .map(str::to_owned)
+    };
+    let wards: Vec<Option<String>> = shifts.iter().map(ward_of).collect();
+    published::publish(dataset, &chosen, |shift, taken| {
+        let mut staff: Vec<usize> = (0..STAFF).collect();
+        staff.sort_by_key(|&n| {
+            let away = wards[shift].as_deref() != Some(WARDS[n % 3]);
+            (n >= 40, away, taken[n], (n + shift * 7) % STAFF)
+        });
+        staff
+    });
 }
 
 fn employee(n: usize, first: i64, rng: &mut Rng) -> Value {
@@ -264,13 +307,6 @@ fn shifts(first: i64, days: i64, rng: &mut Rng) -> Vec<Value> {
             0 => shift["unwantedEmployees"] = json!([who]),
             1 => shift["barredEmployees"] = json!([who]),
             _ => shift["preferredEmployees"] = json!([who]),
-        }
-    }
-    // The first week was published before; a few shifts are already promised.
-    for (n, shift) in out.iter_mut().enumerate() {
-        let start = shift["start"].as_str().unwrap_or_default().to_owned();
-        if start < at(first + 7, 0) && n.is_multiple_of(4) && shift.get("alternativeOf").is_none() {
-            shift["published"] = json!(id(rng.below(25) as usize));
         }
     }
     let pin = |out: &mut Vec<Value>, shift_id: &str, who: usize| {

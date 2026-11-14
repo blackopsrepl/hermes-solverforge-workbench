@@ -5,3 +5,4 @@ dist/
 engine/target/
 node_modules/
 tests/desktop/.build/
+engine/target-main/
