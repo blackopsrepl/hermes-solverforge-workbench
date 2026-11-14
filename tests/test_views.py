@@ -48,7 +48,10 @@ def test_a_shift_the_engine_names_in_a_costly_match_is_marked_with_the_rule():
 def test_time_off_and_preferences_are_drawn_behind_the_shifts():
     view = views.timeline("employee-scheduling", FIXTURE["plan"], FIXTURE["analysis"])
     amina = lanes(view)["employee:amina"]
-    assert {"startMinute": 2 * 1440, "endMinute": 3 * 1440, "label": "Unavailable", "tone": "red"} in amina["overlays"]
+    unavailable = next(o for o in amina["overlays"] if o["label"] == "Unavailable")
+    assert (unavailable["startMinute"], unavailable["endMinute"]) == (2 * 1440, 3 * 1440)
+    # Red is reserved for broken rules; time off is drawn in grey.
+    assert all(o["tone"] not in ("red", "rose") for o in amina["overlays"])
     assert amina["stats"][0]["label"] == "Shifts"
 
 

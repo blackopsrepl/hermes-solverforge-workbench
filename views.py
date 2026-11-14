@@ -22,6 +22,11 @@ WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", 
 TAG_TONES = {"early": "amber", "day": "amber", "morning": "amber", "late": "blue", "evening": "blue",
              "night": "violet"}
 SPARE_TONES = ("cyan", "emerald", "slate", "blue", "amber", "violet")
+# Overlay colours for time an employee cannot or would rather not work.
+UNAVAILABLE = {"background": "rgba(75, 85, 99, 0.16)", "border": "#6b7280", "overlay": "rgba(75, 85, 99, 0.16)",
+               "text": "#374151"}
+RATHER_NOT = {"background": "rgba(156, 163, 175, 0.12)", "border": "#9ca3af", "overlay": "rgba(156, 163, 175, 0.12)",
+              "text": "#4b5563"}
 # A shift named in an entity text of an analysis match, as the engine prints it.
 SHIFT_IN_MATCH = re.compile(r'Shift \{ index: \d+, id: "((?:[^"\\]|\\.)*)"')
 MAX_FLAGGED_MATCHES = 100
@@ -105,7 +110,8 @@ def roster(plan: dict[str, Any], analysis: list[dict[str, Any]] | None = None) -
 
     def overlays(employee: dict[str, Any]) -> list[dict[str, Any]]:
         out = []
-        for key, label, tone in (("unavailable", "Unavailable", "red"), ("unwantedTimes", "Rather not", "amber"),
+        # Time off is grey, so red and rose on the roster only ever mean a broken rule.
+        for key, label, tone in (("unavailable", "Unavailable", UNAVAILABLE), ("unwantedTimes", "Rather not", RATHER_NOT),
                                  ("preferredTimes", "Preferred", "emerald")):
             for span in employee.get(key) or []:
                 begin = _minutes(span.get("from"), day0, f"{employee.get('id')} {key}")
@@ -157,7 +163,7 @@ def roster(plan: dict[str, Any], analysis: list[dict[str, Any]] | None = None) -
     return {
         "title": "Roster",
         "subtitle": f"{len(shifts)} shifts · {len(plan.get('employees') or [])} employees · "
-                    f"{len(open_shifts)} open · red: breaks a hard rule",
+                    f"{len(open_shifts)} open · red: breaks a hard rule · rose: a medium one · grey: time off",
         "label": "Employee",
         "model": {
             "axis": {"startMinute": 0, "endMinute": span_days * DAY, "days": days, "ticks": ticks,
