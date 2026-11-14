@@ -498,7 +498,7 @@ function Matches({ item }) {
     const scored = parseScore(item.score).some(p => p.value !== 0)
     return e('div', { style: faint }, item.match_count ? 'Matches are counted, not listed, for this constraint.' : scored ? 'Scored as a total; this rule has no individual matches.' : 'No matches.')
   }
-  return e('ul', { style: { margin: '4px 0', paddingLeft: 18, ...muted } },
+  return e('ul', { style: { margin: '4px 0', paddingLeft: 18, overflowWrap: 'anywhere', ...muted } },
     item.matches.map((m, i) => e('li', { key: i },
       e(ScoreText, { score: m.score }), ' · ', m.entities.map(x => x.label).join(' · '))),
     item.match_count > item.matches.length ? e('li', { style: faint }, `… ${item.match_count - item.matches.length} more`) : null)
@@ -554,7 +554,9 @@ export function RunView({ id, compact = false, go }) {
       !compact && all.length && !rows.length ? e('div', { style: muted }, 'No constraint matches.') : null,
       rows.length
         ? e(Table, {
-            columns: [{ id: 'name', label: compact ? 'What costs score' : 'Constraint' }, { id: 'level', label: 'Level' }, { id: 'count', label: 'Matches', num: true }, { id: 'score', label: 'Score', num: true }],
+            // Fixed widths: an opened constraint's matches wrap inside its name instead of squeezing the score.
+            columns: [{ id: 'name', label: compact ? 'What costs score' : 'Constraint' }, { id: 'level', label: 'Level', width: 80 },
+              { id: 'count', label: 'Matches', num: true, width: 80 }, { id: 'score', label: 'Score', num: true, width: compact ? 180 : 240 }],
             rows: rows.map(({ item: c, hits }) => ({
               key: c.name, name: e('div', null, e(Highlight, { text: c.name, hits }), open === c.name ? e(Matches, { item: c }) : null),
               level: e('span', { style: { color: levelColor(c.level) } }, c.level),
