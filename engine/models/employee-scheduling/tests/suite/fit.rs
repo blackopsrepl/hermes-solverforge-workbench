@@ -156,10 +156,3 @@ fn bad_records_are_refused_with_codes() {
         assert!(codes.contains(&code), "missing {code} in {codes:?}");
     }
 }
-
-#[test]
-fn small_demo_scores_incrementally_like_in_full() {
-    use solverforge_workbench_employee_scheduling::demo::build;
-    let plan = build("SMALL_WEEK").unwrap();
-    assert_incremental_matches_full(plan, 400, 11);
-}

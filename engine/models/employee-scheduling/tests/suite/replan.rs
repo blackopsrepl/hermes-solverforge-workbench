@@ -6,13 +6,13 @@ use solverforge_workbench_host::Model;
 
 use crate::common::engine;
 
-fn small_week() -> Value {
-    EmployeeScheduling::present(&EmployeeScheduling::demo("SMALL_WEEK").unwrap())
+fn month() -> Value {
+    EmployeeScheduling::present(&EmployeeScheduling::demo("LARGE_MONTH").unwrap())
 }
 
-/// The small week with every shift on the first employee, a quarter left open.
+/// The month with every shift on the first employee, a quarter left open.
 fn crowded() -> Value {
-    let mut plan = small_week();
+    let mut plan = month();
     let first = plan["employees"][0]["id"].clone();
     for (n, shift) in plan["shifts"]
         .as_array_mut()
@@ -39,7 +39,7 @@ fn request(command: &str, plan: Value, extra: Value) -> (i32, Value) {
 
 #[test]
 fn the_roster_has_a_lane_per_employee_and_one_for_open_shifts() {
-    let plan = small_week();
+    let plan = month();
     let (code, answer) = request("view", plan.clone(), json!({}));
     assert_eq!(code, 0);
     let view = &answer["view"];
@@ -53,7 +53,14 @@ fn the_roster_has_a_lane_per_employee_and_one_for_open_shifts() {
         .iter()
         .map(|l| l["items"].as_array().unwrap().len())
         .sum();
-    assert_eq!(items, plan["shifts"].as_array().unwrap().len());
+    // Every shift is drawn except an alternative nobody works.
+    let drawn = plan["shifts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|s| !s["employee"].is_null() || s["alternativeOf"].is_null())
+        .count();
+    assert_eq!(items, drawn);
 }
 
 #[test]
@@ -108,11 +115,7 @@ fn freezing_pins_every_shift_not_yet_pinned_that_starts_before_the_moment() {
 
 #[test]
 fn freezing_refuses_a_moment_that_is_not_a_date_time() {
-    let (code, answer) = request(
-        "evaluate",
-        small_week(),
-        json!({"freeze_before": "tomorrow"}),
-    );
+    let (code, answer) = request("evaluate", month(), json!({"freeze_before": "tomorrow"}));
     assert_eq!(code, 1);
     assert_eq!(answer["error"]["code"], "invalid_freeze");
 }

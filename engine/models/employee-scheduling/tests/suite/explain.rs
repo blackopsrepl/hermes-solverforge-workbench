@@ -19,9 +19,9 @@ fn evaluate(plan: Value) -> Value {
 
 #[test]
 fn every_blamed_shift_and_employee_is_named_by_id_and_label() {
-    // The small week with everyone's shifts on one person: overlaps, runs,
+    // The month with everyone's shifts on one person: overlaps, runs,
     // limits and open shifts all have matches to explain.
-    let mut plan = EmployeeScheduling::present(&EmployeeScheduling::demo("SMALL_WEEK").unwrap());
+    let mut plan = EmployeeScheduling::present(&EmployeeScheduling::demo("LARGE_MONTH").unwrap());
     let first = plan["employees"][0]["id"].clone();
     for (n, shift) in plan["shifts"]
         .as_array_mut()
