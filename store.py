@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS datasets (
     model_id    TEXT NOT NULL,
     name        TEXT NOT NULL,
     tags        TEXT NOT NULL DEFAULT '[]',
-    origin      TEXT NOT NULL CHECK (origin IN ('demo', 'upload', 'patch', 'input', 'run')),
+    origin      TEXT NOT NULL CHECK (origin IN ('demo', 'upload', 'patch', 'input', 'run', 'fill')),
     parent_id   TEXT REFERENCES datasets(id) ON DELETE SET NULL,
     plan        TEXT NOT NULL,           -- the problem, JSON
     config      TEXT NOT NULL DEFAULT '{}', -- settings carried by the dataset itself
@@ -76,12 +76,27 @@ CREATE TABLE IF NOT EXISTS runs (
     issues           TEXT,
     telemetry        TEXT,
     error            TEXT,
+    experiment_id    TEXT REFERENCES experiments(id) ON DELETE CASCADE,
+    judged_score     TEXT,                    -- experiments: the plan scored under the judge profile
+    judged_feasible  INTEGER,
     created_at       TEXT NOT NULL,
     started_at       TEXT,
     finished_at      TEXT
 );
 CREATE INDEX IF NOT EXISTS runs_queue ON runs(status, priority, created_at);
 CREATE INDEX IF NOT EXISTS runs_dataset ON runs(dataset_id, created_at);
+CREATE TABLE IF NOT EXISTS experiments (
+    id          TEXT PRIMARY KEY,
+    model_id    TEXT NOT NULL,
+    name        TEXT NOT NULL,
+    datasets    TEXT NOT NULL,           -- dataset ids, JSON
+    profiles    TEXT NOT NULL,           -- profile ids, JSON
+    judge       TEXT NOT NULL,           -- the profile every plan is scored under for the ranking
+    repeats     INTEGER NOT NULL,
+    overrides   TEXT NOT NULL DEFAULT '{}',
+    created_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS runs_experiment ON runs(experiment_id);
 CREATE TABLE IF NOT EXISTS run_points (
     run_id      TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
     elapsed_ms  INTEGER NOT NULL,
@@ -92,7 +107,7 @@ CREATE TABLE IF NOT EXISTS run_points (
 
 JSON_COLUMNS = {
     "manifest", "tags", "plan", "config", "patch", "weights", "params", "solve",
-    "overrides", "analysis", "kpis", "issues", "telemetry", "error",
+    "overrides", "analysis", "kpis", "issues", "telemetry", "error", "datasets", "profiles",
 }
 
 
@@ -132,6 +147,7 @@ class Store:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._local = threading.local()
+        self._migrate()
         # executescript manages its own transaction.
         self._db().executescript(SCHEMA)
 
@@ -166,6 +182,25 @@ class Store:
             raise
         db.execute("COMMIT")
 
+    def _migrate(self) -> None:
+        """Brings a database made by an earlier version to the current schema."""
+        db = self._db()
+        sql = {row["name"]: row["sql"] for row in
+               db.execute("SELECT name, sql FROM sqlite_master WHERE type = 'table'").fetchall()}
+        if "datasets" in sql and "'fill'" not in sql["datasets"]:
+            # SQLite cannot change a CHECK constraint in place: rebuild the table with fill as an origin.
+            new = sql["datasets"].replace("'input', 'run')", "'input', 'run', 'fill')")
+            new = new.replace("CREATE TABLE datasets", "CREATE TABLE datasets_next", 1)
+            db.execute("PRAGMA foreign_keys=OFF")
+            db.executescript(
+                "BEGIN;" + new + ";INSERT INTO datasets_next SELECT * FROM datasets;DROP TABLE datasets;"
+                "ALTER TABLE datasets_next RENAME TO datasets;COMMIT;")
+            db.execute("PRAGMA foreign_keys=ON")
+        if "runs" in sql and "experiment_id" not in sql["runs"]:
+            db.execute("ALTER TABLE runs ADD COLUMN experiment_id TEXT REFERENCES experiments(id) ON DELETE CASCADE")
+            db.execute("ALTER TABLE runs ADD COLUMN judged_score TEXT")
+            db.execute("ALTER TABLE runs ADD COLUMN judged_feasible INTEGER")
+
     def one(self, sql: str, *args: Any) -> dict[str, Any] | None:
         return _row(self._db().execute(sql, args).fetchone())
 
@@ -195,6 +230,7 @@ class Store:
     def delete_model(self, model_id: str) -> None:
         with self.tx() as db:
             db.execute("DELETE FROM runs WHERE model_id = ?", (model_id,))
+            db.execute("DELETE FROM experiments WHERE model_id = ?", (model_id,))
             db.execute("DELETE FROM datasets WHERE model_id = ?", (model_id,))
             db.execute("DELETE FROM profiles WHERE model_id = ?", (model_id,))
             db.execute("DELETE FROM models WHERE id = ?", (model_id,))
@@ -295,14 +331,15 @@ class Store:
     # ---- runs ---------------------------------------------------------------
 
     def add_run(self, *, dataset_id: str, model_id: str, kind: str, profile_id: str | None,
-                overrides: dict, config: dict, priority: int, status: str) -> dict[str, Any]:
+                overrides: dict, config: dict, priority: int, status: str,
+                experiment_id: str | None = None) -> dict[str, Any]:
         run_id = new_id()
         with self.tx() as db:
             db.execute(
                 "INSERT INTO runs (id, dataset_id, model_id, kind, profile_id, overrides, config, priority,"
-                " status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " status, experiment_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (run_id, dataset_id, model_id, kind, profile_id, _dump(overrides), _dump(config),
-                 priority, status, now()),
+                 priority, status, experiment_id, now()),
             )
         return self.run(run_id)  # type: ignore[return-value]
 
@@ -311,13 +348,23 @@ class Store:
         return self.one(f"SELECT {columns} FROM runs WHERE id = ?", run_id)
 
     def runs(self, *, dataset_id: str | None = None, model_id: str | None = None,
-             status: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
+             status: str | None = None, experiment_id: str | None = None,
+             limit: int | None = 100) -> list[dict[str, Any]]:
         columns = ", ".join(RUN_SUMMARY_COLUMNS)
         return self.all(
             f"SELECT {columns} FROM runs WHERE (? IS NULL OR dataset_id = ?) AND (? IS NULL OR model_id = ?)"
-            " AND (? IS NULL OR status = ?) ORDER BY created_at DESC LIMIT ?",
-            dataset_id, dataset_id, model_id, model_id, status, status, limit,
+            " AND (? IS NULL OR status = ?) AND (? IS NULL OR experiment_id = ?)"
+            " ORDER BY created_at DESC LIMIT ?",
+            dataset_id, dataset_id, model_id, model_id, status, status, experiment_id, experiment_id,
+            -1 if limit is None else limit,
         )
+
+    def finished_solves(self, model_id: str) -> list[dict[str, Any]]:
+        """Every solve of a model that ended with a plan, oldest first, for trends."""
+        return self.all(
+            "SELECT id, dataset_id, profile_id, experiment_id, score, feasible, kpis, finished_at FROM runs"
+            " WHERE model_id = ? AND kind = 'solve' AND status IN ('completed', 'incomplete')"
+            " AND score IS NOT NULL ORDER BY finished_at", model_id)
 
     def update_run(self, run_id: str, **fields: Any) -> None:
         if not fields:
@@ -352,9 +399,35 @@ class Store:
         with self.tx() as db:
             db.execute("DELETE FROM runs WHERE id = ?", (run_id,))
 
+    # ---- experiments --------------------------------------------------------
+
+    def add_experiment(self, *, model_id: str, name: str, datasets: list[str], profiles: list[str],
+                       judge: str, repeats: int, overrides: dict) -> dict[str, Any]:
+        experiment_id = new_id()
+        with self.tx() as db:
+            db.execute(
+                "INSERT INTO experiments (id, model_id, name, datasets, profiles, judge, repeats, overrides,"
+                " created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (experiment_id, model_id, name, _dump(datasets), _dump(profiles), judge, repeats,
+                 _dump(overrides), now()),
+            )
+        return self.experiment(experiment_id)  # type: ignore[return-value]
+
+    def experiment(self, experiment_id: str) -> dict[str, Any] | None:
+        return self.one("SELECT * FROM experiments WHERE id = ?", experiment_id)
+
+    def experiments(self, model_id: str | None = None) -> list[dict[str, Any]]:
+        return self.all("SELECT * FROM experiments WHERE (? IS NULL OR model_id = ?) ORDER BY created_at DESC",
+                        model_id, model_id)
+
+    def delete_experiment(self, experiment_id: str) -> None:
+        with self.tx() as db:
+            db.execute("DELETE FROM runs WHERE experiment_id = ?", (experiment_id,))
+            db.execute("DELETE FROM experiments WHERE id = ?", (experiment_id,))
+
 
 RUN_SUMMARY_COLUMNS = (
     "id", "dataset_id", "model_id", "kind", "profile_id", "overrides", "config", "priority", "status",
     "cancel_requested", "pid", "initial_score", "score", "feasible", "kpis", "issues", "telemetry", "error",
-    "created_at", "started_at", "finished_at",
+    "experiment_id", "judged_score", "judged_feasible", "created_at", "started_at", "finished_at",
 )
