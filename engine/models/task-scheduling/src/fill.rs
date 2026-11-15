@@ -8,15 +8,15 @@
 use solverforge_workbench_host::fill::{name_of, FillAnswer, FillRequest, Ranking};
 use solverforge_workbench_host::{EngineError, EntityName};
 
-use crate::constraints::{define_constraints, TaskConstraints};
-use crate::domain::Plan;
+use crate::constraints::{define_constraints, Constraints};
+use crate::domain::{Lane, Plan};
 use crate::model::TaskScheduling;
 use crate::names::label;
 
 /// The resources' entity descriptor.
 const RESOURCES: usize = 0;
 
-type Director = solverforge_workbench_host::fill::Director<TaskScheduling, TaskConstraints>;
+type Director = solverforge_workbench_host::fill::Director<TaskScheduling, Constraints>;
 
 /// One place a task can go: a resource and a position in its sequence.
 #[derive(Clone, Copy)]
@@ -35,9 +35,9 @@ fn locate(plan: &Plan, t: usize) -> Option<Place> {
     })
 }
 
-/// Whether task `t` is pinned in a resource's frozen prefix.
+/// Whether task `t` is frozen.
 fn frozen(plan: &Plan, t: usize) -> bool {
-    plan.resources.iter().any(|r| r.frozen.contains(&t))
+    plan.tasks[t].frozen_on.is_some()
 }
 
 fn take(director: &mut Director, place: Place) {
@@ -69,7 +69,7 @@ fn places(plan: &Plan, t: usize) -> Vec<(Place, EntityName)> {
         .and_then(|task| task.allowed.as_ref());
     let mut out = Vec::new();
     for (resource, r) in plan.resources.iter().enumerate() {
-        if r.unscheduled
+        if !r.is_resource()
             || allowed.is_some_and(|allowed| !allowed.get(resource).copied().unwrap_or(false))
         {
             continue;
@@ -98,7 +98,7 @@ fn places(plan: &Plan, t: usize) -> Vec<(Place, EntityName)> {
 }
 
 pub fn fill(plan: Plan, request: &FillRequest) -> Result<FillAnswer<Plan>, EngineError> {
-    if plan.resources.iter().all(|r| !r.unscheduled) {
+    if plan.resources.iter().all(|r| r.lane != Lane::Queue) {
         return Err(EngineError::new("unprepared", "the plan was not prepared"));
     }
     let queue = plan.facts.queue;
@@ -137,7 +137,7 @@ pub fn fill(plan: Plan, request: &FillRequest) -> Result<FillAnswer<Plan>, Engin
         let from = locate(&plan, t);
         work.push((t, from, places(&plan, t)));
     }
-    let mut ranking = Ranking::<TaskScheduling, TaskConstraints>::new(plan, define_constraints());
+    let mut ranking = Ranking::<TaskScheduling, Constraints>::new(plan, define_constraints());
     if let Some(choice) = &request.apply {
         let (t, from, candidates) = &work[0];
         let Some((to, _)) = candidates

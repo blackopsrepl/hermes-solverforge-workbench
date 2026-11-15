@@ -1,8 +1,8 @@
 //! The constraint set the plan names in `#[planning_solution]`.
 
-use super::TaskConstraints;
+use super::{tasks, Constraints};
 
-/// Every constraint of the model.
-pub fn define_constraints() -> TaskConstraints {
-    TaskConstraints::new()
+/// Every constraint of the model, behind the short [`Constraints`] type.
+pub fn define_constraints() -> Constraints {
+    Constraints::new(tasks::constraints())
 }

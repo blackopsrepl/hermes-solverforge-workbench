@@ -6,6 +6,6 @@ solverforge::planning_model! {
     mod task;
 
     pub use plan::Plan;
-    pub use resource::Resource;
+    pub use resource::{Lane, Resource};
     pub use task::Task;
 }

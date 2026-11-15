@@ -414,6 +414,7 @@ pub fn derive(plan: &Plan, index: &Index, issues: &mut Vec<Issue>) -> Facts {
         tasks,
         resources,
         queue: r,
+        frozen: r + 1,
         dependents,
         task_types: types,
         changeover,

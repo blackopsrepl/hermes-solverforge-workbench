@@ -16,7 +16,9 @@ pub fn label(plan: &Plan, type_name: &str, index: usize) -> String {
             None => return format!("Task {index}"),
         },
         "Resource" => match plan.resources.get(index) {
-            Some(resource) if resource.unscheduled => return "Unscheduled".to_string(),
+            Some(resource) if !resource.is_resource() => {
+                return resource.name.clone().unwrap_or_default()
+            }
             Some(resource) => (
                 &resource.id,
                 &resource.name,
@@ -42,10 +44,10 @@ pub fn name_entity(plan: &Plan, type_name: &str, planning_id: &str) -> Option<En
         "Task" => plan.tasks.get(index)?.id.clone(),
         "Resource" => {
             let resource = plan.resources.get(index)?;
-            if resource.unscheduled {
+            if !resource.is_resource() {
                 return Some(EntityName {
                     id: None,
-                    label: "Unscheduled".to_string(),
+                    label: resource.name.clone().unwrap_or_default(),
                 });
             }
             resource.id.clone()

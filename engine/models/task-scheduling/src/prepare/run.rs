@@ -2,21 +2,31 @@
 
 use std::sync::Arc;
 
+use solverforge::PlanningSolution;
 use solverforge_workbench_host::{Issue, Severity};
 
 use super::facts::{derive, Index};
-use super::place::{place, queue};
+use super::place::place;
 use crate::constraints::Rule;
 use crate::derived::Facts;
-use crate::domain::Plan;
+use crate::domain::{Lane, Plan, Resource};
+use crate::schedule::{begin, frozen_end, run};
 
 /// Checks `plan`, derives its facts and places its tasks. On any error the
 /// plan is left without facts and must not be scored.
 pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
-    plan.resources.retain(|resource| !resource.unscheduled);
+    plan.resources.retain(Resource::is_resource);
     for (index, task) in plan.tasks.iter_mut().enumerate() {
         task.index = index;
         task.pinned_start = None;
+        task.frozen_on = None;
+        task.frozen_previous = None;
+        task.frozen_rank = 0;
+        task.frozen_last = false;
+        task.lane = None;
+        task.previous = None;
+        task.next = None;
+        task.slot = None;
     }
     for (index, resource) in plan.resources.iter_mut().enumerate() {
         resource.index = index;
@@ -36,42 +46,67 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
     for (t, start) in placed.pinned_start.into_iter().enumerate() {
         plan.tasks[t].pinned_start = start;
     }
-    for ((resource, frozen), sequence) in plan
-        .resources
-        .iter_mut()
-        .zip(placed.frozen)
-        .zip(placed.sequence)
-    {
-        for &t in &frozen {
-            plan.tasks[t].pinned = true;
-        }
-        resource.frozen = frozen;
-        resource.sequence = sequence;
-    }
     for &t in &placed.queued {
         plan.tasks[t].pinned = false;
     }
-    let queue_index = plan.resources.len();
+    for (r, (frozen, sequence)) in placed.frozen.into_iter().zip(placed.sequence).enumerate() {
+        let mut previous = None;
+        for (rank, &t) in frozen.iter().enumerate() {
+            let task = &mut plan.tasks[t];
+            task.pinned = true;
+            task.frozen_on = Some(r);
+            task.frozen_previous = previous;
+            task.frozen_rank = rank;
+            task.frozen_last = rank + 1 == frozen.len();
+            previous = Some(t);
+        }
+        plan.resources[r].frozen = frozen;
+        plan.resources[r].sequence = sequence;
+    }
+    for (task, tf) in plan.tasks.iter_mut().zip(&facts.tasks) {
+        task.open_cost = tf.priority;
+    }
+    let queue = plan.resources.len();
     // Open tasks start on no list at all, so construction places every one
     // of them where it scores best: on a resource or in the queue.
-    plan.resources.push(queue(queue_index));
-    let frozen: Vec<bool> = {
-        let mut frozen = vec![false; plan.tasks.len()];
-        for resource in &plan.resources {
-            for &t in &resource.frozen {
-                frozen[t] = true;
-            }
-        }
-        frozen
-    };
-    plan.task_values = (0..plan.tasks.len()).filter(|&t| !frozen[t]).collect();
+    plan.resources
+        .push(Resource::lane(queue, Lane::Queue, "Unscheduled"));
+    let mut frozen_lane = Resource::lane(queue + 1, Lane::Frozen, "Frozen");
+    frozen_lane.sequence = plan.resources[..queue]
+        .iter()
+        .flat_map(|resource| resource.frozen.iter().copied())
+        .collect();
+    plan.resources.push(frozen_lane);
     plan.facts = Arc::new(facts);
+    start_frozen_tasks(plan);
     // Idle time is off unless a weight turns it on.
     if plan.weights.get(Rule::IdleTime.name()).is_none() {
         plan.weights.set(Rule::IdleTime.name(), 0);
     }
     plan.score = None;
+    plan.update_all_shadows();
     issues
+}
+
+/// A frozen task the dataset gives no start starts as early as its
+/// resource allows after the frozen task before it.
+fn start_frozen_tasks(plan: &mut Plan) {
+    let facts = Arc::clone(&plan.facts);
+    for (r, rf) in facts.resources.iter().enumerate() {
+        for i in 0..plan.resources[r].frozen.len() {
+            let t = plan.resources[r].frozen[i];
+            if plan.tasks[t].pinned_start.is_some() {
+                continue;
+            }
+            let tf = &facts.tasks[t];
+            let (ready, previous_type) = match plan.tasks[t].frozen_previous {
+                Some(p) => (frozen_end(plan, p), facts.tasks[p].task_type),
+                None => (rf.start, rf.initial_type),
+            };
+            let (_, earliest) = begin(&facts, rf, tf, ready, previous_type);
+            plan.tasks[t].pinned_start = Some(run(rf, tf, earliest, tf.duration[r]).0);
+        }
+    }
 }
 
 /// Warns about tasks no resource can run within their window.

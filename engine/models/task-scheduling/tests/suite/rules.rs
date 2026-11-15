@@ -69,6 +69,23 @@ fn a_planned_task_whose_dependency_is_unassigned_costs_the_link_penalty() {
 }
 
 #[test]
+fn a_task_queued_before_the_task_it_waits_on_cannot_be_timed_and_counts_as_unassigned() {
+    let plan = |placed: &[&str]| {
+        dataset(json!({
+            "tasks": [task("A", 30, json!({})), task("B", 30, json!({"dependencies": [{"task": "A"}]}))],
+            "resources": [machine("M1", placed, json!({}))],
+        }))
+    };
+    // B waits on A, which runs after it: neither can be timed.
+    assert_eq!(
+        score(plan(&["B", "A"]), "Task left unassigned"),
+        score(plan(&[]), "Task left unassigned")
+    );
+    assert_ne!(score(plan(&[]), "Task left unassigned"), ZERO);
+    assert_eq!(score(plan(&["A", "B"]), "Task left unassigned"), ZERO);
+}
+
+#[test]
 fn a_dependent_task_waits_for_its_minimum_offset_and_is_penalized_past_its_maximum() {
     let plan = |m2_start: String| {
         dataset(json!({

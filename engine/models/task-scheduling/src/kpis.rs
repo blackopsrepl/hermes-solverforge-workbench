@@ -3,7 +3,7 @@
 use solverforge_workbench_host::Kpi;
 
 use crate::domain::Plan;
-use crate::schedule::Timing;
+use crate::schedule::Schedule;
 
 fn kpi(id: &'static str, label: &'static str, value: f64, unit: &'static str) -> Kpi {
     Kpi {
@@ -28,7 +28,7 @@ fn percent(part: i64, whole: i64) -> f64 {
 
 pub fn kpis(plan: &Plan) -> Vec<Kpi> {
     let facts = &*plan.facts;
-    let timing = Timing::of(plan);
+    let timing = Schedule::of(plan);
     let n = facts.tasks.len();
     let assigned = (0..n).filter(|&t| timing.assigned(t)).count();
     let schedule_end = (0..n)

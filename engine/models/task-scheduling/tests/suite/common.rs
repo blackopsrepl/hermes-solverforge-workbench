@@ -5,7 +5,7 @@ use std::io::{self, Write};
 use std::sync::{Arc, Mutex};
 
 use serde_json::{json, Value};
-use solverforge::{ConstraintSet, HardMediumSoftScore, ScoreDirector};
+use solverforge::{ConstraintSet, HardMediumSoftScore, PlanningSolution, ScoreDirector};
 use solverforge_workbench_host::{entry, run_io, Model};
 use solverforge_workbench_task_scheduling::constraints::define_constraints;
 use solverforge_workbench_task_scheduling::{Plan, TaskScheduling};
@@ -144,15 +144,81 @@ pub fn demo_plan(id: &str) -> Plan {
     plan
 }
 
-/// The plan's score from scratch.
+/// The plan's score from scratch, its slots recomputed first.
 pub fn total(plan: &Plan) -> Score {
-    define_constraints().evaluate_all(plan)
+    let mut fresh = plan.clone();
+    fresh.update_all_shadows();
+    define_constraints().evaluate_all(&fresh)
 }
 
-/// Random list moves between resources, scored incrementally, each checked
-/// against a full evaluation.
+/// Every task's slot, recomputed from scratch.
+pub fn fresh_slots(
+    plan: &Plan,
+) -> Vec<Option<solverforge_workbench_task_scheduling::schedule::Slot>> {
+    let mut fresh = plan.clone();
+    fresh.update_all_shadows();
+    fresh.tasks.iter().map(|task| task.slot).collect()
+}
+
+/// Places every open task, one at a time in construction order, onto a
+/// resource or the queue the way construction does, checking each step
+/// against slots and a score computed from scratch.
+pub fn assert_construction_matches_full(plan: Plan, seed: u64) {
+    let owners = plan.resources.iter().filter(|r| !r.pinned).count();
+    let mut open: Vec<usize> = (0..plan.tasks.len())
+        .filter(|&t| plan.tasks[t].lane.is_none())
+        .collect();
+    open.sort_by_key(|&t| plan.facts.construction_key(t));
+    let mut director = ScoreDirector::new(plan, define_constraints());
+    director.calculate_score();
+    let mut state = seed;
+    let mut next = move |n: usize| {
+        state = state
+            .wrapping_mul(6_364_136_223_846_793_005)
+            .wrapping_add(1_442_695_040_888_963_407);
+        ((state >> 33) as usize) % n.max(1)
+    };
+    for (step, t) in open.into_iter().enumerate() {
+        let to = next(owners);
+        let len = director.working_solution().resources[to].sequence.len();
+        let at = next(len + 1);
+        let incremental = director.do_change(0, to, |plan: &mut Plan| {
+            plan.resources[to].sequence.insert(at, t);
+        });
+        let slots: Vec<_> = director
+            .working_solution()
+            .tasks
+            .iter()
+            .map(|t| t.slot)
+            .collect();
+        assert!(
+            slots == fresh_slots(director.working_solution()),
+            "step {step}: a slot is stale"
+        );
+        let full = total(director.working_solution());
+        assert_eq!(
+            incremental, full,
+            "step {step}: incremental {incremental}, full {full}"
+        );
+    }
+}
+
+/// Random list moves between resources and the queue, scored
+/// incrementally, each checked against slots and a score computed from
+/// scratch. The frozen lane, last, never moves.
 pub fn assert_incremental_matches_full(plan: Plan, steps: usize, seed: u64) {
-    let owners = plan.resources.len();
+    let mut plan = plan;
+    let owners = plan.resources.iter().filter(|r| !r.pinned).count();
+    // Open tasks start in no list: deal them round-robin over the
+    // resources and the queue first.
+    let open: Vec<usize> = (0..plan.tasks.len())
+        .filter(|&t| plan.tasks[t].lane.is_none())
+        .collect();
+    assert!(!open.is_empty() || plan.resources.iter().any(|r| !r.sequence.is_empty()));
+    for (n, t) in open.into_iter().enumerate() {
+        plan.resources[n % owners].sequence.push(t);
+    }
+    plan.update_all_shadows();
     let mut director = ScoreDirector::new(plan, define_constraints());
     director.calculate_score();
     let mut state = seed;
@@ -174,7 +240,13 @@ pub fn assert_incremental_matches_full(plan: Plan, steps: usize, seed: u64) {
         let swap = next(2) == 0 && from != to && target_len > 0;
         let other = next(target_len.max(1));
         let into = next(target_len + usize::from(from != to));
-        let incremental = director.do_change(0, from, |plan: &mut Plan| {
+        // Both owners change: the director refreshes each one's list.
+        director.before_variable_changed(0, from);
+        if to != from {
+            director.before_variable_changed(0, to);
+        }
+        {
+            let plan = director.working_solution_mut();
             if swap {
                 let a = plan.resources[from].sequence[at];
                 let b = plan.resources[to].sequence[other];
@@ -186,7 +258,40 @@ pub fn assert_incremental_matches_full(plan: Plan, steps: usize, seed: u64) {
                 let position = into.min(list.len());
                 list.insert(position, task);
             }
-        });
+        }
+        director.after_variable_changed(0, from);
+        if to != from {
+            director.after_variable_changed(0, to);
+        }
+        let incremental = director.calculate_score();
+        let slots: Vec<_> = director
+            .working_solution()
+            .tasks
+            .iter()
+            .map(|t| t.slot)
+            .collect();
+        let fresh = fresh_slots(director.working_solution());
+        if slots != fresh {
+            let plan = director.working_solution();
+            for (t, (a, b)) in slots.iter().zip(&fresh).enumerate() {
+                if a != b {
+                    let task = &plan.tasks[t];
+                    eprintln!(
+                        "task {t} lane {:?} prev {:?} deps {:?}\n  have {:?}\n  want {:?}",
+                        task.lane,
+                        task.previous,
+                        plan.facts.tasks[t]
+                            .deps
+                            .iter()
+                            .map(|d| d.task)
+                            .collect::<Vec<_>>(),
+                        a,
+                        b
+                    );
+                }
+            }
+            panic!("step {step}: a slot is stale (swap {swap}, from {from}, to {to})");
+        }
         let full = total(director.working_solution());
         assert_eq!(
             incremental, full,

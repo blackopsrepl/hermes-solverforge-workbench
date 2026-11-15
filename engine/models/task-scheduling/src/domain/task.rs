@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use solverforge::prelude::*;
 
+use crate::schedule::Slot;
 use crate::wire::{Dependency, DurationOn};
 
 /// A task to run on one machine or by one employee.
@@ -56,4 +57,30 @@ pub struct Task {
     /// The start a pinned task keeps, in minutes; set by `prepare` and `freeze`.
     #[serde(skip)]
     pub pinned_start: Option<i64>,
+    /// Frozen: the resource the task runs on, the frozen task before it
+    /// there and its rank among that resource's tasks.
+    #[serde(skip)]
+    pub frozen_on: Option<usize>,
+    #[serde(skip)]
+    pub frozen_previous: Option<usize>,
+    #[serde(skip)]
+    pub frozen_rank: usize,
+    /// The last frozen task of its resource.
+    #[serde(skip)]
+    pub frozen_last: bool,
+    /// What leaving the task in no list at all costs: its priority.
+    #[serde(skip)]
+    pub open_cost: i64,
+
+    /// The lane holding the task (list shadow).
+    #[serde(skip)]
+    pub lane: Option<usize>,
+    /// The task before and after it in that lane (list shadows).
+    #[serde(skip)]
+    pub previous: Option<usize>,
+    #[serde(skip)]
+    pub next: Option<usize>,
+    /// Where and when it runs (cascading list shadow).
+    #[serde(skip)]
+    pub slot: Option<Slot>,
 }

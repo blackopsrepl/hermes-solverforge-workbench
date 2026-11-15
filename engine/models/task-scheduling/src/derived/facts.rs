@@ -65,6 +65,8 @@ pub struct Facts {
     pub resources: Vec<ResourceFacts>,
     /// Index of the unscheduled queue among the plan's resources.
     pub queue: usize,
+    /// Index of the frozen lane among the plan's resources.
+    pub frozen: usize,
     /// By task: `(dependent task, index of the dependency in its list)`.
     pub dependents: Vec<Vec<(usize, usize)>>,
     pub task_types: usize,

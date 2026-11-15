@@ -1,6 +1,5 @@
 //! The seventeen rules: names, levels and whether they reward.
 
-use solverforge::HardMediumSoftScore;
 use solverforge_workbench_host::Level;
 
 /// One constraint of the model.
@@ -86,21 +85,6 @@ impl Rule {
 
     pub const fn index(self) -> usize {
         self as usize
-    }
-
-    /// The score of `amount` of this rule: a penalty, or for the preferred
-    /// hand-over a reward.
-    pub fn score(self, amount: i64) -> HardMediumSoftScore {
-        let signed = if self == Rule::PreferredHandOver {
-            amount
-        } else {
-            -amount
-        };
-        match self.level() {
-            Level::Hard => HardMediumSoftScore::of(signed, 0, 0),
-            Level::Medium => HardMediumSoftScore::of(0, signed, 0),
-            Level::Soft => HardMediumSoftScore::of(0, 0, signed),
-        }
     }
 }
 

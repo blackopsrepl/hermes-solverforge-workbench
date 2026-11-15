@@ -3,7 +3,7 @@
 use serde_json::{json, Value};
 
 use crate::domain::Plan;
-use crate::schedule::Timing;
+use crate::schedule::Schedule;
 use crate::time::format_date_time;
 
 /// The plan as JSON: each resource lists its tasks in processing order with
@@ -14,7 +14,7 @@ pub fn present(plan: &Plan) -> Value {
     if plan.facts.resources.is_empty() && plan.facts.tasks.is_empty() {
         return value;
     }
-    let timing = Timing::of(plan);
+    let timing = Schedule::of(plan);
     let mut resources = Vec::new();
     let json_resources = value
         .get_mut("resources")
@@ -22,7 +22,7 @@ pub fn present(plan: &Plan) -> Value {
         .map(std::mem::take)
         .unwrap_or_default();
     for (r, (mut json, resource)) in json_resources.into_iter().zip(&plan.resources).enumerate() {
-        if resource.unscheduled {
+        if !resource.is_resource() {
             continue;
         }
         let Some(order) = timing.order.get(r) else {

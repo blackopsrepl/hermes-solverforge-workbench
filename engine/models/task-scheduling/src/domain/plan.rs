@@ -5,12 +5,27 @@ use solverforge::prelude::*;
 
 use super::{Resource, Task};
 use crate::derived::Facts;
+use crate::schedule::Slot;
 use crate::wire::{Changeover, Parameters, ResourceTransition, TagDef, TypeDef};
 
 /// A task scheduling dataset and, once solved, its schedule.
+///
+/// Each resource runs an ordered list of tasks. A task's slot (where and
+/// when it runs, and what each rule costs for it) follows from the task
+/// before it on its resource and from the tasks it depends on, which other
+/// resources may run; SolverForge keeps every slot current as tasks move.
 #[planning_solution(
     constraints = "crate::constraints::define_constraints",
     solver_toml = "../../solver.toml"
+)]
+#[shadow_variable_updates(
+    list_owner = "resources",
+    inverse_field = "lane",
+    previous_field = "previous",
+    next_field = "next",
+    cascading_field = "slot",
+    cascading_compute = "compute_slot",
+    cascading_dependencies = "slot_dependencies"
 )]
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -31,12 +46,10 @@ pub struct Plan {
     pub parameters: Parameters,
     #[problem_fact_collection]
     pub tasks: Vec<Task>,
+    /// Machines and employees, then the unscheduled queue and the frozen
+    /// lane.
     #[planning_entity_collection]
     pub resources: Vec<Resource>,
-    /// The tasks the solver may place: every task that is not pinned.
-    #[planning_list_element_collection(owner = "resources")]
-    #[serde(skip)]
-    pub task_values: Vec<usize>,
     /// Facts derived from the dataset by `prepare`.
     #[serde(skip)]
     pub facts: Arc<Facts>,
@@ -48,3 +61,19 @@ pub struct Plan {
     pub score: Option<HardMediumSoftScore>,
 }
 
+impl Plan {
+    /// The slot of task `task`, from the task before it and the tasks it
+    /// depends on.
+    pub fn compute_slot(&self, task: usize) -> Option<Slot> {
+        crate::schedule::compute(self, task)
+    }
+
+    /// The tasks task `task` depends on.
+    pub fn slot_dependencies(&self, task: usize) -> impl Iterator<Item = usize> + '_ {
+        self.facts
+            .tasks
+            .get(task)
+            .into_iter()
+            .flat_map(|facts| facts.deps.iter().map(|dep| dep.task))
+    }
+}

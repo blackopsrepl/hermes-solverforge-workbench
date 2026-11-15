@@ -8,8 +8,8 @@ use solverforge_workbench_host::Model;
 use solverforge_workbench_task_scheduling::TaskScheduling;
 
 use crate::common::{
-    assert_incremental_matches_full, at, dataset, demo_plan, engine, evaluate, issue_codes,
-    machine, scores, task,
+    assert_construction_matches_full, assert_incremental_matches_full, at, dataset, demo_plan,
+    engine, evaluate, issue_codes, machine, scores, task,
 };
 
 #[test]
@@ -65,8 +65,14 @@ fn bad_records_are_refused_with_the_reason() {
 }
 
 #[test]
+fn construction_scores_match_full_ones_on_the_demo() {
+    assert_construction_matches_full(demo_plan("FACTORY"), 3);
+}
+
+#[test]
 fn incremental_scores_match_full_ones_on_the_demo() {
-    assert_incremental_matches_full(demo_plan("FACTORY"), 300, 11);
+    assert_incremental_matches_full(demo_plan("FACTORY"), 3000, 11);
+    assert_incremental_matches_full(demo_plan("FACTORY"), 3000, 5);
 }
 
 /// The factory demo with tasks crowded onto the first resources, so most

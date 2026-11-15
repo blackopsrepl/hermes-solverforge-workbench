@@ -7,7 +7,7 @@ use solverforge_workbench_host::view::{blame, Broken, Timeline, View, HARD_TONE,
 use solverforge_workbench_host::{Analysis, Level};
 
 use crate::domain::Plan;
-use crate::schedule::Timing;
+use crate::schedule::Schedule;
 use crate::time::{axis_labels, clock, duration_label, span_label, DAY};
 use crate::wire::ResourceKind;
 
@@ -55,7 +55,7 @@ pub fn view(plan: &Plan, analysis: &Analysis) -> Option<View> {
     if facts.resources.is_empty() {
         return None;
     }
-    let timing = Timing::of(plan);
+    let timing = Schedule::of(plan);
     let broken = blame(analysis);
     let none: Vec<Broken> = Vec::new();
     let broken_of = |type_name: &str, id: &str| {

@@ -1,11 +1,11 @@
 //! Assignments from the dataset placed on the resources: pinned tasks into
-//! each resource's frozen prefix, the rest into its planned sequence, and
-//! every unplaced task into the unscheduled queue.
+//! each resource's frozen prefix, the rest into its planned sequence; every
+//! unplaced task stays open.
 
 use solverforge_workbench_host::Issue;
 
 use super::facts::{time, Index};
-use crate::domain::{Plan, Resource};
+use crate::domain::Plan;
 
 /// What placing the dataset's assignments decided, per resource.
 pub struct Placed {
@@ -88,25 +88,5 @@ pub fn place(plan: &Plan, index: &Index, issues: &mut Vec<Issue>) -> Placed {
         sequence,
         queued,
         pinned_start,
-    }
-}
-
-/// The unscheduled queue resource, empty.
-pub fn queue(index: usize) -> Resource {
-    Resource {
-        index,
-        id: String::new(),
-        name: Some("Unscheduled".to_string()),
-        kind: Default::default(),
-        start: String::new(),
-        machine_type: None,
-        initial_task_type: None,
-        tags: Vec::new(),
-        unavailable: Vec::new(),
-        freeze_tasks_until: None,
-        tasks: Vec::new(),
-        frozen: Vec::new(),
-        sequence: Vec::new(),
-        unscheduled: true,
     }
 }

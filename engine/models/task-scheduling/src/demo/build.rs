@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use crate::derived::Facts;
-use crate::domain::{Plan, Resource, Task};
+use crate::domain::{Lane, Plan, Resource, Task};
 use crate::time::{format_date_time, parse_date_time, DAY};
 use crate::wire::{
     Anchor, Assignment, Changeover, Dependency, DurationOn, Parameters, ResourceKind,
@@ -51,6 +51,15 @@ pub fn task(id: &str, name: &str, minutes: i64) -> Task {
         no_interruptions: None,
         pinned: false,
         pinned_start: None,
+        frozen_on: None,
+        frozen_previous: None,
+        frozen_rank: 0,
+        frozen_last: false,
+        open_cost: 0,
+        lane: None,
+        previous: None,
+        next: None,
+        slot: None,
     }
 }
 
@@ -72,7 +81,6 @@ impl Builder {
                 parameters: Parameters::default(),
                 tasks: Vec::new(),
                 resources: Vec::new(),
-                task_values: Vec::new(),
                 facts: Arc::new(Facts::default()),
                 weights: Default::default(),
                 score: None,
@@ -140,7 +148,8 @@ impl Builder {
             tasks: Vec::new(),
             frozen: Vec::new(),
             sequence: Vec::new(),
-            unscheduled: false,
+            lane: Lane::Resource,
+            pinned: false,
         });
         self.plan.resources.last_mut().expect("just pushed")
     }
