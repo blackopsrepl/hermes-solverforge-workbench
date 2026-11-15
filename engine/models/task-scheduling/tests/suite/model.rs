@@ -235,3 +235,20 @@ fn the_broken_link_penalty_parameter_sets_the_cost_of_a_broken_link() {
         ["defaultPriority", "interruptible", "brokenLinkPenalty"]
     );
 }
+
+#[test]
+fn fill_offers_only_the_resources_a_task_may_run_on() {
+    let plan = dataset(json!({
+        "tasks": [task("A", 30, json!({"requiredResources": ["M2"]}))],
+        "resources": [machine("M1", &[], json!({})), machine("M2", &[], json!({}))],
+    }));
+    let (code, answer) = engine(json!({"command": "fill", "plan": plan, "fill": {"top": 10}}));
+    assert_eq!(code, 0, "{answer}");
+    let ids: Vec<&str> = answer["items"][0]["options"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|o| o["id"].as_str().unwrap())
+        .collect();
+    assert_eq!(ids, ["M2@0"]);
+}

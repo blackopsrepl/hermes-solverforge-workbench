@@ -60,11 +60,18 @@ fn put(
     })
 }
 
-/// Every place for task `t`, with its name.
+/// Every place for task `t` on a resource it may run on, with its name.
 fn places(plan: &Plan, t: usize) -> Vec<(Place, EntityName)> {
+    let allowed = plan
+        .facts
+        .tasks
+        .get(t)
+        .and_then(|task| task.allowed.as_ref());
     let mut out = Vec::new();
     for (resource, r) in plan.resources.iter().enumerate() {
-        if r.unscheduled {
+        if r.unscheduled
+            || allowed.is_some_and(|allowed| !allowed.get(resource).copied().unwrap_or(false))
+        {
             continue;
         }
         let others: Vec<usize> = r.sequence.iter().copied().filter(|&x| x != t).collect();
