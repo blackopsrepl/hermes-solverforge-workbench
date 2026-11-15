@@ -1,13 +1,16 @@
 //! Helpers shared by the model's integration tests.
 
 use std::collections::HashMap;
+use std::io::{self, Write};
+use std::sync::{Arc, Mutex};
 
 use serde_json::{json, Value};
 use solverforge::{ConstraintSet, HardMediumSoftScore, ScoreDirector};
 use solverforge_workbench_employee_scheduling::constraints::define_constraints;
 use solverforge_workbench_employee_scheduling::prepare::prepare;
+use solverforge_workbench_employee_scheduling::EmployeeScheduling;
 use solverforge_workbench_employee_scheduling::Plan;
-use solverforge_workbench_host::Severity;
+use solverforge_workbench_host::{entry, run_io, Severity};
 
 pub type Score = HardMediumSoftScore;
 
@@ -151,4 +154,37 @@ pub fn assert_incremental_matches_full(plan: Plan, steps: usize, seed: u64) {
             "step {step}: shift {shift} -> {value:?} scored {incremental} incrementally, {full} in full"
         );
     }
+}
+
+#[derive(Clone, Default)]
+struct Sink(Arc<Mutex<Vec<u8>>>);
+
+impl Write for Sink {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.0.lock().unwrap().extend_from_slice(buf);
+        Ok(buf.len())
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+/// Sends one request through the engine; returns its exit code and last event.
+pub fn engine(body: Value) -> (i32, Value) {
+    let sink = Sink::default();
+    let code = run_io(
+        "test",
+        &[entry::<EmployeeScheduling>()],
+        false,
+        io::Cursor::new(format!("{body}\n").into_bytes()),
+        Box::new(sink.clone()),
+    );
+    let bytes = sink.0.lock().unwrap().clone();
+    let last = String::from_utf8(bytes)
+        .unwrap()
+        .lines()
+        .filter_map(|line| serde_json::from_str::<Value>(line).ok())
+        .next_back()
+        .expect("the engine answered");
+    (code, last)
 }

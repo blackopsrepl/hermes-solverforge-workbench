@@ -7,12 +7,14 @@ pub mod demo;
 pub mod derived;
 pub mod domain;
 pub mod eval;
+mod freeze;
 mod kpis;
 mod model;
 mod names;
 pub mod prepare;
 mod present;
 pub mod time;
+mod view;
 pub mod wire;
 
 pub use domain::{Employee, Plan, Shift};

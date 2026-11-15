@@ -1,7 +1,10 @@
 //! The employee scheduling model as a workbench model.
 
 use solverforge::{ConstraintSet, ConstraintWeights, HardMediumSoftScore, SolverManager};
-use solverforge_workbench_host::{ConstraintInfo, EntityName, Issue, Kpi, Model};
+use solverforge_workbench_host::view::View;
+use solverforge_workbench_host::{
+    Analysis, ConstraintInfo, EngineError, EntityName, Issue, Kpi, Model,
+};
 
 use crate::domain::Plan;
 
@@ -51,5 +54,14 @@ impl Model for EmployeeScheduling {
     }
     fn name_entity(plan: &Plan, type_name: &str, planning_id: &str) -> Option<EntityName> {
         crate::names::name_entity(plan, type_name, planning_id)
+    }
+    fn view_kind() -> Option<&'static str> {
+        Some("timeline")
+    }
+    fn view(plan: &Plan, analysis: &Analysis) -> Option<View> {
+        crate::view::view(plan, analysis)
+    }
+    fn freeze(plan: &mut Plan, until: &str) -> Result<usize, EngineError> {
+        crate::freeze::freeze(plan, until)
     }
 }

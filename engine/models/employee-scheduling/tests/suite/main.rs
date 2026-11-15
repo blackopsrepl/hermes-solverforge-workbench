@@ -9,6 +9,7 @@ mod fit;
 mod kpis;
 mod model;
 mod patterns;
+mod replan;
 mod time_off;
 mod together;
 mod variety;
