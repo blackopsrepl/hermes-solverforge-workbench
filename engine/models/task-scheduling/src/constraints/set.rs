@@ -1,10 +1,11 @@
 //! The constraint set: seventeen named constraints over one shared timing.
 //!
-//! The director retracts and inserts resources around every change. The set
-//! defers retractions and, on each insert, re-times the plan and returns the
-//! change of every rule's total since the last insert. Deltas telescope, so
-//! the score stays exact whatever order the director notifies resources in,
-//! including moves that touch two resources.
+//! The director retracts and inserts resources around every change. A
+//! retraction marks the timing stale; the first insert after it re-times the
+//! plan and returns the change of every rule's total since the last re-time.
+//! A move touching two resources retracts both before inserting either, so
+//! it re-times once; deltas telescope, so the score stays exact whatever
+//! order the director notifies resources in.
 
 use solverforge::analysis::{
     ConstraintAnalysis, ConstraintJustification, DetailedConstraintMatch, EntityRef,
@@ -33,6 +34,8 @@ pub struct TaskConstraints {
 struct State {
     timing: Timing,
     totals: [i64; 17],
+    /// A resource was retracted since the last re-time.
+    stale: bool,
 }
 
 /// Sums amounts per rule.
@@ -180,6 +183,7 @@ impl TaskConstraints {
         self.state = Some(State {
             timing,
             totals: totals.amounts,
+            stale: false,
         });
         score
     }
@@ -188,9 +192,10 @@ impl TaskConstraints {
         if descriptor != RESOURCES {
             return Score::ZERO;
         }
-        let Some(state) = self.state.as_mut() else {
+        let Some(state) = self.state.as_mut().filter(|state| state.stale) else {
             return Score::ZERO;
         };
+        state.stale = false;
         state.timing.compute(plan);
         let mut totals = Totals::default();
         evaluate(plan, &state.timing, &mut totals);
@@ -200,6 +205,17 @@ impl TaskConstraints {
         }
         state.totals = totals.amounts;
         Self::sum(&delta, multipliers)
+    }
+}
+
+impl TaskConstraints {
+    fn retract(&mut self, descriptor: usize) -> Score {
+        if descriptor == RESOURCES {
+            if let Some(state) = self.state.as_mut() {
+                state.stale = true;
+            }
+        }
+        Score::ZERO
     }
 }
 
@@ -240,8 +256,8 @@ impl ConstraintSet<Plan, Score> for TaskConstraints {
         self.insert(plan, descriptor, None)
     }
 
-    fn on_retract_all(&mut self, _plan: &Plan, _entity: usize, _descriptor: usize) -> Score {
-        Score::ZERO
+    fn on_retract_all(&mut self, _plan: &Plan, _entity: usize, descriptor: usize) -> Score {
+        self.retract(descriptor)
     }
 
     fn reset_all(&mut self) {
@@ -290,9 +306,9 @@ impl ConstraintSet<Plan, Score> for TaskConstraints {
         &mut self,
         _plan: &Plan,
         _entity: usize,
-        _descriptor: usize,
+        descriptor: usize,
         _multipliers: &[u32],
     ) -> Score {
-        Score::ZERO
+        self.retract(descriptor)
     }
 }
