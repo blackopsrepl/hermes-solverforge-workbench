@@ -280,8 +280,9 @@ def test_an_experiment_solves_every_dataset_under_every_profile_and_ranks_the_pr
     # Weight 0 switches the soft rule off: that profile cannot tell the first nurse from the others,
     # and only the judge (Standard) sees the difference.
     wb.save_profile(model_id="toy", name="Blind", settings={"weights": {"Shift for the first nurse": 0}})
+    # Each solve stops at the best score its own profile can reach, so a busy machine cannot cut one short.
     experiment = wb.create_experiment(datasets=[first["id"], second["id"]], profiles=["Standard", "Blind"],
-                                      repeats=2, overrides={"solve": {"seconds": 1}})
+                                      repeats=2, overrides={"solve": {"seconds": 30, "best_score": "0hard/0soft"}})
     assert experiment["judge_name"] == "Standard"
     assert sum(experiment["statuses"].values()) == 8
     deadline = time.monotonic() + 120
