@@ -1,0 +1,15 @@
+[package]
+name = "solverforge-workbench-fleet-readiness"
+version = "0.1.0"
+description = "Fleet maintenance and readiness planning stock model for the SolverForge Workbench engine"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+solverforge-workbench-host = { path = "../../host" }
+solverforge.workspace = true
+serde.workspace = true
+serde_json.workspace = true
