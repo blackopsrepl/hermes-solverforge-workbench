@@ -35,6 +35,14 @@ provides_tools:
   - solverforge_workbench_runs
   - solverforge_workbench_cancel
   - solverforge_workbench_explain
+  - solverforge_workbench_fill
+  - solverforge_workbench_fill_apply
+  - solverforge_workbench_experiment_create
+  - solverforge_workbench_experiment
+  - solverforge_workbench_experiments
+  - solverforge_workbench_experiment_cancel
+  - solverforge_workbench_experiment_delete
+  - solverforge_workbench_trends
   - solverforge_workbench_compare
   - solverforge_workbench_export
 provides_hooks:

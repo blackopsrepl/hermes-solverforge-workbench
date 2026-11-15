@@ -8,9 +8,11 @@ SETTINGS = {
     "type": "object",
     "description": (
         "Settings in three sections. weights: constraint name -> whole-number multiplier (1 = as designed, "
-        "0 = off, 10 = ten times as important). params: model parameters. solve: seconds (time limit), "
-        "unimproved_seconds (stop after this long without improvement), step_count, unimproved_step_count, "
-        "best_score (stop on reaching this score)."
+        "0 = off, 10 = ten times as important). params: model parameters by name, as the model lists them "
+        "(solverforge_workbench_model). solve: seconds (time limit), unimproved_seconds (stop after this long "
+        "without improvement), step_count, unimproved_step_count, best_score (stop on reaching this score), "
+        "freeze_before (a local date-time YYYY-MM-DDTHH:MM: everything that starts before it keeps its "
+        "current assignment, for replanning a schedule already under way)."
     ),
     "properties": {
         "weights": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
@@ -23,6 +25,7 @@ SETTINGS = {
                 "step_count": {"type": "integer", "minimum": 1},
                 "unimproved_step_count": {"type": "integer", "minimum": 1},
                 "best_score": {"type": "string"},
+                "freeze_before": {"type": "string", "description": "YYYY-MM-DDTHH:MM"},
             },
         },
     },
@@ -46,7 +49,7 @@ SCHEMAS: list[dict[str, Any]] = [
           "by level, demo datasets and how many datasets each has."),
     _tool("solverforge_workbench_model",
           "One model in full: every constraint with its group, level (hard/medium/soft) and description, "
-          "the demo datasets, and the model's settings profiles.",
+          "its parameters and KPIs, the demo datasets, the kind of plan view it draws, and its settings profiles.",
           {"model": {"type": "string", "description": "Model id, e.g. employee-scheduling"}}, ["model"]),
     _tool("solverforge_workbench_dataset_create",
           "Create a dataset (a planning problem) for a model from exactly one source: a demo id, an inline "
@@ -134,6 +137,51 @@ SCHEMAS: list[dict[str, Any]] = [
           "that costs or earns score.",
           {"run": {"type": "string"}, "constraint": {"type": "string"}, "entity": {"type": "string"},
            "limit": {"type": "integer", "minimum": 1, "maximum": 200}}, ["run"]),
+    _tool("solverforge_workbench_fill",
+          "The best places for open items of a plan (an unassigned shift's employee, an unplanned visit's "
+          "vehicle and position, a lesson's slot...), ranked by the score each reaches, each with the "
+          "constraints it changes. Give exactly one of run (its solved plan) or dataset (its input). items "
+          "lists item ids; omit it for every open item. Nothing changes until solverforge_workbench_fill_apply.",
+          {"run": {"type": "string"}, "dataset": {"type": "string"},
+           "items": {"type": "array", "items": {"type": "string"}},
+           "top": {"type": "integer", "minimum": 1, "maximum": 50, "description": "Options per item; default 5"},
+           "profile": {"type": "string", "description": "Profile whose weights and parameters score the options"}}),
+    _tool("solverforge_workbench_fill_apply",
+          "Apply one fill option: a new dataset with the item placed (its parent is the dataset the plan came "
+          "from). item and value are the ids solverforge_workbench_fill returned.",
+          {"run": {"type": "string"}, "dataset": {"type": "string"}, "item": {"type": "string"},
+           "value": {"type": "string"}, "name": {"type": "string"}, "profile": {"type": "string"}},
+          ["item", "value"]),
+    _tool("solverforge_workbench_experiment_create",
+          "Queue an experiment: every dataset solved under every profile, repeats times each, to find the "
+          "best settings. Datasets must share one model. Follow it with solverforge_workbench_experiment.",
+          {"datasets": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+           "profiles": {"type": "array", "items": {"type": "string"}, "minItems": 1,
+                        "description": "Profile ids or names"},
+           "repeats": {"type": "integer", "minimum": 1, "maximum": 20},
+           "name": {"type": "string"},
+           "overrides": {**SETTINGS, "description": "Settings applied to every solve on top of each profile, "
+                                                    "e.g. the same time limit. " + SETTINGS["description"]},
+           "priority": {"type": "integer", "minimum": 0, "maximum": 10},
+           "judge": {"type": "string", "description": "Profile every plan is scored under for the ranking, "
+                                                       "since profiles weigh constraints differently; "
+                                                       "default Standard"}},
+          ["datasets", "profiles"]),
+    _tool("solverforge_workbench_experiment",
+          "One experiment: progress, every dataset x profile cell (best, median and worst score under the "
+          "judge profile, feasible solves, mean solve time, mean KPIs) and the profiles ranked: most feasible "
+          "solves first, then the best average place across datasets.",
+          {"experiment": {"type": "string"}}, ["experiment"]),
+    _tool("solverforge_workbench_experiments", "List experiments, newest first, with their progress.",
+          {"model": {"type": "string"}}),
+    _tool("solverforge_workbench_experiment_cancel", "Stop an experiment's queued and running solves.",
+          {"experiment": {"type": "string"}}, ["experiment"]),
+    _tool("solverforge_workbench_experiment_delete", "Delete an experiment and its runs. Asks the user first.",
+          {"experiment": {"type": "string"}}, ["experiment"]),
+    _tool("solverforge_workbench_trends",
+          "A model's finished solves over time: each solve's score, feasibility and KPIs, and every KPI as a "
+          "time series, to see how plans change across datasets and weeks.",
+          {"model": {"type": "string"}}, ["model"]),
     _tool("solverforge_workbench_compare",
           "Compare two or more runs side by side: scores, per-constraint scores, KPIs, profile and solve time.",
           {"runs": {"type": "array", "items": {"type": "string"}, "minItems": 2}}, ["runs"]),

@@ -10,19 +10,24 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import statistics
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Callable
 
-from . import views
 from .engine_bin import ENGINE_VERSION, EngineError, StockEngine, call, engine_env
 from .patching import PatchError, apply_patch
 from .store import Store, new_id
 
 MAX_DATASET_BYTES = 200 * 1024 * 1024
 SECTIONS = ("weights", "params", "solve")
-SOLVE_KEYS = ("seconds", "unimproved_seconds", "step_count", "unimproved_step_count", "best_score")
+SOLVE_KEYS = ("seconds", "unimproved_seconds", "step_count", "unimproved_step_count", "best_score",
+              "freeze_before")
+LOCAL_DATE_TIME = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$")
+MAX_EXPERIMENT_RUNS = 200
+SCORE_PART = re.compile(r"(-?\d+(?:\.\d+)?)([a-z]*)", re.IGNORECASE)
 # Settings every model starts from, kept in its read-only Standard profile.
 STANDARD_SOLVE = {"seconds": 60, "unimproved_seconds": 20}
 MAX_WEIGHT = 1_000_000
@@ -72,6 +77,10 @@ def check_settings(settings: dict[str, Any] | None) -> dict[str, Any]:
         if key == "best_score":
             if value is not None and not isinstance(value, str):
                 raise WorkbenchError("invalid_settings", "best_score is a score such as 0hard/0soft")
+        elif key == "freeze_before":
+            if value is not None and not (isinstance(value, str) and LOCAL_DATE_TIME.match(value)):
+                raise WorkbenchError("invalid_settings",
+                                     "freeze_before is a local date-time such as 2027-03-03T06:00")
         elif value is not None and (not isinstance(value, int) or isinstance(value, bool) or value <= 0):
             raise WorkbenchError("invalid_settings", f"{key} must be a positive whole number")
     return {"weights": weights, "params": params, "solve": solve}
@@ -154,7 +163,7 @@ class Workbench:
             constraints = description.get("constraints", [])
             out.append({
                 "id": model["id"], "kind": model["kind"], "name": model["name"], "version": model["version"],
-                "constraints": len(constraints),
+                "view": description.get("view"), "constraints": len(constraints),
                 "levels": {level: sum(1 for c in constraints if c.get("level") == level)
                            for level in ("hard", "medium", "soft")},
                 "demos": description.get("demos", []), "weights": description.get("weights", False),
@@ -169,10 +178,12 @@ class Workbench:
         return {"id": model["id"], "kind": model["kind"], "name": model["name"], "version": model["version"],
                 "source": model.get("source"), "demos": description.get("demos", []),
                 "weights": description.get("weights", False),
+                "parameters": description.get("parameters", []),
+                "kpis": description.get("kpis", []),
+                "view": description.get("view"),
                 "constraints": description.get("constraints", []),
                 "profiles": [self.profile_view(p) for p in self.store.profiles(model_id)],
-                "default_profile": (self.profile_record(model_id, None) or {}).get("id"),
-                "schedule_view": views.has_view(model_id)}
+                "default_profile": (self.profile_record(model_id, None) or {}).get("id")}
 
     # ---- datasets -----------------------------------------------------------
 
@@ -299,6 +310,7 @@ class Workbench:
         base = self.profile_record(model_id, copy_from) if copy_from else None
         merged = check_settings(_merge(base, settings) if base else settings)
         self._check_weight_names(model_id, merged["weights"])
+        self._check_params(model_id, merged["params"])
         if profile_id is None and self.store.profile_named(model_id, name):
             raise WorkbenchError("name_taken", f"model {model_id} already has a profile named {name!r}")
         if profile_id is None and len(self.store.profiles(model_id)) >= 50:
@@ -326,6 +338,26 @@ class Workbench:
         if unknown:
             raise WorkbenchError("unknown_constraint", f"model {model_id} has no constraint named {unknown[0]!r}",
                                  unknown=unknown, known=sorted(known))
+
+    def _check_params(self, model_id: str, params: dict[str, Any]) -> None:
+        """Every parameter must be one the model lists, with a value of its kind."""
+        listed = {p["name"]: p for p in self.model_record(model_id)["manifest"].get("parameters", [])}
+        unknown = sorted(set(params) - set(listed))
+        if unknown:
+            raise WorkbenchError("unknown_parameter", f"model {model_id} has no parameter named {unknown[0]!r}",
+                                 unknown=unknown, known=sorted(listed))
+        for name, value in params.items():
+            kind = listed[name].get("kind")
+            fits = {
+                "integer": isinstance(value, int) and not isinstance(value, bool),
+                "duration": isinstance(value, int) and not isinstance(value, bool),
+                "number": isinstance(value, (int, float)) and not isinstance(value, bool),
+                "boolean": isinstance(value, bool),
+                "string": isinstance(value, str),
+            }.get(kind, True)
+            if not fits:
+                raise WorkbenchError("invalid_parameter", f"parameter {name!r} of {model_id} is a {kind}",
+                                     parameter=name, kind=kind)
 
     def set_default_profile(self, model_id: str, ref: str) -> dict[str, Any]:
         profile = self.profile_record(model_id, ref)
@@ -380,22 +412,29 @@ class Workbench:
         profile = self.profile_record(model_id, profile_ref)
         settings = self.effective_settings(dataset, profile, check_settings(overrides))
         self._check_weight_names(model_id, settings["weights"])
+        self._check_params(model_id, settings["params"])
         config = {**settings, "engine": str(self.engine_for(model_id))}
         return dataset, profile, config
+
+    def _request(self, command: str, model_id: str, plan: dict[str, Any], config: dict[str, Any],
+                 **extra: Any) -> dict[str, Any]:
+        """One engine request for ``plan`` under the effective settings ``config``."""
+        return {"command": command, "model": model_id, "plan": with_params(plan, config.get("params")),
+                "weights": config.get("weights", {}),
+                **({"freeze_before": config["solve"]["freeze_before"]}
+                   if (config.get("solve") or {}).get("freeze_before") else {}),
+                **extra}
 
     def evaluate(self, dataset_id: str, profile: str | None = None, overrides: dict | None = None,
                  plan: dict | None = None) -> dict[str, Any]:
         """Scores the dataset's plan as it stands (or ``plan``, e.g. a run's), without solving it."""
         dataset, profile_row, config = self._prepare_run(dataset_id, profile, overrides)
         body = plan if plan is not None else dataset["plan"]
-        if config["params"]:
-            body = {**body, "parameters": {**(body.get("parameters") or {}), **config["params"]}}
         run = self.store.add_run(dataset_id=dataset_id, model_id=dataset["model_id"], kind="evaluate",
                                  profile_id=profile_row["id"] if profile_row else None, overrides=overrides or {},
                                  config=config, priority=5, status="solving")
         try:
-            answer = self._call(dataset["model_id"], {"command": "evaluate", "model": dataset["model_id"],
-                                                      "plan": body, "weights": config["weights"]})
+            answer = self._call(dataset["model_id"], self._request("evaluate", dataset["model_id"], body, config))
         except WorkbenchError as exc:
             status = "invalid" if exc.code in ("invalid_dataset", "invalid_plan") else "failed"
             self.store.update_run(run["id"], status=status, finished_at=_now(),
@@ -404,20 +443,22 @@ class Workbench:
             raise
         self.store.update_run(run["id"], status="completed", score=answer["score"],
                               initial_score=answer["score"], feasible=int(bool(answer.get("feasible"))),
-                              plan=body, analysis=answer.get("analysis"), kpis=answer.get("kpis"),
+                              plan=with_params(body, config["params"]), analysis=answer.get("analysis"),
+                              kpis=answer.get("kpis"),
                               issues=answer.get("issues"), finished_at=_now())
         self.changed("run", id=run["id"])
         return self.run(run["id"])
 
     def solve(self, dataset_id: str, profile: str | None = None, overrides: dict | None = None,
-              priority: int = 5) -> dict[str, Any]:
+              priority: int = 5, experiment_id: str | None = None, kick: bool = True) -> dict[str, Any]:
         if not isinstance(priority, int) or not 0 <= priority <= 10:
             raise WorkbenchError("invalid_priority", "priority is a whole number from 0 (last) to 10 (first)")
         dataset, profile_row, config = self._prepare_run(dataset_id, profile, overrides)
         run = self.store.add_run(dataset_id=dataset_id, model_id=dataset["model_id"], kind="solve",
                                  profile_id=profile_row["id"] if profile_row else None, overrides=overrides or {},
-                                 config=config, priority=priority, status="queued")
-        self.kick()
+                                 config=config, priority=priority, status="queued", experiment_id=experiment_id)
+        if kick:
+            self.kick()
         self.changed("run", id=run["id"])
         return self.run_brief(self.store.run(run["id"], with_plan=False))  # type: ignore[arg-type]
 
@@ -455,7 +496,7 @@ class Workbench:
 
     def run_brief(self, run: dict[str, Any]) -> dict[str, Any]:
         return {key: run.get(key) for key in ("id", "dataset_id", "model_id", "kind", "status", "priority",
-                                              "profile_id", "initial_score", "score", "feasible",
+                                              "profile_id", "experiment_id", "initial_score", "score", "feasible",
                                               "created_at", "started_at", "finished_at", "error")}
 
     def run(self, run_id: str, with_plan: bool = False, max_matches: int = 3) -> dict[str, Any]:
@@ -470,24 +511,69 @@ class Workbench:
             view["plan"] = run.get("plan")
         return view
 
-    def schedule(self, run_id: str | None = None, dataset_id: str | None = None) -> dict[str, Any]:
-        """The schedule view of a run's plan (with its broken rules marked) or of a dataset's input."""
+    def _source(self, run_id: str | None, dataset_id: str | None) -> tuple[dict[str, Any], dict[str, Any], str]:
+        """(dataset, plan, what) of a run's plan or a dataset's input; exactly one is given."""
         if bool(run_id) == bool(dataset_id):
             raise WorkbenchError("one_source", "give exactly one of run or dataset")
         if run_id:
             run = self.run_record(run_id)
-            model_id, plan, analysis = run["model_id"], run.get("plan"), run.get("analysis")
-        else:
-            dataset = self.dataset_record(dataset_id or "")
-            model_id, plan, analysis = dataset["model_id"], dataset["plan"], None
-        if not views.has_view(model_id):
-            raise WorkbenchError("no_view", f"model {model_id} has no schedule view")
-        if not isinstance(plan, dict):
-            raise WorkbenchError("no_plan", f"run {run_id} has no plan yet")
-        try:
-            return views.timeline(model_id, plan, analysis)
-        except views.ViewError as exc:
-            raise WorkbenchError("invalid_plan", str(exc)) from exc
+            if not isinstance(run.get("plan"), dict):
+                raise WorkbenchError("no_plan", f"run {run_id} has no plan yet")
+            return self.dataset_record(run["dataset_id"]), run["plan"], f"run {run_id}"
+        dataset = self.dataset_record(dataset_id or "")
+        return dataset, dataset["plan"], f"dataset {dataset_id}"
+
+    def view(self, run_id: str | None = None, dataset_id: str | None = None) -> dict[str, Any]:
+        """The plan drawn by its model (a timeline, or routes on a map), broken rules marked.
+
+        A run's plan is drawn under the settings it was solved with; a dataset's
+        input under its model's defaults and the dataset's own settings.
+        """
+        dataset, plan, _ = self._source(run_id, dataset_id)
+        model_id = dataset["model_id"]
+        if not self.model_record(model_id)["manifest"].get("view"):
+            raise WorkbenchError("no_view", f"model {model_id} has no plan view")
+        config = self.run_record(run_id)["config"] if run_id else self.effective_settings(dataset, None, None)
+        # The stored plan of a run already carries its parameters; a frozen solve's pins are in the plan.
+        config = {**config, "solve": {k: v for k, v in (config.get("solve") or {}).items() if k != "freeze_before"}}
+        return self._call(model_id, self._request("view", model_id, plan, config))["view"]
+
+    def fill(self, run_id: str | None = None, dataset_id: str | None = None, items: list[str] | None = None,
+             top: int = 5, profile: str | None = None) -> dict[str, Any]:
+        """The best places for open items of a plan, ranked by the score each reaches, with the
+        constraints each placement changes."""
+        if not isinstance(top, int) or isinstance(top, bool) or not 1 <= top <= 50:
+            raise WorkbenchError("invalid_top", "top is a whole number from 1 to 50")
+        if items is not None and not (isinstance(items, list) and all(isinstance(i, str) for i in items)):
+            raise WorkbenchError("invalid_items", "items is a list of item ids")
+        dataset, plan, what = self._source(run_id, dataset_id)
+        config = self._fill_config(dataset, profile)
+        answer = self._call(dataset["model_id"], self._request(
+            "fill", dataset["model_id"], plan, config, fill={"items": items or [], "top": top}))
+        return {"source": what, "dataset_id": dataset["id"], "run_id": run_id, "items": answer["items"],
+                "issues": answer.get("issues", [])}
+
+    def fill_apply(self, item: str, value: str, run_id: str | None = None, dataset_id: str | None = None,
+                   name: str = "", profile: str | None = None) -> dict[str, Any]:
+        """A new dataset: the plan with one fill option applied, its parent the dataset it came from."""
+        if not (isinstance(item, str) and item and isinstance(value, str) and value):
+            raise WorkbenchError("invalid_choice", "give the item id and the value id of a fill option")
+        dataset, plan, _ = self._source(run_id, dataset_id)
+        config = self._fill_config(dataset, profile)
+        answer = self._call(dataset["model_id"], self._request(
+            "fill", dataset["model_id"], plan, config, fill={"apply": {"item": item, "value": value}}))
+        child = self.store.add_dataset(
+            model_id=dataset["model_id"], name=name or f"{dataset['name']} (filled)", plan=answer["plan"],
+            origin="fill", tags=dataset["tags"], parent_id=dataset["id"], config=dataset["config"],
+            patch=[{"op": "fill", "item": item, "value": value, **({"from_run": run_id} if run_id else {})}])
+        self.changed("dataset", id=child["id"])
+        return self.dataset_view(child)
+
+    def _fill_config(self, dataset: dict[str, Any], profile: str | None) -> dict[str, Any]:
+        settings = self.effective_settings(dataset, self.profile_record(dataset["model_id"], profile), None)
+        self._check_weight_names(dataset["model_id"], settings["weights"])
+        self._check_params(dataset["model_id"], settings["params"])
+        return settings
 
     def runs(self, dataset_id: str | None = None, model_id: str | None = None,
              status: str | None = None) -> list[dict[str, Any]]:
@@ -562,6 +648,179 @@ class Workbench:
                               if k["id"] == kpi_id), "")} for kpi_id in kpi_ids],
         }
 
+    # ---- experiments ----------------------------------------------------------
+
+    def create_experiment(self, *, datasets: list[str], profiles: list[str], repeats: int = 1, name: str = "",
+                          overrides: dict | None = None, priority: int = 3,
+                          judge: str | None = None) -> dict[str, Any]:
+        """Solves every dataset under every profile, ``repeats`` times each, to rank the profiles.
+
+        Profiles weigh constraints differently, so their own scores do not compare: every plan
+        is scored again under one judge profile (the model's Standard profile unless named).
+        """
+        if not isinstance(datasets, list) or not datasets or not all(isinstance(d, str) for d in datasets):
+            raise WorkbenchError("invalid_datasets", "datasets is a non-empty list of dataset ids")
+        if not isinstance(profiles, list) or not profiles or not all(isinstance(p, str) for p in profiles):
+            raise WorkbenchError("invalid_profiles", "profiles is a non-empty list of profile ids or names")
+        if not isinstance(repeats, int) or isinstance(repeats, bool) or not 1 <= repeats <= 20:
+            raise WorkbenchError("invalid_repeats", "repeats is a whole number from 1 to 20")
+        rows = [self.dataset_record(d) for d in dict.fromkeys(datasets)]
+        models = {row["model_id"] for row in rows}
+        if len(models) != 1:
+            raise WorkbenchError("mixed_models", "an experiment's datasets all belong to one model",
+                                 models=sorted(models))
+        model_id = models.pop()
+        chosen = []
+        for ref in dict.fromkeys(profiles):
+            profile = self.profile_record(model_id, ref)
+            assert profile is not None
+            if profile["id"] not in chosen:
+                chosen.append(profile["id"])
+        self.ensure_standard_profile(model_id)
+        judge_row = self.profile_record(model_id, judge or f"{model_id}-standard")
+        assert judge_row is not None
+        total = len(rows) * len(chosen) * repeats
+        if total > MAX_EXPERIMENT_RUNS:
+            raise WorkbenchError("too_many_runs", f"the experiment would queue {total} solves; at most "
+                                                  f"{MAX_EXPERIMENT_RUNS}", runs=total)
+        overrides = check_settings(overrides)
+        for dataset in rows:  # refuse before queuing anything
+            for profile_id in chosen:
+                self._prepare_run(dataset["id"], profile_id, overrides)
+        experiment = self.store.add_experiment(
+            model_id=model_id, name=name or f"Experiment {len(self.store.experiments(model_id)) + 1}",
+            datasets=[row["id"] for row in rows], profiles=chosen, judge=judge_row["id"], repeats=repeats,
+            overrides=overrides)
+        for _ in range(repeats):
+            for dataset in rows:
+                for profile_id in chosen:
+                    self.solve(dataset["id"], profile_id, overrides, priority, experiment_id=experiment["id"],
+                               kick=False)
+        self.kick()
+        self.changed("experiment", id=experiment["id"])
+        return self.experiment(experiment["id"])
+
+    def experiment_record(self, experiment_id: str) -> dict[str, Any]:
+        experiment = self.store.experiment(experiment_id)
+        if experiment is None:
+            raise WorkbenchError("unknown_experiment", f"no experiment has id {experiment_id!r}")
+        return experiment
+
+    def experiment(self, experiment_id: str) -> dict[str, Any]:
+        """Every dataset × profile cell with its runs, and the profiles ranked: most feasible
+        solves first, then the best average place across datasets, then the best median score."""
+        self.reap()
+        experiment = self.experiment_record(experiment_id)
+        self._judge(experiment)
+        runs = self.store.runs(experiment_id=experiment_id, limit=None)
+        names = {d: (self.store.dataset(d) or {}).get("name", d) for d in experiment["datasets"]}
+        profile_names = {p: (self.store.profile(p) or {}).get("name", p) for p in experiment["profiles"]}
+        cells = []
+        for dataset_id in experiment["datasets"]:
+            for profile_id in experiment["profiles"]:
+                mine = [r for r in runs if r["dataset_id"] == dataset_id and r["profile_id"] == profile_id]
+                cells.append(_cell(dataset_id, profile_id, mine))
+        # Each dataset ranks the profiles by their best solve; a profile's place is averaged over datasets.
+        places: dict[str, list[int]] = {p: [] for p in experiment["profiles"]}
+        for dataset_id in experiment["datasets"]:
+            ranked = sorted((c for c in cells if c["dataset_id"] == dataset_id and c["best"]),
+                            key=lambda c: _rank_key(c["best"]))
+            for place, cell in enumerate(ranked, 1):
+                places[cell["profile_id"]].append(place)
+        ranking = []
+        for profile_id in experiment["profiles"]:
+            mine = [c for c in cells if c["profile_id"] == profile_id]
+            finished = sum(c["finished"] for c in mine)
+            feasible = sum(c["feasible"] for c in mine)
+            medians = [c["median"] for c in mine if c["median"]]
+            ranking.append({
+                "profile_id": profile_id, "profile": profile_names[profile_id], "finished": finished,
+                "feasible": feasible, "runs": sum(c["runs"] for c in mine),
+                "average_place": round(statistics.mean(places[profile_id]), 2) if places[profile_id] else None,
+                "median_scores": medians,
+            })
+        ranking.sort(key=lambda r: (-(r["feasible"] / r["finished"]) if r["finished"] else 1,
+                                    r["average_place"] if r["average_place"] is not None else float("inf"),
+                                    [_negated(_score_key(m)) for m in r["median_scores"]]))
+        for place, row in enumerate(ranking, 1):
+            row["place"] = place
+            row.pop("median_scores")
+        statuses: dict[str, int] = {}
+        for run in runs:
+            statuses[run["status"]] = statuses.get(run["status"], 0) + 1
+        return {**experiment, "judge_name": (self.store.profile(experiment["judge"]) or {}).get("name"),
+                "dataset_names": names, "profile_names": profile_names, "statuses": statuses,
+                "done": all(r["status"] in TERMINAL for r in runs), "cells": cells, "ranking": ranking}
+
+    def _judge(self, experiment: dict[str, Any]) -> None:
+        """Scores every finished plan of the experiment not yet judged under the judge profile."""
+        judge = self.store.profile(experiment["judge"])
+        for run in self.store.runs(experiment_id=experiment["id"], limit=None):
+            if run["status"] not in ("completed", "incomplete") or run.get("judged_score") or not run.get("score"):
+                continue
+            plan = (self.store.run(run["id"]) or {}).get("plan")
+            dataset = self.store.dataset(run["dataset_id"])
+            if not isinstance(plan, dict) or dataset is None:
+                continue
+            settings = self.effective_settings(dataset, judge, None)
+            answer = self._call(run["model_id"], self._request("evaluate", run["model_id"], plan,
+                                                               {**settings, "solve": {}}, max_matches=0))
+            self.store.update_run(run["id"], judged_score=answer["score"],
+                                  judged_feasible=int(bool(answer.get("feasible"))))
+
+    def experiments(self, model_id: str | None = None) -> list[dict[str, Any]]:
+        out = []
+        for experiment in self.store.experiments(model_id):
+            runs = self.store.runs(experiment_id=experiment["id"], limit=None)
+            out.append({**experiment, "runs": len(runs),
+                        "finished": sum(1 for r in runs if r["status"] in TERMINAL),
+                        "done": all(r["status"] in TERMINAL for r in runs)})
+        return out
+
+    def cancel_experiment(self, experiment_id: str) -> dict[str, Any]:
+        self.experiment_record(experiment_id)
+        for run in self.store.runs(experiment_id=experiment_id, limit=None):
+            if run["status"] in ("queued", "solving"):
+                self.cancel(run["id"])
+        return self.experiment(experiment_id)
+
+    def delete_experiment(self, experiment_id: str) -> None:
+        self.experiment_record(experiment_id)
+        if self.store.runs(experiment_id=experiment_id, status="solving"):
+            raise WorkbenchError("busy", "cancel the experiment's running solves before deleting it")
+        self.store.delete_experiment(experiment_id)
+        self.changed("experiment", id=experiment_id, deleted=True)
+
+    # ---- trends -------------------------------------------------------------
+
+    def trends(self, model_id: str) -> dict[str, Any]:
+        """Every finished solve of a model in time order, with its score and KPIs, and each KPI's series."""
+        manifest = self.model_record(model_id)["manifest"]
+        solves = self.store.finished_solves(model_id)
+        names = {}
+        points = []
+        for run in solves:
+            if run["dataset_id"] not in names:
+                names[run["dataset_id"]] = (self.store.dataset(run["dataset_id"]) or {}).get("name", run["dataset_id"])
+            points.append({"run_id": run["id"], "dataset_id": run["dataset_id"], "dataset": names[run["dataset_id"]],
+                           "profile_id": run["profile_id"], "experiment_id": run["experiment_id"],
+                           "finished_at": run["finished_at"], "score": run["score"],
+                           "feasible": bool(run["feasible"]),
+                           "kpis": {k["id"]: k["value"] for k in run.get("kpis") or []
+                                    if isinstance(k.get("value"), (int, float))}})
+        catalog = {k["id"]: k for k in manifest.get("kpis", [])}
+        seen = []
+        for run in solves:
+            for kpi in run.get("kpis") or []:
+                if kpi["id"] not in seen:
+                    seen.append(kpi["id"])
+                    catalog.setdefault(kpi["id"], {"id": kpi["id"], "label": kpi.get("label", kpi["id"]),
+                                                   "unit": kpi.get("unit", "")})
+        series = [{**catalog[kpi_id], "points": [[p["finished_at"], p["kpis"][kpi_id], p["run_id"]]
+                                                  for p in points if kpi_id in p["kpis"]]} for kpi_id in seen]
+        return {"model_id": model_id, "solves": points, "kpis": series,
+                "feasible_share": round(sum(p["feasible"] for p in points) / len(points), 3) if points else None}
+
     def status(self) -> dict[str, Any]:
         found = self.engine.version()
         binary = self.engine.binary()
@@ -573,6 +832,52 @@ class Workbench:
             "solving": len(self.store.runs(status="solving")),
             "parallel_solves": self._parallel(),
         }
+
+
+def with_params(plan: dict[str, Any], params: dict[str, Any] | None) -> dict[str, Any]:
+    """The plan with the settings' model parameters merged into its own ``parameters``."""
+    if not params:
+        return plan
+    return {**plan, "parameters": {**(plan.get("parameters") or {}), **params}}
+
+
+def _score_key(score: str | None) -> tuple[float, ...]:
+    """A score as numbers, most significant level first: "-1hard/0medium/-30soft" -> (-1, 0, -30)."""
+    return tuple(float(value) for value, _ in SCORE_PART.findall(score or ""))
+
+
+def _negated(key: tuple[float, ...]) -> tuple[float, ...]:
+    return tuple(-value for value in key)
+
+
+def _rank_key(run: dict[str, Any]) -> tuple:
+    """Sorts feasible solves before infeasible ones, then higher scores first."""
+    return (0 if run.get("feasible") else 1, _negated(_score_key(run.get("score"))))
+
+
+def _cell(dataset_id: str, profile_id: str, runs: list[dict[str, Any]]) -> dict[str, Any]:
+    """One dataset x profile cell; its scores are the judge's, so cells compare."""
+    finished = [{**r, "own_score": r["score"], "score": r["judged_score"], "feasible": r["judged_feasible"]}
+                for r in runs if r["status"] in ("completed", "incomplete") and r.get("judged_score")]
+    ordered = sorted(finished, key=_rank_key)
+    elapsed = [(r.get("telemetry") or {}).get("elapsed_ms") for r in finished]
+    kpis: dict[str, list[float]] = {}
+    for run in finished:
+        for kpi in run.get("kpis") or []:
+            if isinstance(kpi.get("value"), (int, float)):
+                kpis.setdefault(kpi["id"], []).append(kpi["value"])
+    return {
+        "dataset_id": dataset_id, "profile_id": profile_id, "runs": len(runs), "finished": len(finished),
+        "feasible": sum(1 for r in finished if r.get("feasible")),
+        "best": {"run_id": ordered[0]["id"], "score": ordered[0]["score"],
+                 "feasible": bool(ordered[0].get("feasible"))} if ordered else None,
+        "median": ordered[(len(ordered) - 1) // 2]["score"] if ordered else None,
+        "worst": ordered[-1]["score"] if ordered else None,
+        "mean_elapsed_ms": round(statistics.mean([e for e in elapsed if e is not None]))
+        if any(e is not None for e in elapsed) else None,
+        "kpis": {kpi_id: round(statistics.mean(values), 3) for kpi_id, values in kpis.items()},
+        "run_ids": [r["id"] for r in runs],
+    }
 
 
 def _tags(tags: list[str] | None) -> list[str]:

@@ -42,6 +42,8 @@ def request_for(store: Store, run: dict[str, Any], command: str) -> dict[str, An
         plan = {**plan, "parameters": {**(plan.get("parameters") or {}), **config["params"]}}
     request: dict[str, Any] = {"command": command, "model": run["model_id"], "plan": plan,
                                "weights": config.get("weights", {}), "max_matches": config.get("max_matches", 100)}
+    if (config.get("solve") or {}).get("freeze_before"):
+        request["freeze_before"] = config["solve"]["freeze_before"]
     if command == "solve" and config.get("solve"):
         request["termination"] = {key: value for key, value in config["solve"].items()
                                   if key in ("seconds", "unimproved_seconds", "step_count",

@@ -112,6 +112,39 @@ class Tools:
         return ok(**self.wb.explain(args["run"], args.get("constraint", ""), args.get("entity", ""),
                                     int(args.get("limit", 20))))
 
+    def fill(self, args: dict) -> str:
+        return ok(**self.wb.fill(run_id=args.get("run"), dataset_id=args.get("dataset"), items=args.get("items"),
+                                 top=args.get("top", 5), profile=args.get("profile")))
+
+    def fill_apply(self, args: dict) -> str:
+        dataset = self.wb.fill_apply(args["item"], args["value"], run_id=args.get("run"),
+                                     dataset_id=args.get("dataset"), name=args.get("name", ""),
+                                     profile=args.get("profile"))
+        return ok(dataset=dataset, next="solve or evaluate the new dataset, or fill its next open item")
+
+    def experiment_create(self, args: dict) -> str:
+        experiment = self.wb.create_experiment(datasets=args["datasets"], profiles=args["profiles"],
+                                               repeats=args.get("repeats", 1), name=args.get("name", ""),
+                                               overrides=args.get("overrides"), priority=args.get("priority", 3),
+                                               judge=args.get("judge"))
+        return ok(experiment=experiment, next="call solverforge_workbench_experiment to follow it and read the ranking")
+
+    def experiment(self, args: dict) -> str:
+        return ok(experiment=self.wb.experiment(args["experiment"]))
+
+    def experiments(self, args: dict) -> str:
+        return ok(experiments=self.wb.experiments(args.get("model")))
+
+    def experiment_cancel(self, args: dict) -> str:
+        return ok(experiment=self.wb.cancel_experiment(args["experiment"]))
+
+    def experiment_delete(self, args: dict) -> str:
+        self.wb.delete_experiment(args["experiment"])
+        return ok(deleted=args["experiment"])
+
+    def trends(self, args: dict) -> str:
+        return ok(**self.wb.trends(args["model"]))
+
     def compare(self, args: dict) -> str:
         return ok(**self.wb.compare(args["runs"]))
 

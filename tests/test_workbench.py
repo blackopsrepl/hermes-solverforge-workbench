@@ -218,3 +218,116 @@ def test_a_dead_worker_is_reported_instead_of_solving_forever(wb):
     wb.store.update_run(run["id"], pid=2 ** 22 + 12345)
     assert wb.run(run["id"])["status"] == "failed"
     assert wb.run(run["id"])["error"]["code"] == "solve_interrupted"
+
+
+def test_fill_ranks_each_open_shift_and_applying_one_makes_a_child_dataset(wb):
+    dataset = demo(wb)
+    options = wb.fill(dataset_id=dataset["id"], top=2)
+    assert options["source"] == f"dataset {dataset['id']}"
+    assert [item["id"] for item in options["items"]] == [f"Shift#{n}" for n in range(6)]
+    best = options["items"][0]["options"][0]
+    # Any nurse but the avoided first one: the shift is covered and no soft point is lost.
+    assert best["id"] in ("Nurse#1", "Nurse#2")
+    assert best["delta"] == "1hard/0soft"
+    assert best["changes"] == [{"constraint": "Unassigned shift", "level": "hard", "delta": "1hard/0soft"}]
+    child = wb.fill_apply("Shift#0", best["id"], dataset_id=dataset["id"])
+    assert child["parent_id"] == dataset["id"] and child["origin"] == "fill"
+    assert child["patch"] == [{"op": "fill", "item": "Shift#0", "value": best["id"]}]
+    plan = wb.dataset_record(child["id"])["plan"]
+    assert plan["shifts"][0]["nurse_idx"] == int(best["id"].split("#")[1])
+    assert [item["id"] for item in wb.fill(dataset_id=child["id"])["items"]] == [f"Shift#{n}" for n in range(1, 6)]
+    with pytest.raises(WorkbenchError) as error:
+        wb.fill_apply("Shift#1", "Nurse#7", dataset_id=dataset["id"])
+    assert error.value.code == "unknown_value"
+
+
+def test_fill_reads_a_runs_plan(wb):
+    dataset = demo(wb)
+    run = wait_for(wb, wb.solve(dataset["id"], overrides={"solve": {"seconds": 1}})["id"])
+    # A solved plan has no open shift; naming one ranks its alternatives.
+    assert wb.fill(run_id=run["id"])["items"] == []
+    moved = wb.fill(run_id=run["id"], items=["Shift#2"], top=3)["items"][0]["options"]
+    assert len(moved) == 3 and moved[0]["feasible"] is True
+
+
+def test_parameters_must_be_ones_the_model_lists(wb):
+    assert wb.model("toy")["parameters"] == []
+    with pytest.raises(WorkbenchError) as error:
+        wb.save_profile(model_id="toy", name="Fast", settings={"params": {"speed": 40}})
+    assert error.value.code == "unknown_parameter"
+
+
+def test_freezing_needs_a_date_time_and_a_model_with_time(wb):
+    dataset = demo(wb)
+    with pytest.raises(WorkbenchError) as error:
+        wb.evaluate(dataset["id"], overrides={"solve": {"freeze_before": "Monday"}})
+    assert error.value.code == "invalid_settings"
+    with pytest.raises(WorkbenchError) as error:
+        wb.evaluate(dataset["id"], overrides={"solve": {"freeze_before": "2027-03-01T06:00"}})
+    assert error.value.code == "freeze_unsupported"
+
+
+def test_a_model_without_a_plan_view_says_so(wb):
+    dataset = demo(wb)
+    assert wb.model("toy")["view"] is None
+    with pytest.raises(WorkbenchError) as error:
+        wb.view(dataset_id=dataset["id"])
+    assert error.value.code == "no_view"
+
+
+def test_an_experiment_solves_every_dataset_under_every_profile_and_ranks_the_profiles(wb):
+    first, second = demo(wb), demo(wb, name="Second")
+    # Weight 0 switches the soft rule off: that profile cannot tell the first nurse from the others,
+    # and only the judge (Standard) sees the difference.
+    wb.save_profile(model_id="toy", name="Blind", settings={"weights": {"Shift for the first nurse": 0}})
+    experiment = wb.create_experiment(datasets=[first["id"], second["id"]], profiles=["Standard", "Blind"],
+                                      repeats=2, overrides={"solve": {"seconds": 1}})
+    assert experiment["judge_name"] == "Standard"
+    assert sum(experiment["statuses"].values()) == 8
+    deadline = time.monotonic() + 120
+    while not wb.experiment(experiment["id"])["done"] and time.monotonic() < deadline:
+        time.sleep(0.3)
+    done = wb.experiment(experiment["id"])
+    assert done["done"] and done["statuses"] == {"completed": 8}
+    assert len(done["cells"]) == 4 and all(c["finished"] == 2 and c["feasible"] == 2 for c in done["cells"])
+    standard = [c for c in done["cells"] if c["profile_id"] == "toy-standard"]
+    assert all(c["best"]["score"] == c["worst"] == "0hard/0soft" for c in standard)
+    assert [(r["profile"], r["place"]) for r in done["ranking"]] == [("Standard", 1), ("Blind", 2)]
+    assert done["ranking"][0]["average_place"] == 1.0
+    assert wb.experiments("toy")[0]["runs"] == 8
+    trends = wb.trends("toy")
+    assert len(trends["solves"]) == 8 and trends["feasible_share"] == 1.0
+    assert trends["kpis"][0]["id"] == "assigned" and len(trends["kpis"][0]["points"]) == 8
+    wb.delete_experiment(experiment["id"])
+    assert wb.experiments("toy") == [] and wb.runs(model_id="toy") == []
+
+
+def test_an_experiment_refuses_mixed_models_and_too_many_solves(wb):
+    dataset = demo(wb)
+    with pytest.raises(WorkbenchError) as error:
+        wb.create_experiment(datasets=[dataset["id"]], profiles=["Standard"], repeats=21)
+    assert error.value.code == "invalid_repeats"
+    with pytest.raises(WorkbenchError) as error:
+        wb.create_experiment(datasets=[dataset["id"]], profiles=["Nope"])
+    assert error.value.code == "unknown_profile"
+
+
+def test_a_v0_1_database_migrates_keeping_its_records(tmp_path):
+    import sqlite3
+
+    path = tmp_path / "old.db"
+    db = sqlite3.connect(path)
+    db.executescript((ROOT / "tests" / "fixtures" / "store-v0.1.0.sql").read_text())
+    db.execute("INSERT INTO datasets (id, model_id, name, origin, plan, created_at)"
+               " VALUES ('d1', 'toy', 'Old', 'demo', '{}', '2026-11-01')")
+    db.execute("INSERT INTO runs (id, dataset_id, model_id, kind, status, created_at)"
+               " VALUES ('r1', 'd1', 'toy', 'solve', 'completed', '2026-11-01')")
+    db.commit()
+    db.close()
+    store = Store(path)
+    assert store.dataset("d1")["name"] == "Old"
+    assert store.run("r1")["experiment_id"] is None
+    child = store.add_dataset(model_id="toy", name="Filled", plan={}, origin="fill", parent_id="d1")
+    assert child["origin"] == "fill"
+    store.delete_dataset("d1")  # the rebuilt table keeps its cascade to runs
+    assert store.run("r1") is None

@@ -20,7 +20,8 @@ from .tools import tool_table
 NAME = "solverforge-workbench"
 TOOLSET = "solverforge-workbench"
 # Tools that delete the user's data. Each needs a human yes, every time.
-GATED = {"solverforge_workbench_dataset_delete", "solverforge_workbench_profile_delete"}
+GATED = {"solverforge_workbench_dataset_delete", "solverforge_workbench_profile_delete",
+         "solverforge_workbench_experiment_delete"}
 
 _lock = threading.Lock()
 # One workbench per plugin data directory. The data directory follows the Hermes
@@ -68,6 +69,10 @@ def approval_text(wb: Workbench, tool_name: str, args: dict) -> str:
         dataset = wb.store.dataset(args.get("dataset", "")) or {}
         runs = len(wb.store.runs(dataset_id=args.get("dataset", "")))
         return f"Delete dataset “{dataset.get('name', args.get('dataset'))}” and its {runs} run(s)?"
+    if tool_name == "solverforge_workbench_experiment_delete":
+        experiment = wb.store.experiment(args.get("experiment", "")) or {}
+        runs = len(wb.store.runs(experiment_id=args.get("experiment", ""), limit=None))
+        return f"Delete experiment “{experiment.get('name', args.get('experiment'))}” and its {runs} run(s)?"
     profile = wb.store.profile(args.get("profile", "")) or wb.store.profile_named(
         args.get("model", ""), args.get("profile", "")) or {}
     return f"Delete profile “{profile.get('name', args.get('profile'))}” of {args.get('model')}?"
@@ -85,7 +90,7 @@ def register(ctx) -> None:
             return None
         args = args or {}
         # Scope "always allow" to this exact record, so one approval never covers a later deletion.
-        target = args.get("dataset") or args.get("profile") or ""
+        target = args.get("dataset") or args.get("profile") or args.get("experiment") or ""
         return {"action": "approve", "message": approval_text(wb(), tool_name, args),
                 "rule_key": f"{tool_name}:{target}"}
 
