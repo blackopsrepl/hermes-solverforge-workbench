@@ -16,3 +16,4 @@ path = "src/main.rs"
 solverforge-workbench-host = { path = "../host" }
 solverforge-workbench-employee-scheduling = { path = "../models/employee-scheduling" }
 solverforge-workbench-task-scheduling = { path = "../models/task-scheduling" }
+solverforge-workbench-pickup-delivery-routing = { path = "../models/pickup-delivery-routing" }
