@@ -5,13 +5,21 @@ machine. Pick a model, load a dataset, tune what matters with constraint
 weights and profiles, solve in the background, and read which rule cost what
 and why. The Desktop shows each solved plan as a schedule.
 
-Status: **pre-release.** The first model, employee scheduling, is complete;
-the engine has no published binaries yet, so the workbench installs from a
-checkout (see [Development](#development)).
-
 ## Try it
 
-With the plugin installed, ask Hermes:
+You need [Hermes Agent](https://github.com/NousResearch/hermes-agent) 0.22.2 or newer.
+
+```sh
+hermes plugins install blackopsrepl/hermes-solverforge-workbench --enable
+hermes solverforge-workbench install
+```
+
+The second command downloads the engine for your computer (6 to 8 MB) and
+checks it against a fingerprint pinned in the plugin. There is nothing else to
+install: no Rust, no database, no account.
+
+Current Hermes builds a session's tool list from the plugins it saw at the
+previous launch, so run `hermes chat -q hi` once after installing. Then ask:
 
 > “Show me the employee scheduling demo for a small ward and solve it.”
 >
@@ -21,8 +29,9 @@ With the plugin installed, ask Hermes:
 >
 > “Ines is sick on Wednesday. Replan from the published roster and keep everything else.”
 
-In the Desktop, **SolverForge Workbench** in the sidebar opens the same
-models, datasets and runs.
+**In the Desktop app**, open **Capabilities → Plugins** and turn on
+SolverForge Workbench's Desktop features. **SolverForge Workbench** in the
+sidebar then opens the same models, datasets and runs.
 
 ## Models
 
@@ -66,14 +75,13 @@ wards on two sites) that uses every rule.
   weights, editable in place, and a fuzzy search over name, group, level and
   description (`rst btwn` finds *Rest between shifts*).
 - A run's page shows the score and how far it moved, a score-over-time chart
-  per level, the KPIs, the plan as a roster (one lane per employee; red marks a
-  shift that breaks a hard rule, rose a medium one, grey is time off) and every
-  constraint with its matches.
+  per level, the KPIs, the plan as a roster and every constraint with its
+  matches, each naming the employees and shifts it blames. On the roster, one
+  lane per employee: red marks a shift that breaks a hard rule, rose a medium
+  one, and a rule over an employee's whole roster (overlaps, rest, work limits)
+  is named on their row; grey is time off.
 - A `::solverforge-workbench{run="…"}` card in the chat shows what costs score
   in a run, and a status-bar chip counts running solves.
-
-The Desktop half of a plugin installed from a checkout starts switched off:
-turn it on under **Capabilities → Plugins**.
 
 ## Settings
 
@@ -90,9 +98,9 @@ Under **Settings → Plugins → SolverForge Workbench**
 - **The engine.** `hermes solverforge-workbench install` or
   `/solverforge-workbench install` downloads `solverforge-workbench-<platform>`
   from this repository's `engine-v0.1.0` release and refuses it unless its
-  SHA-256 matches the value pinned in [`engine_bin.py`](engine_bin.py). Until
-  that release exists, install refuses and the `binary` setting points at a
-  local build.
+  SHA-256 matches the value pinned in [`engine_bin.py`](engine_bin.py). Each
+  binary carries a build attestation:
+  `gh attestation verify solverforge-workbench-<platform> --repo blackopsrepl/hermes-solverforge-workbench`.
 - **One program per solve.** The engine reads one JSON request on standard
   input and writes JSON lines on standard output. It starts with only the
   environment a process needs (no API keys reach it) and makes no network
