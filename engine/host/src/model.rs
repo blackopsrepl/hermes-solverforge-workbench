@@ -53,12 +53,11 @@ pub trait Model: 'static {
     fn kpis(_plan: &Self::Plan) -> Vec<Kpi> {
         Vec::new()
     }
-    /// Names an entity a constraint match blames: its record id in the
-    /// model's wire format and a label people read. Analysis knows an entity
-    /// only by its type name (`Shift`) and its `Debug` text, which the
-    /// planning macros derive; the model reads the text it owns. `None`
-    /// reports the type and the text unchanged.
-    fn name_entity(_plan: &Self::Plan, _type_name: &str, _debug: &str) -> Option<EntityName> {
+    /// Names an entity a constraint match blames, found by its type name
+    /// (`Shift`) and its planning id as analysis renders it: the record's id
+    /// in the model's wire format and a label people read. Called only for
+    /// entities with a planning id; `None` reports the entity's `Debug` text.
+    fn name_entity(_plan: &Self::Plan, _type_name: &str, _planning_id: &str) -> Option<EntityName> {
         None
     }
 }

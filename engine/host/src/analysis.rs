@@ -68,7 +68,10 @@ pub fn analyze<M: Model>(mut plan: M::Plan, max_matches: usize) -> Analysis {
                             let type_name = short_type(&entity.type_name);
                             EntityReport {
                                 type_name: type_name.to_string(),
-                                name: M::name_entity(plan, type_name, &entity.display)
+                                name: entity
+                                    .planning_id
+                                    .as_deref()
+                                    .and_then(|id| M::name_entity(plan, type_name, id))
                                     .unwrap_or_else(|| EntityName {
                                         id: None,
                                         label: clip(&entity.display),

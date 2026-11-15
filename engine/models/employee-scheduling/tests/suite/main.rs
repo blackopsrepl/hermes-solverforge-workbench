@@ -4,6 +4,7 @@
 mod common;
 mod demos;
 mod economy;
+mod explain;
 mod fit;
 mod kpis;
 mod model;

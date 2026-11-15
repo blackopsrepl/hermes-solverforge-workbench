@@ -1,8 +1,8 @@
 {
  "ok": true,
  "run": {
-  "id": "5c8fcef2c7fc",
-  "dataset_id": "29ea2a26dcaf",
+  "id": "41b3aee66c3a",
+  "dataset_id": "5b6e58a1667c",
   "model_id": "toy",
   "kind": "solve",
   "status": "completed",
@@ -11,9 +11,9 @@
   "initial_score": "-6hard/0soft",
   "score": "0hard/0soft",
   "feasible": 1,
-  "created_at": "2026-11-14T12:58:33.020+00:00",
-  "started_at": "2026-11-14T12:58:33.082+00:00",
-  "finished_at": "2026-11-14T12:58:35.102+00:00",
+  "created_at": "2026-11-15T05:45:27.125+00:00",
+  "started_at": "2026-11-15T05:45:27.189+00:00",
+  "finished_at": "2026-11-15T05:45:29.210+00:00",
   "error": null,
   "config": {
    "weights": {},
@@ -39,9 +39,9 @@
   "issues": [],
   "telemetry": {
    "elapsed_ms": 2000,
-   "moves_accepted": 224035,
-   "moves_evaluated": 475935,
-   "steps": 224579
+   "moves_accepted": 227538,
+   "moves_evaluated": 457521,
+   "steps": 227934
   },
   "points": [
    {

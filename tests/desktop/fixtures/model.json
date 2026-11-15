@@ -45,10 +45,10 @@
     "is_default": 0,
     "read_only": 1,
     "revision": 1,
-    "updated_at": "2026-11-14T12:58:32.987+00:00"
+    "updated_at": "2026-11-15T05:45:27.083+00:00"
    },
    {
-    "id": "caf22bf55151",
+    "id": "0fe06c82cd91",
     "model_id": "toy",
     "name": "Lenient",
     "description": "",
@@ -60,7 +60,7 @@
     "is_default": 0,
     "read_only": 0,
     "revision": 1,
-    "updated_at": "2026-11-14T12:58:33.001+00:00"
+    "updated_at": "2026-11-15T05:45:27.101+00:00"
    }
   ],
   "default_profile": "toy-standard",

@@ -1,9 +1,9 @@
 //! Names for the entities constraint analysis blames, read from the plan.
 //!
-//! Analysis knows an entity only by its type name and the `Debug` text the
-//! planning macros derive, which for every type here starts with
-//! `Type { index: N`. The index finds the record; the label is what a person
-//! reads: an employee's name, a shift's day and hours.
+//! Analysis reports an entity's type name and its planning id: the `index`
+//! field of every type here, which is its position in the plan. The index
+//! finds the record; the label is what a person reads: an employee's name, a
+//! shift's day and hours.
 
 use solverforge_workbench_host::EntityName;
 
@@ -16,8 +16,8 @@ const MONTHS: [&str; 12] = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-pub fn name_entity(plan: &Plan, type_name: &str, debug: &str) -> Option<EntityName> {
-    let index = index_of(debug)?;
+pub fn name_entity(plan: &Plan, type_name: &str, planning_id: &str) -> Option<EntityName> {
+    let index: usize = planning_id.parse().ok()?;
     let named = |id: &str, label: String| EntityName {
         id: Some(id.to_string()),
         label,
@@ -79,15 +79,6 @@ pub fn name_entity(plan: &Plan, type_name: &str, debug: &str) -> Option<EntityNa
     }
 }
 
-/// The `N` of a `Type { index: N, …` rendering.
-fn index_of(debug: &str) -> Option<usize> {
-    let rest = &debug[debug.find("{ index: ")? + "{ index: ".len()..];
-    let digits = rest
-        .find(|c: char| !c.is_ascii_digit())
-        .unwrap_or(rest.len());
-    rest[..digits].parse().ok()
-}
-
 fn derived(plan: &Plan) -> Option<&Derived> {
     plan.days.first().map(|day| &*day.ctx)
 }
@@ -111,13 +102,6 @@ fn clock(minutes: i64) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn the_index_is_read_from_the_derived_debug_text() {
-        assert_eq!(index_of("Shift { index: 12, id: \"a\" }"), Some(12));
-        assert_eq!(index_of("Whole { index: 0, ctx: … }"), Some(0));
-        assert_eq!(index_of("Shift { id: \"a\" }"), None);
-    }
 
     #[test]
     fn dates_read_as_weekday_day_and_month() {

@@ -46,7 +46,7 @@ impl Model for EmployeeScheduling {
     fn kpis(plan: &Plan) -> Vec<Kpi> {
         crate::kpis::kpis(plan)
     }
-    fn name_entity(plan: &Plan, type_name: &str, debug: &str) -> Option<EntityName> {
-        crate::names::name_entity(plan, type_name, debug)
+    fn name_entity(plan: &Plan, type_name: &str, planning_id: &str) -> Option<EntityName> {
+        crate::names::name_entity(plan, type_name, planning_id)
     }
 }
