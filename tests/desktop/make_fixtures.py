@@ -30,9 +30,11 @@ out = {
  'evaluated': call('solverforge_workbench_run', {'run': ev['id'], 'max_matches': 10}),
  'compare': call('solverforge_workbench_compare', {'runs': [ev['id'], r['id']]}),
 }
+# Fixtures are committed: absolute paths of this checkout become relative ones.
+checkout = str(Path('.').resolve()) + '/'
 for k, v in out.items():  # every fixture is a successful tool answer
     assert v['ok'], (k, v)
-    Path(f'tests/desktop/fixtures/{k}.json').write_text(json.dumps(v, indent=1) + '\n')
+    Path(f'tests/desktop/fixtures/{k}.json').write_text(json.dumps(v, indent=1).replace(checkout, '') + '\n')
 print({k: len(json.dumps(v)) for k, v in out.items()})
 
 # The roster page the backend serves for the employee scheduling run in tests/fixtures.

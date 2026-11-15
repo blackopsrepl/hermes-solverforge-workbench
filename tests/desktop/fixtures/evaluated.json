@@ -1,8 +1,8 @@
 {
  "ok": true,
  "run": {
-  "id": "b357187f7686",
-  "dataset_id": "5b6e58a1667c",
+  "id": "0e00412251ae",
+  "dataset_id": "b406e3c05752",
   "model_id": "toy",
   "kind": "evaluate",
   "status": "completed",
@@ -11,9 +11,9 @@
   "initial_score": "-6hard/0soft",
   "score": "-6hard/0soft",
   "feasible": 0,
-  "created_at": "2026-11-15T05:45:27.108+00:00",
+  "created_at": "2026-11-15T08:30:53.757+00:00",
   "started_at": null,
-  "finished_at": "2026-11-15T05:45:27.119+00:00",
+  "finished_at": "2026-11-15T08:30:53.765+00:00",
   "error": null,
   "config": {
    "weights": {},
