@@ -1,0 +1,106 @@
+{
+ "ok": true,
+ "model_id": "toy",
+ "solves": [
+  {
+   "run_id": "cf7fc7204f88",
+   "dataset_id": "5a8c2a1e6a13",
+   "dataset": "Demo Week",
+   "profile_id": "toy-standard",
+   "experiment_id": null,
+   "finished_at": "2026-11-15T17:48:10.814+00:00",
+   "score": "0hard/0soft",
+   "feasible": true,
+   "kpis": {
+    "assigned": 6.0
+   }
+  },
+  {
+   "run_id": "d97f04e0fb06",
+   "dataset_id": "5a8c2a1e6a13",
+   "dataset": "Demo Week",
+   "profile_id": "ae7f37cf1637",
+   "experiment_id": "84531df7eec8",
+   "finished_at": "2026-11-15T17:48:11.131+00:00",
+   "score": "0hard/0soft",
+   "feasible": true,
+   "kpis": {
+    "assigned": 6.0
+   }
+  },
+  {
+   "run_id": "036b73a65e1c",
+   "dataset_id": "5a8c2a1e6a13",
+   "dataset": "Demo Week",
+   "profile_id": "toy-standard",
+   "experiment_id": "84531df7eec8",
+   "finished_at": "2026-11-15T17:48:12.327+00:00",
+   "score": "0hard/0soft",
+   "feasible": true,
+   "kpis": {
+    "assigned": 6.0
+   }
+  },
+  {
+   "run_id": "c74c17962b5e",
+   "dataset_id": "1701c4d2c54b",
+   "dataset": "Demo Week B",
+   "profile_id": "toy-standard",
+   "experiment_id": "84531df7eec8",
+   "finished_at": "2026-11-15T17:48:12.347+00:00",
+   "score": "0hard/0soft",
+   "feasible": true,
+   "kpis": {
+    "assigned": 6.0
+   }
+  },
+  {
+   "run_id": "fb51b2b3faf3",
+   "dataset_id": "1701c4d2c54b",
+   "dataset": "Demo Week B",
+   "profile_id": "ae7f37cf1637",
+   "experiment_id": "84531df7eec8",
+   "finished_at": "2026-11-15T17:48:12.417+00:00",
+   "score": "0hard/0soft",
+   "feasible": true,
+   "kpis": {
+    "assigned": 6.0
+   }
+  }
+ ],
+ "kpis": [
+  {
+   "id": "assigned",
+   "label": "Assigned shifts",
+   "unit": "shifts",
+   "points": [
+    [
+     "2026-11-15T17:48:10.814+00:00",
+     6.0,
+     "cf7fc7204f88"
+    ],
+    [
+     "2026-11-15T17:48:11.131+00:00",
+     6.0,
+     "d97f04e0fb06"
+    ],
+    [
+     "2026-11-15T17:48:12.327+00:00",
+     6.0,
+     "036b73a65e1c"
+    ],
+    [
+     "2026-11-15T17:48:12.347+00:00",
+     6.0,
+     "c74c17962b5e"
+    ],
+    [
+     "2026-11-15T17:48:12.417+00:00",
+     6.0,
+     "fb51b2b3faf3"
+    ]
+   ]
+  }
+ ],
+ "feasible_share": 1.0
+}

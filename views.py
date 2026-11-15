@@ -1,274 +1,171 @@
-"""Plan views: a model's plan drawn as a schedule.
+"""Plan views as self-contained pages for the Desktop's sandboxed frame.
 
-A view turns a plan (in the model's own dataset format) and the run's analysis
-into the numeric model the solverforge-ui scheduling timeline draws, and wraps
-it in a self-contained HTML document the Desktop shows in a sandboxed frame.
-Models without a view get none; every number still comes from the plan.
+The engine draws a plan as its model sees it (a timeline, or routes on a map
+with a timeline per vehicle) and marks the rules it breaks; this module only
+wraps that view, with the vendored solverforge-ui and Leaflet code, in an HTML
+document that loads nothing but map tiles.
 """
 
 from __future__ import annotations
 
 import json
-import re
-from datetime import datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 ASSETS = Path(__file__).parent / "assets" / "ui"
-DAY = 1440
-WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
-# Tones for the first tag of a shift; other tags take the remaining tones in order of appearance.
-TAG_TONES = {"early": "amber", "day": "amber", "morning": "amber", "late": "blue", "evening": "blue",
-             "night": "violet"}
-SPARE_TONES = ("cyan", "emerald", "slate", "blue", "amber", "violet")
-# Overlay colours for time an employee cannot or would rather not work.
-UNAVAILABLE = {"background": "rgba(75, 85, 99, 0.16)", "border": "#6b7280", "overlay": "rgba(75, 85, 99, 0.16)",
-               "text": "#374151"}
-RATHER_NOT = {"background": "rgba(156, 163, 175, 0.12)", "border": "#9ca3af", "overlay": "rgba(156, 163, 175, 0.12)",
-              "text": "#4b5563"}
-MAX_FLAGGED_MATCHES = 100
-# Lane badges for rules an employee's roster breaks as a whole.
-BROKEN_BADGE = {
-    "hard": {"bg": "rgba(220, 38, 38, 0.12)", "border": "1px solid #dc2626", "color": "#b91c1c"},
-    "medium": {"bg": "rgba(225, 29, 72, 0.08)", "border": "1px solid #fb7185", "color": "#be123c"},
-}
-MAX_LANE_RULES = 2
-MAX_LANE_BADGES = 4
+TILES = ("https://a.tile.openstreetmap.org https://b.tile.openstreetmap.org "
+         "https://c.tile.openstreetmap.org")
 
 
-class ViewError(ValueError):
-    """The plan cannot be drawn: a field the view needs is missing or malformed."""
+@lru_cache(maxsize=None)
+def _asset(name: str) -> str:
+    return (ASSETS / name).read_text(encoding="utf-8")
 
 
-def _minutes(stamp: Any, start: datetime, what: str) -> int:
-    try:
-        moment = datetime.fromisoformat(str(stamp))
-    except ValueError as exc:
-        raise ViewError(f"{what} is not a local date-time: {stamp!r}") from exc
-    return int((moment - start) / timedelta(minutes=1))
-
-
-def _hhmm(minute: int, start: datetime) -> str:
-    return (start + timedelta(minutes=minute)).strftime("%H:%M")
-
-
-Flags = dict[str, list[tuple[str, str]]]
-SCORE_PART = re.compile(r"(-?\d+)(hard|medium|soft)")
-
-
-def _cost(score: Any, level: str) -> int:
-    """How much a match costs at its level, as a positive number."""
-    parts = {name: int(value) for value, name in SCORE_PART.findall(str(score))}
-    return -parts.get(level, 0)
-
-
-def _flags(analysis: list[dict[str, Any]] | None) -> tuple[Flags, dict[str, list[tuple[str, str, int]]]]:
-    """(shift id, employee id) -> [(level, constraint)] for every hard or medium match that costs score.
-
-    A match justified by an employee comes from a rule over that employee's
-    whole roster: it names every shift they work, so it marks the employee,
-    not each shift. A match without an employee marks the shifts it names.
-    """
-    shifts: Flags = {}
-    employees: dict[str, list[tuple[str, str, int]]] = {}
-    for item in analysis or []:
-        if item.get("level") not in ("hard", "medium"):
-            continue
-        for match in (item.get("matches") or [])[:MAX_FLAGGED_MATCHES]:
-            if not str(match.get("score", "")).startswith("-") and "/-" not in str(match.get("score", "")):
-                continue
-            entities = match.get("entities") or []
-            named = [str(e["id"]) for e in entities if e.get("type") == "Employee" and e.get("id")]
-            for employee_id in named:
-                employees.setdefault(employee_id, []).append(
-                    (item["level"], item["name"], _cost(match.get("score"), item["level"])))
-            if named:
-                continue
-            for entity in entities:
-                if entity.get("type") == "Shift" and entity.get("id"):
-                    shifts.setdefault(str(entity["id"]), []).append((item["level"], item["name"]))
-    return shifts, employees
-
-
-def _rule_badges(broken: list[tuple[str, str, int]]) -> list[dict[str, Any]]:
-    """Badges naming the rules an employee's roster breaks: hard ones first, then the costliest."""
-    level_of: dict[str, str] = {}
-    cost_of: dict[str, int] = {}
-    for level, name, cost in broken:
-        level_of[name] = level
-        cost_of[name] = cost_of.get(name, 0) + cost
-    names = sorted(level_of, key=lambda name: (level_of[name] != "hard", -cost_of[name], name))
-    badges = [{"label": name, "style": BROKEN_BADGE[level_of[name]]} for name in names[:MAX_LANE_RULES]]
-    if len(names) > MAX_LANE_RULES:
-        rest = names[MAX_LANE_RULES:]
-        worst = "hard" if any(level_of[name] == "hard" for name in rest) else "medium"
-        badges.append({"label": f"+{len(rest)} more", "style": BROKEN_BADGE[worst]})
-    return badges
-
-
-def roster(plan: dict[str, Any], analysis: list[dict[str, Any]] | None = None) -> dict[str, Any]:
-    """Employee scheduling: one lane per employee, open shifts on top, time off as overlays."""
-    schedule = plan.get("schedule") or {}
-    try:
-        start = datetime.fromisoformat(str(schedule["start"]))
-        end_at = datetime.fromisoformat(str(schedule["end"]))
-    except (KeyError, ValueError) as exc:
-        raise ViewError("the plan's schedule needs a start and an end date-time") from exc
-    day0 = start.replace(hour=0, minute=0, second=0, microsecond=0)
-    span_days = max(1, -(-int((end_at - day0) / timedelta(minutes=1)) // DAY))
-    weekend = {str(d).lower() for d in schedule.get("weekend") or ("saturday", "sunday")}
-    flags, employee_flags = _flags(analysis)
-
-    tones: dict[str, str] = dict(TAG_TONES)
-    def tone_of(tags: list[str]) -> str:
-        key = (tags or ["shift"])[0]
-        if key not in tones:
-            tones[key] = SPARE_TONES[(len(tones) - len(TAG_TONES)) % len(SPARE_TONES)]
-        return tones[key]
-
-    def item(shift: dict[str, Any]) -> dict[str, Any]:
-        begin = _minutes(shift.get("start"), day0, f"shift {shift.get('id')} start")
-        finish = _minutes(shift.get("end"), day0, f"shift {shift.get('id')} end")
-        if finish <= begin:
-            raise ViewError(f"shift {shift.get('id')} ends before it starts")
-        tags = [str(t) for t in shift.get("tags") or []]
-        broken = flags.get(str(shift.get("id")), [])
-        notes = [f"{_hhmm(begin, day0)}–{_hhmm(finish, day0)}"]
-        if tags:
-            notes.append(", ".join(tags))
-        if shift.get("pinned"):
-            notes.append("pinned")
-        if shift.get("optional"):
-            notes.append("optional")
-        if broken:
-            notes.append("breaks: " + "; ".join(sorted({name for _, name in broken})))
-        return {
-            "id": str(shift.get("id")),
-            "startMinute": begin,
-            "endMinute": finish,
-            "label": f"{'📌 ' if shift.get('pinned') else ''}{tags[0] if tags else 'shift'}",
-            "meta": " · ".join(notes),
-            "tone": "red" if any(level == "hard" for level, _ in broken) else "rose" if broken else tone_of(tags),
-        }
-
-    def overlays(employee: dict[str, Any]) -> list[dict[str, Any]]:
-        out = []
-        # Time off is grey, so red and rose on the roster only ever mean a broken rule.
-        for key, label, tone in (("unavailable", "Unavailable", UNAVAILABLE), ("unwantedTimes", "Rather not", RATHER_NOT),
-                                 ("preferredTimes", "Preferred", "emerald")):
-            for span in employee.get(key) or []:
-                begin = _minutes(span.get("from"), day0, f"{employee.get('id')} {key}")
-                finish = _minutes(span.get("to"), day0, f"{employee.get('id')} {key}")
-                if finish > begin:
-                    out.append({"startMinute": begin, "endMinute": finish, "label": label, "tone": tone})
-        return out
-
-    shifts = [s for s in plan.get("shifts") or [] if isinstance(s, dict)]
-    by_employee: dict[str, list[dict[str, Any]]] = {}
-    open_shifts = []
-    for shift in shifts:
-        if shift.get("employee"):
-            by_employee.setdefault(str(shift["employee"]), []).append(shift)
-        elif not shift.get("alternativeOf"):  # an unchosen alternative is not an open shift
-            open_shifts.append(shift)
-
-    lanes = []
-    if open_shifts:
-        mandatory = sum(1 for s in open_shifts if not s.get("optional"))
-        lanes.append({
-            "id": "open", "label": "Open shifts", "mode": "detailed",
-            "badges": [{"label": f"{mandatory} mandatory"}] if mandatory else [],
-            "stats": [{"label": "Shifts", "value": len(open_shifts)}],
-            "items": [item(s) for s in sorted(open_shifts, key=lambda s: str(s.get("start")))],
-        })
-    for employee in plan.get("employees") or []:
-        employee_id = str(employee.get("id"))
-        mine = sorted(by_employee.get(employee_id, []), key=lambda s: str(s.get("start")))
-        items = [item(s) for s in mine]
-        minutes = sum(i["endMinute"] - i["startMinute"] for i in items)
-        lanes.append({
-            "id": f"employee:{employee_id}",
-            "label": str(employee.get("name") or employee_id),
-            "mode": "detailed",
-            "badges": (_rule_badges(employee_flags.get(employee_id, [])) + [
-                {"label": str(s if isinstance(s, str) else s.get("id"))} for s in (employee.get("skills") or [])
-            ])[:MAX_LANE_BADGES],
-            "stats": [{"label": "Shifts", "value": len(items)}, {"label": "Hours", "value": round(minutes / 60, 1)}],
-            "overlays": overlays(employee),
-            "items": items,
-        })
-
-    days = []
-    for n in range(span_days):
-        date = day0 + timedelta(days=n)
-        days.append({"label": date.strftime("%a"), "subLabel": date.strftime("%-d %b"),
-                     "isWeekend": WEEKDAYS[date.weekday()] in weekend})
-    ticks = [{"minute": m, "label": f"{(m % DAY) // 60:02d}:00"} for m in range(0, span_days * DAY + 1, 360)]
-    shown = min(span_days, 7 if span_days > 14 else span_days)
-    return {
-        "title": "Roster",
-        "subtitle": f"{len(shifts)} shifts · {len(plan.get('employees') or [])} employees · "
-                    f"{len(open_shifts)} open · red: breaks a hard rule, on a shift or an employee's row · "
-                    "rose: a medium one · grey: time off",
-        "label": "Employee",
-        "model": {
-            "axis": {"startMinute": 0, "endMinute": span_days * DAY, "days": days, "ticks": ticks,
-                     "initialViewport": {"startMinute": 0, "endMinute": shown * DAY}},
-            "lanes": lanes,
-        },
-    }
-
-
-VIEWS: dict[str, Callable[[dict[str, Any], list[dict[str, Any]] | None], dict[str, Any]]] = {
-    "employee-scheduling": roster,
-}
-
-
-def has_view(model_id: str) -> bool:
-    return model_id in VIEWS
-
-
-def timeline(model_id: str, plan: dict[str, Any], analysis: list[dict[str, Any]] | None = None) -> dict[str, Any]:
-    builder = VIEWS.get(model_id)
-    if builder is None:
-        raise ViewError(f"model {model_id} has no schedule view")
-    return builder(plan, analysis)
-
-
-@lru_cache(maxsize=1)
-def _assets() -> tuple[str, str]:
-    return (ASSETS / "sf.css").read_text(encoding="utf-8"), (ASSETS / "sf.js").read_text(encoding="utf-8")
-
-
-GUEST = """
-(function () {
-  var data = JSON.parse(document.getElementById('view-data').textContent);
-  var mount = document.getElementById('view');
+TIMELINE = """
+function drawTimeline(view, mount) {
   try {
-    var view = SF.rail.createTimeline({
-      title: data.title, subtitle: data.subtitle, label: data.label, labelWidth: 220,
-      zoomPresets: data.model.axis.endMinute > 7 * 1440 ? ['1w', '2w', '4w', 'reset'] : ['reset'],
-      model: data.model
+    var timeline = SF.rail.createTimeline({
+      title: view.title, subtitle: view.subtitle, label: view.label, labelWidth: 220,
+      zoomPresets: view.model.axis.endMinute > 7 * 1440 ? ['1w', '2w', '4w', 'reset'] : ['reset'],
+      model: view.model
     });
-    mount.appendChild(view.el);
+    mount.appendChild(timeline.el);
   } catch (error) {
-    mount.textContent = 'The schedule could not be drawn: ' + error.message;
+    mount.textContent = 'The plan could not be drawn: ' + error.message;
   }
+}
+"""
+
+TIMELINE_GUEST = TIMELINE + """
+drawTimeline(JSON.parse(document.getElementById('view-data').textContent), document.getElementById('view'));
+"""
+
+# Routes: the map on top, one coloured line per vehicle through its numbered stops,
+# unplanned stops grey; a legend to focus one vehicle; the per-vehicle timeline below.
+ROUTES_GUEST = TIMELINE + """
+(function () {
+  var view = JSON.parse(document.getElementById('view-data').textContent);
+  var status = document.getElementById('tiles');
+  var text = function (tag, value, cls) {
+    var el = document.createElement(tag);
+    el.textContent = value;
+    if (cls) el.className = cls;
+    return el;
+  };
+  document.getElementById('title').textContent = view.title;
+  document.getElementById('subtitle').textContent = view.subtitle;
+  var ctrl = SF.map.create({container: 'map', center: [0, 0], zoom: 2});
+  var map = ctrl.map;
+  var bounds = L.latLngBounds([]);
+  var describe = function (stop, prefix) {
+    var parts = [prefix + stop.label];
+    if (stop.arrival) parts.push('arrive ' + stop.arrival.replace('T', ' '));
+    if (stop.departure) parts.push('leave ' + stop.departure.replace('T', ' '));
+    (stop.broken || []).forEach(function (b) { parts.push('breaks ' + b.constraint); });
+    return parts.join(' · ');
+  };
+  var marker = function (lat, lon, label, color, title) {
+    var m = ctrl.addStopNumber({lat: lat, lng: lon, number: label, color: color});
+    m.bindPopup(text('span', title));
+    m.getElement && m.getElement() && m.getElement().setAttribute('title', title);
+    bounds.extend([lat, lon]);
+    return m;
+  };
+  var BROKEN = {hard: '#dc2626', medium: '#e11d48'};
+  var legend = document.getElementById('legend');
+  var focused = null;
+  view.vehicles.forEach(function (route) {
+    var points = route.path && route.path.length ? route.path
+      : [[route.start.lat, route.start.lon]].concat(route.stops.map(function (s) { return [s.lat, s.lon]; }),
+                                                    [[route.end.lat, route.end.lon]]);
+    ctrl.drawRoute({points: points, color: route.color, weight: 4, opacity: 0.85});
+    marker(route.start.lat, route.start.lon, 'S', route.color, route.label + ': ' + route.start.label);
+    if (route.end.lat !== route.start.lat || route.end.lon !== route.start.lon) {
+      marker(route.end.lat, route.end.lon, 'E', route.color, route.label + ': ' + route.end.label);
+    }
+    route.stops.forEach(function (stop, n) {
+      var worst = (stop.broken || []).filter(function (b) { return !b.shared; })[0];
+      marker(stop.lat, stop.lon, String(n + 1), worst ? BROKEN[worst.level] : route.color,
+             describe(stop, route.label + ' #' + (n + 1) + ': '));
+    });
+    var item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'legend-item';
+    var swatch = text('span', '', 'swatch');
+    swatch.style.background = route.color;
+    item.appendChild(swatch);
+    item.appendChild(text('span', route.label, 'name'));
+    item.appendChild(text('span', route.stats.join(' · '), 'stats'));
+    item.addEventListener('click', function () {
+      focused = focused === route.color ? null : route.color;
+      if (focused) ctrl.highlight(focused); else ctrl.clearHighlight();
+      Array.prototype.forEach.call(legend.children, function (child) {
+        child.classList.toggle('dim', Boolean(focused) && child !== item);
+      });
+    });
+    legend.appendChild(item);
+  });
+  view.unassigned.forEach(function (stop) {
+    marker(stop.lat, stop.lon, '•', '#9ca3af', describe(stop, 'Unplanned: '));
+  });
+  if (view.unassigned.length) {
+    legend.appendChild(text('div', view.unassigned.length + ' unplanned', 'unplanned'));
+  }
+  var fit = function () {
+    map.invalidateSize();
+    if (bounds.isValid()) map.fitBounds(bounds, {padding: [30, 30], maxZoom: 15, animate: false});
+  };
+  new ResizeObserver(fit).observe(document.getElementById('map'));
+  fit();
+  map.eachLayer(function (layer) {
+    if (!(layer instanceof L.TileLayer)) return;
+    layer.on('tileerror', function () { status.textContent = 'Map tiles unavailable: routes are drawn without the street map.'; });
+    layer.on('load', function () { status.textContent = ''; });
+  });
+  map.attributionControl.setPrefix(false);
+  drawTimeline(view.timeline, document.getElementById('view'));
 })();
 """
 
+ROUTES_CSS = """
+body{font:13px system-ui,sans-serif;color:#1f2937}
+header{padding:8px 10px 4px}header h1{margin:0;font-size:14px}header p{margin:2px 0 0;color:#6b7280}
+#map{height:420px;border-radius:8px;margin:0 10px}
+#tiles{margin:2px 10px;color:#b45309;font-size:12px;min-height:0}
+#legend{display:flex;flex-wrap:wrap;gap:6px;padding:6px 10px}
+.legend-item{display:inline-flex;align-items:center;gap:6px;border:1px solid #e5e7eb;background:#fff;border-radius:6px;
+  padding:3px 8px;cursor:pointer;font:inherit}
+.legend-item.dim{opacity:.4}.swatch{width:12px;height:12px;border-radius:3px;display:inline-block}
+.legend-item .name{font-weight:600}.legend-item .stats{color:#6b7280}.unplanned{align-self:center;color:#6b7280}
+"""
+
+
+def _payload(view: dict[str, Any]) -> str:
+    # JSON inside a script element: only "</" (and HTML comment openers) could end it early.
+    return json.dumps(view, ensure_ascii=False).replace("</", "<\\/").replace("<!--", "<\\!--")
+
+
+def _page(csp: str, css: str, body: str, view: dict[str, Any], scripts: list[str], guest: str) -> str:
+    return (
+        "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"referrer\" content=\"no-referrer\">"
+        f"<meta http-equiv=\"Content-Security-Policy\" content=\"{csp}\">"
+        "<style>" + css + "\nhtml,body{margin:0;background:transparent}#view{padding:0}</style></head>"
+        "<body>" + body + "<script id=\"view-data\" type=\"application/json\">" + _payload(view) + "</script>"
+        + "".join("<script>" + script + "\n</script>" for script in scripts)
+        + "<script>" + guest + "</script></body></html>"
+    )
+
 
 def document(view: dict[str, Any]) -> str:
-    """A self-contained HTML page drawing ``view``; no network access, no host access."""
-    css, js = _assets()
-    # JSON inside a script element: only "</" could end it early.
-    payload = json.dumps(view, ensure_ascii=False).replace("</", "<\\/")
-    return (
-        "<!doctype html><html><head><meta charset=\"utf-8\">"
-        "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; "
-        "script-src 'unsafe-inline'\">"
-        "<style>" + css + "\nhtml,body{margin:0;background:transparent}#view{padding:0}</style></head>"
-        "<body><div id=\"view\"></div><script id=\"view-data\" type=\"application/json\">" + payload + "</script>"
-        "<script>" + js + "\n</script><script>" + GUEST + "</script></body></html>"
-    )
+    """A self-contained HTML page drawing an engine view; it reaches nothing but map tiles."""
+    base = "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"
+    if view.get("kind") == "routes":
+        return _page(base + f"; img-src data: {TILES}",
+                     _asset("sf.css") + "\n" + _asset("leaflet.css") + "\n" + _asset("sf-map.css") + ROUTES_CSS,
+                     "<header><h1 id=\"title\"></h1><p id=\"subtitle\"></p></header><div id=\"map\" "
+                     "aria-label=\"Routes on a street map\"></div><p id=\"tiles\" role=\"status\"></p>"
+                     "<div id=\"legend\" aria-label=\"Vehicles\"></div><div id=\"view\"></div>",
+                     view, [_asset("sf.js"), _asset("leaflet.js"), _asset("sf-map.js")], ROUTES_GUEST)
+    return _page(base, _asset("sf.css"), "<div id=\"view\"></div>", view, [_asset("sf.js")], TIMELINE_GUEST)

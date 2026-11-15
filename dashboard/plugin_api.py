@@ -2,7 +2,8 @@
 
 Reads go through the same tool handlers the agent uses, so the page and the
 chat see one store and one set of refusals. The writes (solve, evaluate,
-cancel, save a profile, make a profile the default) are reachable only from a
+cancel, save a profile, make a profile the default, a dataset from a demo,
+apply a fill option, start or stop an experiment) are reachable only from a
 button the user clicks; that click is the decision. Nothing here deletes.
 """
 
@@ -34,6 +35,10 @@ READS = {
     "runs": "solverforge_workbench_runs",
     "run": "solverforge_workbench_run",
     "compare": "solverforge_workbench_compare",
+    "fill": "solverforge_workbench_fill",
+    "experiments": "solverforge_workbench_experiments",
+    "experiment": "solverforge_workbench_experiment",
+    "trends": "solverforge_workbench_trends",
 }
 WRITES = {
     "solve": "solverforge_workbench_solve",
@@ -42,8 +47,12 @@ WRITES = {
     "profile_save": "solverforge_workbench_profile_save",
     "profile_default": "solverforge_workbench_profile_default",
     "dataset_create": "solverforge_workbench_dataset_create",
+    "fill_apply": "solverforge_workbench_fill_apply",
+    "experiment_create": "solverforge_workbench_experiment_create",
+    "experiment_cancel": "solverforge_workbench_experiment_cancel",
 }
 STATUS = {"unknown_model": 404, "unknown_dataset": 404, "unknown_run": 404, "unknown_profile": 404,
+          "unknown_experiment": 404,
           "no_view": 404, "stale": 409, "busy": 409, "engine_missing": 503, "storage_error": 503}
 
 
@@ -90,21 +99,22 @@ router = APIRouter()
 
 @router.get("/view")
 def view(run: str = "", dataset: str = "") -> JSONResponse:
-    """The schedule of a run or dataset as a self-contained page for the Desktop's sandboxed frame."""
+    """The plan of a run or dataset, drawn by its model, as a self-contained page for the sandboxed frame."""
     package = _package()
     service = importlib.import_module(f"{package.__name__}.service")
     views = importlib.import_module(f"{package.__name__}.views")
     try:
-        timeline = package.workbench(_config).schedule(run_id=run or None, dataset_id=dataset or None)
+        drawn = package.workbench(_config).view(run_id=run or None, dataset_id=dataset or None)
     except service.WorkbenchError as exc:
         return JSONResponse({"ok": False, "code": exc.code, "error": exc.message},
                             status_code=STATUS.get(exc.code, 400))
-    return JSONResponse({"ok": True, "document": views.document(timeline)})
+    return JSONResponse({"ok": True, "kind": drawn.get("kind"), "document": views.document(drawn)})
 
 
 @router.get("/{action}")
-def read(action: str, model: str = "", dataset: str = "", run: str = "", runs: str = "",
-         include_plan: bool = False, max_matches: int = 10) -> JSONResponse:
+def read(action: str, model: str = "", dataset: str = "", run: str = "", runs: str = "", experiment: str = "",
+         items: str = "", top: int = 5, profile: str = "", include_plan: bool = False,
+         max_matches: int = 10) -> JSONResponse:
     if action not in READS:
         return JSONResponse({"ok": False, "code": "unknown_action", "error": f"no read named {action!r}"},
                             status_code=404)
@@ -115,6 +125,11 @@ def read(action: str, model: str = "", dataset: str = "", run: str = "", runs: s
         args["include_plan"] = include_plan
     if action == "compare":
         args = {"runs": [r for r in runs.split(",") if r]}
+    if action == "experiment":
+        args = {"experiment": experiment}
+    if action == "fill":
+        args = {"run": run or None, "dataset": dataset or None, "top": max(1, min(top, 50)),
+                "profile": profile or None, "items": [i for i in items.split(",") if i] or None}
     return _call(READS[action], {k: v for k, v in args.items() if v is not None})
 
 

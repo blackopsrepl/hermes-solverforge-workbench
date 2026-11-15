@@ -6,6 +6,7 @@
    "kind": "stock",
    "name": "Toy roster",
    "version": "0.0.0-testkit",
+   "view": null,
    "constraints": 3,
    "levels": {
     "hard": 2,
@@ -16,7 +17,7 @@
     "WEEK"
    ],
    "weights": true,
-   "datasets": 1
+   "datasets": 2
   }
  ]
 }

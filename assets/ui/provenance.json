@@ -2,10 +2,17 @@
   "solverforge_ui_version": "0.9.1",
   "solverforge_ui_commit": "94cfd9eef222fc6509ea410f6f7c4e2b90a825b1",
   "solverforge_ui_repository": "https://github.com/solverforge/solverforge-ui",
-  "files": "static/sf/sf.js and static/sf/sf.css, unmodified",
+  "files": "static/sf/sf.js, static/sf/sf.css, static/sf/modules/sf-map.js, static/sf/modules/sf-map.css and static/sf/vendor/leaflet/leaflet.js, leaflet.css, unmodified",
+  "leaflet_version": "1.9.4",
+  "leaflet_license_source": "https://raw.githubusercontent.com/Leaflet/Leaflet/v1.9.4/LICENSE",
   "sha256": {
     "sf.css": "5d504d904f3bd4c8f01c1453359dcd4dceb125dc94a05db8ee8899a4a00bafec",
     "sf.js": "8125327fd2ebb1d28657bdaa6a6d2520a9b3a27434fa2685b57e7bf49243d066",
-    "solverforge-ui-LICENSE": "5416115b91952412c8f4c40230090acd00fd36b2c8a50df50b07b1ac1d314b4e"
+    "sf-map.css": "bb21875455b7f5522a3da68df830b8e042610059cc58687330e88096f9c0bcf7",
+    "sf-map.js": "54b8c1cec98e4d73b226bc8f5e3cf13541d01214c398c43798b30ee616715ddb",
+    "leaflet.css": "a7837102824184820dfa198d1ebcd109ff6d0ff9a2672a074b9a1b4d147d04c6",
+    "leaflet.js": "db49d009c841f5ca34a888c96511ae936fd9f5533e90d8b2c4d57596f4e5641a",
+    "solverforge-ui-LICENSE": "5416115b91952412c8f4c40230090acd00fd36b2c8a50df50b07b1ac1d314b4e",
+    "Leaflet-LICENSE": "53e8dc25862014e4324741ca18fbe3611e11d42ef69f59f86ea8c5389647d4cb"
   }
 }

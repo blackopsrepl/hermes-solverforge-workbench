@@ -1,0 +1,7063 @@
+{
+ "kind": "timeline",
+ "label": "Employee",
+ "model": {
+  "axis": {
+   "days": [
+    {
+     "isWeekend": false,
+     "label": "Mon",
+     "subLabel": "1 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Tue",
+     "subLabel": "2 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Wed",
+     "subLabel": "3 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Thu",
+     "subLabel": "4 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Fri",
+     "subLabel": "5 Mar"
+    },
+    {
+     "isWeekend": true,
+     "label": "Sat",
+     "subLabel": "6 Mar"
+    },
+    {
+     "isWeekend": true,
+     "label": "Sun",
+     "subLabel": "7 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Mon",
+     "subLabel": "8 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Tue",
+     "subLabel": "9 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Wed",
+     "subLabel": "10 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Thu",
+     "subLabel": "11 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Fri",
+     "subLabel": "12 Mar"
+    },
+    {
+     "isWeekend": true,
+     "label": "Sat",
+     "subLabel": "13 Mar"
+    },
+    {
+     "isWeekend": true,
+     "label": "Sun",
+     "subLabel": "14 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Mon",
+     "subLabel": "15 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Tue",
+     "subLabel": "16 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Wed",
+     "subLabel": "17 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Thu",
+     "subLabel": "18 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Fri",
+     "subLabel": "19 Mar"
+    },
+    {
+     "isWeekend": true,
+     "label": "Sat",
+     "subLabel": "20 Mar"
+    },
+    {
+     "isWeekend": true,
+     "label": "Sun",
+     "subLabel": "21 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Mon",
+     "subLabel": "22 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Tue",
+     "subLabel": "23 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Wed",
+     "subLabel": "24 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Thu",
+     "subLabel": "25 Mar"
+    },
+    {
+     "isWeekend": false,
+     "label": "Fri",
+     "subLabel": "26 Mar"
+    },
+    {
+     "isWeekend": true,
+     "label": "Sat",
+     "subLabel": "27 Mar"
+    },
+    {
+     "isWeekend": true,
+     "label": "Sun",
+     "subLabel": "28 Mar"
+    }
+   ],
+   "endMinute": 40320,
+   "initialViewport": {
+    "endMinute": 10080,
+    "startMinute": 0
+   },
+   "startMinute": 0,
+   "ticks": [
+    {
+     "label": "00:00",
+     "minute": 0
+    },
+    {
+     "label": "06:00",
+     "minute": 360
+    },
+    {
+     "label": "12:00",
+     "minute": 720
+    },
+    {
+     "label": "18:00",
+     "minute": 1080
+    },
+    {
+     "label": "00:00",
+     "minute": 1440
+    },
+    {
+     "label": "06:00",
+     "minute": 1800
+    },
+    {
+     "label": "12:00",
+     "minute": 2160
+    },
+    {
+     "label": "18:00",
+     "minute": 2520
+    },
+    {
+     "label": "00:00",
+     "minute": 2880
+    },
+    {
+     "label": "06:00",
+     "minute": 3240
+    },
+    {
+     "label": "12:00",
+     "minute": 3600
+    },
+    {
+     "label": "18:00",
+     "minute": 3960
+    },
+    {
+     "label": "00:00",
+     "minute": 4320
+    },
+    {
+     "label": "06:00",
+     "minute": 4680
+    },
+    {
+     "label": "12:00",
+     "minute": 5040
+    },
+    {
+     "label": "18:00",
+     "minute": 5400
+    },
+    {
+     "label": "00:00",
+     "minute": 5760
+    },
+    {
+     "label": "06:00",
+     "minute": 6120
+    },
+    {
+     "label": "12:00",
+     "minute": 6480
+    },
+    {
+     "label": "18:00",
+     "minute": 6840
+    },
+    {
+     "label": "00:00",
+     "minute": 7200
+    },
+    {
+     "label": "06:00",
+     "minute": 7560
+    },
+    {
+     "label": "12:00",
+     "minute": 7920
+    },
+    {
+     "label": "18:00",
+     "minute": 8280
+    },
+    {
+     "label": "00:00",
+     "minute": 8640
+    },
+    {
+     "label": "06:00",
+     "minute": 9000
+    },
+    {
+     "label": "12:00",
+     "minute": 9360
+    },
+    {
+     "label": "18:00",
+     "minute": 9720
+    },
+    {
+     "label": "00:00",
+     "minute": 10080
+    },
+    {
+     "label": "06:00",
+     "minute": 10440
+    },
+    {
+     "label": "12:00",
+     "minute": 10800
+    },
+    {
+     "label": "18:00",
+     "minute": 11160
+    },
+    {
+     "label": "00:00",
+     "minute": 11520
+    },
+    {
+     "label": "06:00",
+     "minute": 11880
+    },
+    {
+     "label": "12:00",
+     "minute": 12240
+    },
+    {
+     "label": "18:00",
+     "minute": 12600
+    },
+    {
+     "label": "00:00",
+     "minute": 12960
+    },
+    {
+     "label": "06:00",
+     "minute": 13320
+    },
+    {
+     "label": "12:00",
+     "minute": 13680
+    },
+    {
+     "label": "18:00",
+     "minute": 14040
+    },
+    {
+     "label": "00:00",
+     "minute": 14400
+    },
+    {
+     "label": "06:00",
+     "minute": 14760
+    },
+    {
+     "label": "12:00",
+     "minute": 15120
+    },
+    {
+     "label": "18:00",
+     "minute": 15480
+    },
+    {
+     "label": "00:00",
+     "minute": 15840
+    },
+    {
+     "label": "06:00",
+     "minute": 16200
+    },
+    {
+     "label": "12:00",
+     "minute": 16560
+    },
+    {
+     "label": "18:00",
+     "minute": 16920
+    },
+    {
+     "label": "00:00",
+     "minute": 17280
+    },
+    {
+     "label": "06:00",
+     "minute": 17640
+    },
+    {
+     "label": "12:00",
+     "minute": 18000
+    },
+    {
+     "label": "18:00",
+     "minute": 18360
+    },
+    {
+     "label": "00:00",
+     "minute": 18720
+    },
+    {
+     "label": "06:00",
+     "minute": 19080
+    },
+    {
+     "label": "12:00",
+     "minute": 19440
+    },
+    {
+     "label": "18:00",
+     "minute": 19800
+    },
+    {
+     "label": "00:00",
+     "minute": 20160
+    },
+    {
+     "label": "06:00",
+     "minute": 20520
+    },
+    {
+     "label": "12:00",
+     "minute": 20880
+    },
+    {
+     "label": "18:00",
+     "minute": 21240
+    },
+    {
+     "label": "00:00",
+     "minute": 21600
+    },
+    {
+     "label": "06:00",
+     "minute": 21960
+    },
+    {
+     "label": "12:00",
+     "minute": 22320
+    },
+    {
+     "label": "18:00",
+     "minute": 22680
+    },
+    {
+     "label": "00:00",
+     "minute": 23040
+    },
+    {
+     "label": "06:00",
+     "minute": 23400
+    },
+    {
+     "label": "12:00",
+     "minute": 23760
+    },
+    {
+     "label": "18:00",
+     "minute": 24120
+    },
+    {
+     "label": "00:00",
+     "minute": 24480
+    },
+    {
+     "label": "06:00",
+     "minute": 24840
+    },
+    {
+     "label": "12:00",
+     "minute": 25200
+    },
+    {
+     "label": "18:00",
+     "minute": 25560
+    },
+    {
+     "label": "00:00",
+     "minute": 25920
+    },
+    {
+     "label": "06:00",
+     "minute": 26280
+    },
+    {
+     "label": "12:00",
+     "minute": 26640
+    },
+    {
+     "label": "18:00",
+     "minute": 27000
+    },
+    {
+     "label": "00:00",
+     "minute": 27360
+    },
+    {
+     "label": "06:00",
+     "minute": 27720
+    },
+    {
+     "label": "12:00",
+     "minute": 28080
+    },
+    {
+     "label": "18:00",
+     "minute": 28440
+    },
+    {
+     "label": "00:00",
+     "minute": 28800
+    },
+    {
+     "label": "06:00",
+     "minute": 29160
+    },
+    {
+     "label": "12:00",
+     "minute": 29520
+    },
+    {
+     "label": "18:00",
+     "minute": 29880
+    },
+    {
+     "label": "00:00",
+     "minute": 30240
+    },
+    {
+     "label": "06:00",
+     "minute": 30600
+    },
+    {
+     "label": "12:00",
+     "minute": 30960
+    },
+    {
+     "label": "18:00",
+     "minute": 31320
+    },
+    {
+     "label": "00:00",
+     "minute": 31680
+    },
+    {
+     "label": "06:00",
+     "minute": 32040
+    },
+    {
+     "label": "12:00",
+     "minute": 32400
+    },
+    {
+     "label": "18:00",
+     "minute": 32760
+    },
+    {
+     "label": "00:00",
+     "minute": 33120
+    },
+    {
+     "label": "06:00",
+     "minute": 33480
+    },
+    {
+     "label": "12:00",
+     "minute": 33840
+    },
+    {
+     "label": "18:00",
+     "minute": 34200
+    },
+    {
+     "label": "00:00",
+     "minute": 34560
+    },
+    {
+     "label": "06:00",
+     "minute": 34920
+    },
+    {
+     "label": "12:00",
+     "minute": 35280
+    },
+    {
+     "label": "18:00",
+     "minute": 35640
+    },
+    {
+     "label": "00:00",
+     "minute": 36000
+    },
+    {
+     "label": "06:00",
+     "minute": 36360
+    },
+    {
+     "label": "12:00",
+     "minute": 36720
+    },
+    {
+     "label": "18:00",
+     "minute": 37080
+    },
+    {
+     "label": "00:00",
+     "minute": 37440
+    },
+    {
+     "label": "06:00",
+     "minute": 37800
+    },
+    {
+     "label": "12:00",
+     "minute": 38160
+    },
+    {
+     "label": "18:00",
+     "minute": 38520
+    },
+    {
+     "label": "00:00",
+     "minute": 38880
+    },
+    {
+     "label": "06:00",
+     "minute": 39240
+    },
+    {
+     "label": "12:00",
+     "minute": 39600
+    },
+    {
+     "label": "18:00",
+     "minute": 39960
+    },
+    {
+     "label": "00:00",
+     "minute": 40320
+    }
+   ]
+  },
+  "lanes": [
+   {
+    "badges": [
+     {
+      "label": "1 mandatory"
+     }
+    ],
+    "id": "open",
+    "items": [
+     {
+      "endMinute": 900,
+      "id": "2027-03-01-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a · breaks: Mandatory shift left open",
+      "startMinute": 420,
+      "tone": "rose"
+     },
+     {
+      "endMinute": 780,
+      "id": "2027-03-01-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 540,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 840,
+      "id": "2027-03-01-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 600,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 2220,
+      "id": "2027-03-02-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 1980,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 2280,
+      "id": "2027-03-02-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 2040,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 3660,
+      "id": "2027-03-03-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 3420,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 3720,
+      "id": "2027-03-03-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 3480,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 5100,
+      "id": "2027-03-04-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 4860,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 5160,
+      "id": "2027-03-04-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 4920,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 6540,
+      "id": "2027-03-05-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 6300,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 6600,
+      "id": "2027-03-05-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 6360,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 10860,
+      "id": "2027-03-08-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 10620,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 10920,
+      "id": "2027-03-08-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 10680,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 12300,
+      "id": "2027-03-09-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 12060,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 12360,
+      "id": "2027-03-09-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 12120,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 13740,
+      "id": "2027-03-10-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 13500,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 13800,
+      "id": "2027-03-10-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 13560,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 15180,
+      "id": "2027-03-11-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 14940,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 15240,
+      "id": "2027-03-11-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 15000,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 16620,
+      "id": "2027-03-12-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 16380,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 16680,
+      "id": "2027-03-12-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 16440,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 20940,
+      "id": "2027-03-15-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 20700,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 21000,
+      "id": "2027-03-15-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 20760,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 22380,
+      "id": "2027-03-16-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 22140,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 22440,
+      "id": "2027-03-16-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 22200,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 23820,
+      "id": "2027-03-17-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 23580,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 23880,
+      "id": "2027-03-17-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 23640,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 25260,
+      "id": "2027-03-18-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 25020,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 25320,
+      "id": "2027-03-18-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 25080,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 26700,
+      "id": "2027-03-19-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 26460,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 26760,
+      "id": "2027-03-19-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 26520,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 31020,
+      "id": "2027-03-22-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 30780,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 31080,
+      "id": "2027-03-22-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 30840,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 32460,
+      "id": "2027-03-23-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 32220,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 32520,
+      "id": "2027-03-23-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 32280,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 33900,
+      "id": "2027-03-24-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 33660,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 33960,
+      "id": "2027-03-24-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 33720,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 35340,
+      "id": "2027-03-25-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 35100,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 35400,
+      "id": "2027-03-25-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 35160,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 36780,
+      "id": "2027-03-26-support-0",
+      "label": "support",
+      "meta": "09:00–13:00 · support, ward-a · optional",
+      "startMinute": 36540,
+      "tone": "cyan"
+     },
+     {
+      "endMinute": 36840,
+      "id": "2027-03-26-support-1",
+      "label": "support",
+      "meta": "10:00–14:00 · support, ward-a · optional",
+      "startMinute": 36600,
+      "tone": "cyan"
+     }
+    ],
+    "label": "Open shifts",
+    "mode": "detailed",
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 41
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "Overlapping shifts",
+      "style": {
+       "bg": "rgba(220, 38, 38, 0.12)",
+       "border": "1px solid #dc2626",
+       "color": "#b91c1c"
+      }
+     },
+     {
+      "label": "Minutes per period outside required range",
+      "style": {
+       "bg": "rgba(220, 38, 38, 0.12)",
+       "border": "1px solid #dc2626",
+       "color": "#b91c1c"
+      }
+     },
+     {
+      "label": "+1 more",
+      "style": {
+       "bg": "rgba(220, 38, 38, 0.12)",
+       "border": "1px solid #dc2626",
+       "color": "#b91c1c"
+      }
+     },
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e01",
+    "items": [
+     {
+      "endMinute": 900,
+      "id": "2027-03-01-ward-a-early-0",
+      "label": "📌 early",
+      "meta": "07:00–15:00 · early, ward-a, promised · pinned",
+      "startMinute": 420,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 900,
+      "id": "2027-03-01-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 420,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 2340,
+      "id": "2027-03-02-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 1860,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 3780,
+      "id": "2027-03-03-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 3300,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 5220,
+      "id": "2027-03-04-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 4740,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 8100,
+      "id": "2027-03-06-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b, weekend",
+      "startMinute": 7620,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 10980,
+      "id": "2027-03-08-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 10500,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 12420,
+      "id": "2027-03-09-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 11940,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 15300,
+      "id": "2027-03-11-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 14820,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 21060,
+      "id": "2027-03-15-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 20580,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 23940,
+      "id": "2027-03-17-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 23460,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 25380,
+      "id": "2027-03-18-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 24900,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 28260,
+      "id": "2027-03-20-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b, weekend",
+      "startMinute": 27780,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 29700,
+      "id": "2027-03-21-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a, weekend",
+      "startMinute": 29220,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 31140,
+      "id": "2027-03-22-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 30660,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 35460,
+      "id": "2027-03-25-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 34980,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 36900,
+      "id": "2027-03-26-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 36420,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 39780,
+      "id": "2027-03-28-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a, weekend",
+      "startMinute": 39300,
+      "tone": "amber"
+     }
+    ],
+    "label": "Ada North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 10080,
+      "label": "Unavailable",
+      "startMinute": 8640,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 5220,
+      "label": "Preferred",
+      "startMinute": 4740,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 18
+     },
+     {
+      "label": "Hours",
+      "value": 144.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "senior"
+     },
+     {
+      "label": "wound-care"
+     }
+    ],
+    "id": "employee:e02",
+    "items": [
+     {
+      "endMinute": 900,
+      "id": "2027-03-01-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 420,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 5040,
+      "id": "2027-03-04-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 4800,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 7140,
+      "id": "2027-03-05-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 6660,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 10980,
+      "id": "2027-03-08-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 10500,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 13860,
+      "id": "2027-03-10-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 13380,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 16560,
+      "id": "2027-03-12-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 16320,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 19620,
+      "id": "2027-03-14-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c, weekend",
+      "startMinute": 19140,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 22500,
+      "id": "2027-03-16-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 22020,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 23940,
+      "id": "2027-03-17-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 23460,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 25380,
+      "id": "2027-03-18-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 24900,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 26820,
+      "id": "2027-03-19-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 26340,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 28260,
+      "id": "2027-03-20-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b, weekend",
+      "startMinute": 27780,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 35460,
+      "id": "2027-03-25-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 34980,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 36900,
+      "id": "2027-03-26-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 36420,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 38340,
+      "id": "2027-03-27-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a, weekend",
+      "startMinute": 37860,
+      "tone": "amber"
+     }
+    ],
+    "label": "Bea North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 12960,
+      "label": "Unavailable",
+      "startMinute": 11520,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 34500,
+      "label": "Rather not",
+      "startMinute": 34020,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 15
+     },
+     {
+      "label": "Hours",
+      "value": 112.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e03",
+    "items": [
+     {
+      "endMinute": 2340,
+      "id": "2027-03-02-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 1860,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 6660,
+      "id": "2027-03-05-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 6180,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 9540,
+      "id": "2027-03-07-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a, weekend",
+      "startMinute": 9060,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 15300,
+      "id": "2027-03-11-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 14820,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 18180,
+      "id": "2027-03-13-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b, weekend",
+      "startMinute": 17700,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 19620,
+      "id": "2027-03-14-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c, weekend",
+      "startMinute": 19140,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 21060,
+      "id": "2027-03-15-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 20580,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 22500,
+      "id": "2027-03-16-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 22020,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 29700,
+      "id": "2027-03-21-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b, weekend",
+      "startMinute": 29220,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 31140,
+      "id": "2027-03-22-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 30660,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 34020,
+      "id": "2027-03-24-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 33540,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 35460,
+      "id": "2027-03-25-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 34980,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 36900,
+      "id": "2027-03-26-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 36420,
+      "tone": "amber"
+     }
+    ],
+    "label": "Cas North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 5760,
+      "label": "Unavailable",
+      "startMinute": 4320,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 19620,
+      "label": "Preferred",
+      "startMinute": 19140,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 13
+     },
+     {
+      "label": "Hours",
+      "value": 104.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e04",
+    "items": [
+     {
+      "endMinute": 900,
+      "id": "2027-03-01-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 420,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 4260,
+      "id": "2027-03-03-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 3780,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 8100,
+      "id": "2027-03-06-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b, weekend",
+      "startMinute": 7620,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 11460,
+      "id": "2027-03-08-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 10980,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 14340,
+      "id": "2027-03-10-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 13860,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 15780,
+      "id": "2027-03-11-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 15300,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 17220,
+      "id": "2027-03-12-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 16740,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 22980,
+      "id": "2027-03-16-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 22500,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 27300,
+      "id": "2027-03-19-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 26820,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 28740,
+      "id": "2027-03-20-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a, weekend",
+      "startMinute": 28260,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 31620,
+      "id": "2027-03-22-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 31140,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 35940,
+      "id": "2027-03-25-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 35460,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 40260,
+      "id": "2027-03-28-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b, weekend",
+      "startMinute": 39780,
+      "tone": "blue"
+     }
+    ],
+    "label": "Dov North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 25920,
+      "label": "Unavailable",
+      "startMinute": 24480,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 2820,
+      "label": "Rather not",
+      "startMinute": 2340,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 13
+     },
+     {
+      "label": "Hours",
+      "value": 104.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "icu"
+     },
+     {
+      "label": "wound-care"
+     }
+    ],
+    "id": "employee:e05",
+    "items": [
+     {
+      "endMinute": 3300,
+      "id": "2027-03-02-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 2820,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 7140,
+      "id": "2027-03-05-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 6660,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 8580,
+      "id": "2027-03-06-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b, weekend",
+      "startMinute": 8100,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 11460,
+      "id": "2027-03-08-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 10980,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 14340,
+      "id": "2027-03-10-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 13860,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 15780,
+      "id": "2027-03-11-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 15300,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 18660,
+      "id": "2027-03-13-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c, weekend",
+      "startMinute": 18180,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 24420,
+      "id": "2027-03-17-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 23940,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 25860,
+      "id": "2027-03-18-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 25380,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 31140,
+      "id": "2027-03-22-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 30660,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 32580,
+      "id": "2027-03-23-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 32100,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 35940,
+      "id": "2027-03-25-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 35460,
+      "tone": "blue"
+     }
+    ],
+    "label": "Eda North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 30240,
+      "label": "Unavailable",
+      "startMinute": 28800,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 8100,
+      "label": "Preferred",
+      "startMinute": 7620,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 12
+     },
+     {
+      "label": "Hours",
+      "value": 96.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "senior"
+     }
+    ],
+    "id": "employee:e06",
+    "items": [
+     {
+      "endMinute": 900,
+      "id": "2027-03-01-ward-b-early-0",
+      "label": "📌 early",
+      "meta": "07:00–15:00 · early, ward-b, promised · pinned",
+      "startMinute": 420,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 5220,
+      "id": "2027-03-04-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 4740,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 9540,
+      "id": "2027-03-07-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a, weekend",
+      "startMinute": 9060,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 12900,
+      "id": "2027-03-09-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 12420,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 16260,
+      "id": "2027-03-11-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 15780,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 17700,
+      "id": "2027-03-12-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 17220,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 22020,
+      "id": "2027-03-15-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 21540,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 23460,
+      "id": "2027-03-16-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 22980,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 27300,
+      "id": "2027-03-19-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 26820,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 31140,
+      "id": "2027-03-22-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 30660,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 32580,
+      "id": "2027-03-23-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 32100,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 34020,
+      "id": "2027-03-24-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 33540,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 37380,
+      "id": "2027-03-26-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 36900,
+      "tone": "blue"
+     }
+    ],
+    "label": "Fin North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 20160,
+      "label": "Unavailable",
+      "startMinute": 18720,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 38820,
+      "label": "Rather not",
+      "startMinute": 38340,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 13
+     },
+     {
+      "label": "Hours",
+      "value": 104.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e07",
+    "items": [
+     {
+      "endMinute": 1380,
+      "id": "2027-03-01-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 900,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 7140,
+      "id": "2027-03-05-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 6660,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 12420,
+      "id": "2027-03-09-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 11940,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 13860,
+      "id": "2027-03-10-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 13380,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 16740,
+      "id": "2027-03-12-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 16260,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 21060,
+      "id": "2027-03-15-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 20580,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 23940,
+      "id": "2027-03-17-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 23460,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 27780,
+      "id": "2027-03-19-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 27300,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 31140,
+      "id": "2027-03-22-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 30660,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 34020,
+      "id": "2027-03-24-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 33540,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 38820,
+      "id": "2027-03-27-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a, weekend",
+      "startMinute": 38340,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 40260,
+      "id": "2027-03-28-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a, weekend",
+      "startMinute": 39780,
+      "tone": "blue"
+     }
+    ],
+    "label": "Gil North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 2880,
+      "label": "Unavailable",
+      "startMinute": 1440,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 8100,
+      "label": "Preferred",
+      "startMinute": 7620,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 12
+     },
+     {
+      "label": "Hours",
+      "value": 96.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "wound-care"
+     }
+    ],
+    "id": "employee:e08",
+    "items": [
+     {
+      "endMinute": 1860,
+      "id": "2027-03-01-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 1380,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 6180,
+      "id": "2027-03-04-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 5700,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 10020,
+      "id": "2027-03-07-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b, weekend",
+      "startMinute": 9540,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 12900,
+      "id": "2027-03-09-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 12420,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 15780,
+      "id": "2027-03-11-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 15300,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 17220,
+      "id": "2027-03-12-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 16740,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 18660,
+      "id": "2027-03-13-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a, weekend",
+      "startMinute": 18180,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 21540,
+      "id": "2027-03-15-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 21060,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 22980,
+      "id": "2027-03-16-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 22500,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 26820,
+      "id": "2027-03-19-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 26340,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 31620,
+      "id": "2027-03-22-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 31140,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 33060,
+      "id": "2027-03-23-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 32580,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 34500,
+      "id": "2027-03-24-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 34020,
+      "tone": "blue"
+     }
+    ],
+    "label": "Hal North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 36000,
+      "label": "Unavailable",
+      "startMinute": 34560,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 1380,
+      "label": "Rather not",
+      "startMinute": 900,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 13
+     },
+     {
+      "label": "Hours",
+      "value": 104.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "senior"
+     },
+     {
+      "label": "icu"
+     }
+    ],
+    "id": "employee:e09",
+    "items": [
+     {
+      "endMinute": 2340,
+      "id": "2027-03-02-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 1860,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 3780,
+      "id": "2027-03-03-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 3300,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 5220,
+      "id": "2027-03-04-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 4740,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 6660,
+      "id": "2027-03-05-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 6180,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 10980,
+      "id": "2027-03-08-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 10500,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 15300,
+      "id": "2027-03-11-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 14820,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 18180,
+      "id": "2027-03-13-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c, weekend",
+      "startMinute": 17700,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 19620,
+      "id": "2027-03-14-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b, weekend",
+      "startMinute": 19140,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 22500,
+      "id": "2027-03-16-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 22020,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 25380,
+      "id": "2027-03-18-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 24900,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 26820,
+      "id": "2027-03-19-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 26340,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 29700,
+      "id": "2027-03-21-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c, weekend",
+      "startMinute": 29220,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 32580,
+      "id": "2027-03-23-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 32100,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 38340,
+      "id": "2027-03-27-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c, weekend",
+      "startMinute": 37860,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 39780,
+      "id": "2027-03-28-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b, weekend",
+      "startMinute": 39300,
+      "tone": "amber"
+     }
+    ],
+    "label": "Ines North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 14400,
+      "label": "Unavailable",
+      "startMinute": 12960,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 9540,
+      "label": "Preferred",
+      "startMinute": 9060,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 15
+     },
+     {
+      "label": "Hours",
+      "value": 120.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e10",
+    "items": [
+     {
+      "endMinute": 2340,
+      "id": "2027-03-02-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 1860,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 3780,
+      "id": "2027-03-03-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 3300,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 10980,
+      "id": "2027-03-08-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 10500,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 15300,
+      "id": "2027-03-11-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 14820,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 16740,
+      "id": "2027-03-12-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 16260,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 20100,
+      "id": "2027-03-14-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b, weekend",
+      "startMinute": 19620,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 23940,
+      "id": "2027-03-17-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 23460,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 25380,
+      "id": "2027-03-18-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 24900,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 30180,
+      "id": "2027-03-21-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c, weekend",
+      "startMinute": 29700,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 31620,
+      "id": "2027-03-22-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 31140,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 35460,
+      "id": "2027-03-25-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 34980,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 36900,
+      "id": "2027-03-26-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 36420,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 39780,
+      "id": "2027-03-28-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c, weekend",
+      "startMinute": 39300,
+      "tone": "amber"
+     }
+    ],
+    "label": "Jo North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 34560,
+      "label": "Unavailable",
+      "startMinute": 33120,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 25860,
+      "label": "Rather not",
+      "startMinute": 25380,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 13
+     },
+     {
+      "label": "Hours",
+      "value": 104.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "senior"
+     },
+     {
+      "label": "wound-care"
+     }
+    ],
+    "id": "employee:e11",
+    "items": [
+     {
+      "endMinute": 900,
+      "id": "2027-03-01-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 420,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 2340,
+      "id": "2027-03-02-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 1860,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 3780,
+      "id": "2027-03-03-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 3300,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 5220,
+      "id": "2027-03-04-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 4740,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 8100,
+      "id": "2027-03-06-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c, weekend",
+      "startMinute": 7620,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 12420,
+      "id": "2027-03-09-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 11940,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 13860,
+      "id": "2027-03-10-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 13380,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 17220,
+      "id": "2027-03-12-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 16740,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 21540,
+      "id": "2027-03-15-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 21060,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 22980,
+      "id": "2027-03-16-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 22500,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 24420,
+      "id": "2027-03-17-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 23940,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 25860,
+      "id": "2027-03-18-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 25380,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 27300,
+      "id": "2027-03-19-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 26820,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 32580,
+      "id": "2027-03-23-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 32100,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 34020,
+      "id": "2027-03-24-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 33540,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 37380,
+      "id": "2027-03-26-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 36900,
+      "tone": "blue"
+     }
+    ],
+    "label": "Kai North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 11520,
+      "label": "Unavailable",
+      "startMinute": 10080,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 31140,
+      "label": "Preferred",
+      "startMinute": 30660,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 16
+     },
+     {
+      "label": "Hours",
+      "value": 128.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e12",
+    "items": [
+     {
+      "endMinute": 900,
+      "id": "2027-03-01-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 420,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 2340,
+      "id": "2027-03-02-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 1860,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 3780,
+      "id": "2027-03-03-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 3300,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 8100,
+      "id": "2027-03-06-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c, weekend",
+      "startMinute": 7620,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 12420,
+      "id": "2027-03-09-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 11940,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 13860,
+      "id": "2027-03-10-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 13380,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 22980,
+      "id": "2027-03-16-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 22500,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 24420,
+      "id": "2027-03-17-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 23940,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 32580,
+      "id": "2027-03-23-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 32100,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 34020,
+      "id": "2027-03-24-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 33540,
+      "tone": "amber"
+     }
+    ],
+    "label": "Lea North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 40320,
+      "label": "Unavailable",
+      "startMinute": 38880,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 21540,
+      "label": "Rather not",
+      "startMinute": 21060,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 10
+     },
+     {
+      "label": "Hours",
+      "value": 80.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "icu"
+     }
+    ],
+    "id": "employee:e13",
+    "items": [
+     {
+      "endMinute": 2340,
+      "id": "2027-03-02-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 1860,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 5220,
+      "id": "2027-03-04-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 4740,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 13860,
+      "id": "2027-03-10-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 13380,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 17220,
+      "id": "2027-03-12-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 16740,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 21540,
+      "id": "2027-03-15-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 21060,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 25860,
+      "id": "2027-03-18-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 25380,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 27300,
+      "id": "2027-03-19-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 26820,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 34020,
+      "id": "2027-03-24-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 33540,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 37380,
+      "id": "2027-03-26-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 36900,
+      "tone": "blue"
+     }
+    ],
+    "label": "Max North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 12960,
+      "label": "Unavailable",
+      "startMinute": 11520,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 16740,
+      "label": "Preferred",
+      "startMinute": 16260,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 9
+     },
+     {
+      "label": "Hours",
+      "value": 72.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "wound-care"
+     }
+    ],
+    "id": "employee:e14",
+    "items": [
+     {
+      "endMinute": 720,
+      "id": "2027-03-01-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 480,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 2820,
+      "id": "2027-03-02-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 2340,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 6660,
+      "id": "2027-03-05-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 6180,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 11460,
+      "id": "2027-03-08-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 10980,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 12900,
+      "id": "2027-03-09-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 12420,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 18660,
+      "id": "2027-03-13-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b, weekend",
+      "startMinute": 18180,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 22500,
+      "id": "2027-03-16-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 22020,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 23940,
+      "id": "2027-03-17-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 23460,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 25200,
+      "id": "2027-03-18-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 24960,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 26820,
+      "id": "2027-03-19-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 26340,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 29700,
+      "id": "2027-03-21-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a, weekend",
+      "startMinute": 29220,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 33060,
+      "id": "2027-03-23-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 32580,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 35940,
+      "id": "2027-03-25-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 35460,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 39780,
+      "id": "2027-03-28-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a, weekend",
+      "startMinute": 39300,
+      "tone": "amber"
+     }
+    ],
+    "label": "Nia North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 21600,
+      "label": "Unavailable",
+      "startMinute": 20160,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 40260,
+      "label": "Rather not",
+      "startMinute": 39780,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 14
+     },
+     {
+      "label": "Hours",
+      "value": 104.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e15",
+    "items": [
+     {
+      "endMinute": 4260,
+      "id": "2027-03-03-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 3780,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 7140,
+      "id": "2027-03-05-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 6660,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 8580,
+      "id": "2027-03-06-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c, weekend",
+      "startMinute": 8100,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 13860,
+      "id": "2027-03-10-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 13380,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 15300,
+      "id": "2027-03-11-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 14820,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 16740,
+      "id": "2027-03-12-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 16260,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 19620,
+      "id": "2027-03-14-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b, weekend",
+      "startMinute": 19140,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 25380,
+      "id": "2027-03-18-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 24900,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 26820,
+      "id": "2027-03-19-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 26340,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 29700,
+      "id": "2027-03-21-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c, weekend",
+      "startMinute": 29220,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 34020,
+      "id": "2027-03-24-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 33540,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 36900,
+      "id": "2027-03-26-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 36420,
+      "tone": "amber"
+     }
+    ],
+    "label": "Oto North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 21600,
+      "label": "Unavailable",
+      "startMinute": 20160,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 29700,
+      "label": "Preferred",
+      "startMinute": 29220,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 12
+     },
+     {
+      "label": "Hours",
+      "value": 96.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "senior"
+     }
+    ],
+    "id": "employee:e16",
+    "items": [
+     {
+      "endMinute": 4260,
+      "id": "2027-03-03-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 3780,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 7620,
+      "id": "2027-03-05-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 7140,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 12420,
+      "id": "2027-03-09-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 11940,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 16740,
+      "id": "2027-03-12-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 16260,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 18180,
+      "id": "2027-03-13-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c, weekend",
+      "startMinute": 17700,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 19620,
+      "id": "2027-03-14-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a, weekend",
+      "startMinute": 19140,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 21060,
+      "id": "2027-03-15-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 20580,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 26820,
+      "id": "2027-03-19-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 26340,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 28260,
+      "id": "2027-03-20-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a, weekend",
+      "startMinute": 27780,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 31140,
+      "id": "2027-03-22-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 30660,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 34020,
+      "id": "2027-03-24-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 33540,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 35460,
+      "id": "2027-03-25-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 34980,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 38340,
+      "id": "2027-03-27-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b, weekend",
+      "startMinute": 37860,
+      "tone": "amber"
+     }
+    ],
+    "label": "Pia North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 24480,
+      "label": "Unavailable",
+      "startMinute": 23040,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 40260,
+      "label": "Rather not",
+      "startMinute": 39780,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 13
+     },
+     {
+      "label": "Hours",
+      "value": 104.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "icu"
+     },
+     {
+      "label": "wound-care"
+     }
+    ],
+    "id": "employee:e17",
+    "items": [
+     {
+      "endMinute": 1860,
+      "id": "2027-03-01-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 1380,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 4740,
+      "id": "2027-03-03-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 4260,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 7620,
+      "id": "2027-03-05-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 7140,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 11940,
+      "id": "2027-03-08-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 11460,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 14820,
+      "id": "2027-03-10-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 14340,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 20580,
+      "id": "2027-03-14-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b, weekend",
+      "startMinute": 20100,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 22020,
+      "id": "2027-03-15-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 21540,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 24900,
+      "id": "2027-03-17-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 24420,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 31620,
+      "id": "2027-03-22-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 31140,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 33060,
+      "id": "2027-03-23-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 32580,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 37860,
+      "id": "2027-03-26-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 37380,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 40740,
+      "id": "2027-03-28-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b, weekend",
+      "startMinute": 40260,
+      "tone": "violet"
+     }
+    ],
+    "label": "Quin North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 10080,
+      "label": "Unavailable",
+      "startMinute": 8640,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 6660,
+      "label": "Preferred",
+      "startMinute": 6180,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 12
+     },
+     {
+      "label": "Hours",
+      "value": 96.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e18",
+    "items": [
+     {
+      "endMinute": 1380,
+      "id": "2027-03-01-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 900,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 2820,
+      "id": "2027-03-02-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 2340,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 8100,
+      "id": "2027-03-06-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a, weekend",
+      "startMinute": 7620,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 11460,
+      "id": "2027-03-08-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 10980,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 12900,
+      "id": "2027-03-09-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 12420,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 16740,
+      "id": "2027-03-12-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 16260,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 21060,
+      "id": "2027-03-15-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 20580,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 22500,
+      "id": "2027-03-16-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 22020,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 25380,
+      "id": "2027-03-18-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 24900,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 26820,
+      "id": "2027-03-19-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 26340,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 31140,
+      "id": "2027-03-22-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 30660,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 32580,
+      "id": "2027-03-23-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 32100,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 35460,
+      "id": "2027-03-25-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 34980,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 38340,
+      "id": "2027-03-27-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a, weekend",
+      "startMinute": 37860,
+      "tone": "amber"
+     }
+    ],
+    "label": "Rui North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 24480,
+      "label": "Unavailable",
+      "startMinute": 23040,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 8580,
+      "label": "Rather not",
+      "startMinute": 8100,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 14
+     },
+     {
+      "label": "Hours",
+      "value": 112.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e19",
+    "items": [
+     {
+      "endMinute": 5700,
+      "id": "2027-03-04-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 5220,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 9540,
+      "id": "2027-03-07-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b, weekend",
+      "startMinute": 9060,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 12900,
+      "id": "2027-03-09-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 12420,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 14340,
+      "id": "2027-03-10-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 13860,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 15780,
+      "id": "2027-03-11-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 15300,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 21060,
+      "id": "2027-03-15-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 20580,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 23940,
+      "id": "2027-03-17-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 23460,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 25380,
+      "id": "2027-03-18-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 24900,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 33060,
+      "id": "2027-03-23-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 32580,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 34500,
+      "id": "2027-03-24-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 34020,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 37380,
+      "id": "2027-03-26-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 36900,
+      "tone": "blue"
+     }
+    ],
+    "label": "Sol North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 23040,
+      "label": "Unavailable",
+      "startMinute": 21600,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 21060,
+      "label": "Preferred",
+      "startMinute": 20580,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 11
+     },
+     {
+      "label": "Hours",
+      "value": 88.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "wound-care"
+     }
+    ],
+    "id": "employee:e20",
+    "items": [
+     {
+      "endMinute": 2820,
+      "id": "2027-03-02-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 2340,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 5700,
+      "id": "2027-03-04-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 5220,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 9540,
+      "id": "2027-03-07-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c, weekend",
+      "startMinute": 9060,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 10800,
+      "id": "2027-03-08-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 10560,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 14340,
+      "id": "2027-03-10-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 13860,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 15780,
+      "id": "2027-03-11-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 15300,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 21060,
+      "id": "2027-03-15-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 20580,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 22500,
+      "id": "2027-03-16-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 22020,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 25380,
+      "id": "2027-03-18-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 24900,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 31620,
+      "id": "2027-03-22-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 31140,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 34500,
+      "id": "2027-03-24-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 34020,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 39300,
+      "id": "2027-03-27-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c, weekend",
+      "startMinute": 38820,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 40740,
+      "id": "2027-03-28-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c, weekend",
+      "startMinute": 40260,
+      "tone": "violet"
+     }
+    ],
+    "label": "Tao North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 24480,
+      "label": "Unavailable",
+      "startMinute": 23040,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 30180,
+      "label": "Rather not",
+      "startMinute": 29700,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 13
+     },
+     {
+      "label": "Hours",
+      "value": 100.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "senior"
+     },
+     {
+      "label": "icu"
+     }
+    ],
+    "id": "employee:e21",
+    "items": [
+     {
+      "endMinute": 900,
+      "id": "2027-03-01-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 420,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 5700,
+      "id": "2027-03-04-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 5220,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 9540,
+      "id": "2027-03-07-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b, weekend",
+      "startMinute": 9060,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 12420,
+      "id": "2027-03-09-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 11940,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 13860,
+      "id": "2027-03-10-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 13380,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 16740,
+      "id": "2027-03-12-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 16260,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 24900,
+      "id": "2027-03-17-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 24420,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 26340,
+      "id": "2027-03-18-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 25860,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 27780,
+      "id": "2027-03-19-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 27300,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 29220,
+      "id": "2027-03-20-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b, weekend",
+      "startMinute": 28740,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 33540,
+      "id": "2027-03-23-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 33060,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 38340,
+      "id": "2027-03-27-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b, weekend",
+      "startMinute": 37860,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 39780,
+      "id": "2027-03-28-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c, weekend",
+      "startMinute": 39300,
+      "tone": "amber"
+     }
+    ],
+    "label": "Uma North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 4320,
+      "label": "Unavailable",
+      "startMinute": 2880,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 39780,
+      "label": "Preferred",
+      "startMinute": 39300,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 13
+     },
+     {
+      "label": "Hours",
+      "value": 104.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e22",
+    "items": [
+     {
+      "endMinute": 2340,
+      "id": "2027-03-02-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 1860,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 3780,
+      "id": "2027-03-03-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 3300,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 10980,
+      "id": "2027-03-08-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 10500,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 15300,
+      "id": "2027-03-11-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 14820,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 18180,
+      "id": "2027-03-13-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a, weekend",
+      "startMinute": 17700,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 21540,
+      "id": "2027-03-15-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 21060,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 24420,
+      "id": "2027-03-17-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 23940,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 25860,
+      "id": "2027-03-18-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 25380,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 29220,
+      "id": "2027-03-20-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c, weekend",
+      "startMinute": 28740,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 35940,
+      "id": "2027-03-25-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 35460,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 37380,
+      "id": "2027-03-26-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 36900,
+      "tone": "blue"
+     }
+    ],
+    "label": "Vic North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 33120,
+      "label": "Unavailable",
+      "startMinute": 31680,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 11460,
+      "label": "Rather not",
+      "startMinute": 10980,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 11
+     },
+     {
+      "label": "Hours",
+      "value": 88.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "senior"
+     },
+     {
+      "label": "wound-care"
+     }
+    ],
+    "id": "employee:e23",
+    "items": [
+     {
+      "endMinute": 5220,
+      "id": "2027-03-04-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 4740,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 6660,
+      "id": "2027-03-05-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 6180,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 8100,
+      "id": "2027-03-06-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a, weekend",
+      "startMinute": 7620,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 10980,
+      "id": "2027-03-08-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 10500,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 12240,
+      "id": "2027-03-09-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 12000,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 13860,
+      "id": "2027-03-10-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 13380,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 16740,
+      "id": "2027-03-12-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 16260,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 18180,
+      "id": "2027-03-13-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a, weekend",
+      "startMinute": 17700,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 23940,
+      "id": "2027-03-17-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 23460,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 26820,
+      "id": "2027-03-19-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 26340,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 28260,
+      "id": "2027-03-20-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a, weekend",
+      "startMinute": 27780,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 31140,
+      "id": "2027-03-22-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 30660,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 34020,
+      "id": "2027-03-24-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 33540,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 36720,
+      "id": "2027-03-26-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 36480,
+      "tone": "emerald"
+     }
+    ],
+    "label": "Wes North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 36000,
+      "label": "Unavailable",
+      "startMinute": 34560,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 38340,
+      "label": "Preferred",
+      "startMinute": 37860,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 14
+     },
+     {
+      "label": "Hours",
+      "value": 104.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e24",
+    "items": [
+     {
+      "endMinute": 4260,
+      "id": "2027-03-03-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 3780,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 5700,
+      "id": "2027-03-04-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 5220,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 7140,
+      "id": "2027-03-05-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 6660,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 12420,
+      "id": "2027-03-09-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 11940,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 15780,
+      "id": "2027-03-11-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 15300,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 19620,
+      "id": "2027-03-14-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a, weekend",
+      "startMinute": 19140,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 21060,
+      "id": "2027-03-15-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 20580,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 22500,
+      "id": "2027-03-16-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 22020,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 23940,
+      "id": "2027-03-17-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 23460,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 25380,
+      "id": "2027-03-18-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 24900,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 28260,
+      "id": "2027-03-20-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c, weekend",
+      "startMinute": 27780,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 32580,
+      "id": "2027-03-23-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 32100,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 35940,
+      "id": "2027-03-25-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 35460,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 38820,
+      "id": "2027-03-27-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c, weekend",
+      "startMinute": 38340,
+      "tone": "blue"
+     }
+    ],
+    "label": "Yan North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 30240,
+      "label": "Unavailable",
+      "startMinute": 28800,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 33060,
+      "label": "Rather not",
+      "startMinute": 32580,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 14
+     },
+     {
+      "label": "Hours",
+      "value": 112.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "icu"
+     }
+    ],
+    "id": "employee:e25",
+    "items": [
+     {
+      "endMinute": 1380,
+      "id": "2027-03-01-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 900,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 7620,
+      "id": "2027-03-05-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 7140,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 9060,
+      "id": "2027-03-06-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b, weekend",
+      "startMinute": 8580,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 10500,
+      "id": "2027-03-07-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b, weekend",
+      "startMinute": 10020,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 13380,
+      "id": "2027-03-09-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 12900,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 16260,
+      "id": "2027-03-11-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 15780,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 19140,
+      "id": "2027-03-13-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c, weekend",
+      "startMinute": 18660,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 27300,
+      "id": "2027-03-19-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 26820,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 28740,
+      "id": "2027-03-20-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c, weekend",
+      "startMinute": 28260,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 30180,
+      "id": "2027-03-21-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b, weekend",
+      "startMinute": 29700,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 31620,
+      "id": "2027-03-22-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 31140,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 34500,
+      "id": "2027-03-24-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 34020,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 37860,
+      "id": "2027-03-26-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 37380,
+      "tone": "violet"
+     }
+    ],
+    "label": "Zoe North",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 36000,
+      "label": "Unavailable",
+      "startMinute": 34560,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 26820,
+      "label": "Preferred",
+      "startMinute": 26340,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 13
+     },
+     {
+      "label": "Hours",
+      "value": 104.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "senior"
+     },
+     {
+      "label": "wound-care"
+     }
+    ],
+    "id": "employee:e26",
+    "items": [
+     {
+      "endMinute": 2160,
+      "id": "2027-03-02-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 1920,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 3600,
+      "id": "2027-03-03-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 3360,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 4740,
+      "id": "2027-03-03-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 4260,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 6180,
+      "id": "2027-03-04-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 5700,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 12420,
+      "id": "2027-03-09-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 11940,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 13680,
+      "id": "2027-03-10-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 13440,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 20100,
+      "id": "2027-03-14-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a, weekend",
+      "startMinute": 19620,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 21540,
+      "id": "2027-03-15-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 21060,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 23760,
+      "id": "2027-03-17-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 23520,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 30660,
+      "id": "2027-03-21-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c, weekend",
+      "startMinute": 30180,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 32580,
+      "id": "2027-03-23-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 32100,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 36900,
+      "id": "2027-03-26-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 36420,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 40260,
+      "id": "2027-03-28-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c, weekend",
+      "startMinute": 39780,
+      "tone": "blue"
+     }
+    ],
+    "label": "Ada South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 10080,
+      "label": "Unavailable",
+      "startMinute": 8640,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 31620,
+      "label": "Rather not",
+      "startMinute": 31140,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 13
+     },
+     {
+      "label": "Hours",
+      "value": 88.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e27",
+    "items": [
+     {
+      "endMinute": 3300,
+      "id": "2027-03-02-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 2820,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 4740,
+      "id": "2027-03-03-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 4260,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 10020,
+      "id": "2027-03-07-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c, weekend",
+      "startMinute": 9540,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 12420,
+      "id": "2027-03-09-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 11940,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 17700,
+      "id": "2027-03-12-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 17220,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 20580,
+      "id": "2027-03-14-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c, weekend",
+      "startMinute": 20100,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 25860,
+      "id": "2027-03-18-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 25380,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 27780,
+      "id": "2027-03-19-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 27300,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 32580,
+      "id": "2027-03-23-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 32100,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 34500,
+      "id": "2027-03-24-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 34020,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 35940,
+      "id": "2027-03-25-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 35460,
+      "tone": "blue"
+     }
+    ],
+    "label": "Bea South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 14400,
+      "label": "Unavailable",
+      "startMinute": 12960,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 12420,
+      "label": "Preferred",
+      "startMinute": 11940,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 11
+     },
+     {
+      "label": "Hours",
+      "value": 88.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e28",
+    "items": [
+     {
+      "endMinute": 5220,
+      "id": "2027-03-04-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 4740,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 6660,
+      "id": "2027-03-05-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 6180,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 9060,
+      "id": "2027-03-06-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a, weekend",
+      "startMinute": 8580,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 14340,
+      "id": "2027-03-10-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 13860,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 17220,
+      "id": "2027-03-12-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 16740,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 21540,
+      "id": "2027-03-15-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 21060,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 22980,
+      "id": "2027-03-16-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 22500,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 34980,
+      "id": "2027-03-24-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 34500,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 36420,
+      "id": "2027-03-25-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 35940,
+      "tone": "violet"
+     }
+    ],
+    "label": "Cas South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 27360,
+      "label": "Unavailable",
+      "startMinute": 25920,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 34500,
+      "label": "Rather not",
+      "startMinute": 34020,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 9
+     },
+     {
+      "label": "Hours",
+      "value": 72.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "icu"
+     },
+     {
+      "label": "wound-care"
+     }
+    ],
+    "id": "employee:e29",
+    "items": [
+     {
+      "endMinute": 2820,
+      "id": "2027-03-02-ward-b-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 2340,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 4260,
+      "id": "2027-03-03-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 3780,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 5700,
+      "id": "2027-03-04-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 5220,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 11460,
+      "id": "2027-03-08-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 10980,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 17700,
+      "id": "2027-03-12-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 17220,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 19140,
+      "id": "2027-03-13-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b, weekend",
+      "startMinute": 18660,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 24420,
+      "id": "2027-03-17-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 23940,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 26340,
+      "id": "2027-03-18-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 25860,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 33060,
+      "id": "2027-03-23-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 32580,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 34980,
+      "id": "2027-03-24-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 34500,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 36420,
+      "id": "2027-03-25-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 35940,
+      "tone": "violet"
+     }
+    ],
+    "label": "Dov South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 31680,
+      "label": "Unavailable",
+      "startMinute": 30240,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 38340,
+      "label": "Preferred",
+      "startMinute": 37860,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 11
+     },
+     {
+      "label": "Hours",
+      "value": 88.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "senior"
+     }
+    ],
+    "id": "employee:e30",
+    "items": [
+     {
+      "endMinute": 1860,
+      "id": "2027-03-01-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 1380,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 6660,
+      "id": "2027-03-05-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 6180,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 9540,
+      "id": "2027-03-07-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c, weekend",
+      "startMinute": 9060,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 10980,
+      "id": "2027-03-08-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 10500,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 15300,
+      "id": "2027-03-11-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 14820,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 32100,
+      "id": "2027-03-22-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 31620,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 36420,
+      "id": "2027-03-25-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 35940,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 40740,
+      "id": "2027-03-28-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a, weekend",
+      "startMinute": 40260,
+      "tone": "violet"
+     }
+    ],
+    "label": "Eda South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 14400,
+      "label": "Unavailable",
+      "startMinute": 12960,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 35940,
+      "label": "Rather not",
+      "startMinute": 35460,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 8
+     },
+     {
+      "label": "Hours",
+      "value": 64.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "senior"
+     }
+    ],
+    "id": "employee:e31",
+    "items": [
+     {
+      "endMinute": 3300,
+      "id": "2027-03-02-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 2820,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 8580,
+      "id": "2027-03-06-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a, weekend",
+      "startMinute": 8100,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 12900,
+      "id": "2027-03-09-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 12420,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 15300,
+      "id": "2027-03-11-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 14820,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 16740,
+      "id": "2027-03-12-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 16260,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 26340,
+      "id": "2027-03-18-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 25860,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 28260,
+      "id": "2027-03-20-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c, weekend",
+      "startMinute": 27780,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 29700,
+      "id": "2027-03-21-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b, weekend",
+      "startMinute": 29220,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 34500,
+      "id": "2027-03-24-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 34020,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 36900,
+      "id": "2027-03-26-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 36420,
+      "tone": "amber"
+     }
+    ],
+    "label": "Fin South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 23040,
+      "label": "Unavailable",
+      "startMinute": 21600,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 34020,
+      "label": "Preferred",
+      "startMinute": 33540,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 10
+     },
+     {
+      "label": "Hours",
+      "value": 80.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "wound-care"
+     }
+    ],
+    "id": "employee:e32",
+    "items": [
+     {
+      "endMinute": 5220,
+      "id": "2027-03-04-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 4740,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 6660,
+      "id": "2027-03-05-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 6180,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 11460,
+      "id": "2027-03-08-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 10980,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 14340,
+      "id": "2027-03-10-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 13860,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 19140,
+      "id": "2027-03-13-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a, weekend",
+      "startMinute": 18660,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 20880,
+      "id": "2027-03-15-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 20640,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 22320,
+      "id": "2027-03-16-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 22080,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 26640,
+      "id": "2027-03-19-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 26400,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 30960,
+      "id": "2027-03-22-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 30720,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 35280,
+      "id": "2027-03-25-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 35040,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 38340,
+      "id": "2027-03-27-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c, weekend",
+      "startMinute": 37860,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 39780,
+      "id": "2027-03-28-ward-b-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b, weekend",
+      "startMinute": 39300,
+      "tone": "amber"
+     }
+    ],
+    "label": "Gil South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 15840,
+      "label": "Unavailable",
+      "startMinute": 14400,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 12900,
+      "label": "Rather not",
+      "startMinute": 12420,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 12
+     },
+     {
+      "label": "Hours",
+      "value": 76.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "icu"
+     }
+    ],
+    "id": "employee:e33",
+    "items": [
+     {
+      "endMinute": 4260,
+      "id": "2027-03-03-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 3780,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 6180,
+      "id": "2027-03-04-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 5700,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 13860,
+      "id": "2027-03-10-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 13380,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 15300,
+      "id": "2027-03-11-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 14820,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 16740,
+      "id": "2027-03-12-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 16260,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 22980,
+      "id": "2027-03-16-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 22500,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 30660,
+      "id": "2027-03-21-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b, weekend",
+      "startMinute": 30180,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 32100,
+      "id": "2027-03-22-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 31620,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 33540,
+      "id": "2027-03-23-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 33060,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 37860,
+      "id": "2027-03-26-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 37380,
+      "tone": "violet"
+     }
+    ],
+    "label": "Hal South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 25920,
+      "label": "Unavailable",
+      "startMinute": 24480,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 13860,
+      "label": "Preferred",
+      "startMinute": 13380,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 10
+     },
+     {
+      "label": "Hours",
+      "value": 80.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e34",
+    "items": [
+     {
+      "endMinute": 2340,
+      "id": "2027-03-02-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 1860,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 5220,
+      "id": "2027-03-04-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 4740,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 6660,
+      "id": "2027-03-05-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 6180,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 10980,
+      "id": "2027-03-08-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 10500,
+      "tone": "amber"
+     }
+    ],
+    "label": "Ines South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 31680,
+      "label": "Unavailable",
+      "startMinute": 30240,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 20100,
+      "label": "Rather not",
+      "startMinute": 19620,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 4
+     },
+     {
+      "label": "Hours",
+      "value": 32.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "wound-care"
+     }
+    ],
+    "id": "employee:e35",
+    "items": [
+     {
+      "endMinute": 2820,
+      "id": "2027-03-02-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 2340,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 9060,
+      "id": "2027-03-06-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c, weekend",
+      "startMinute": 8580,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 10500,
+      "id": "2027-03-07-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c, weekend",
+      "startMinute": 10020,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 15120,
+      "id": "2027-03-11-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 14880,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 17220,
+      "id": "2027-03-12-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 16740,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 22500,
+      "id": "2027-03-16-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 22020,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 23940,
+      "id": "2027-03-17-ward-a-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 23460,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 25860,
+      "id": "2027-03-18-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 25380,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 32400,
+      "id": "2027-03-23-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 32160,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 33840,
+      "id": "2027-03-24-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 33600,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 39300,
+      "id": "2027-03-27-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a, weekend",
+      "startMinute": 38820,
+      "tone": "violet"
+     }
+    ],
+    "label": "Jo South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 5760,
+      "label": "Unavailable",
+      "startMinute": 4320,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 22500,
+      "label": "Preferred",
+      "startMinute": 22020,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 11
+     },
+     {
+      "label": "Hours",
+      "value": 76.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "senior"
+     }
+    ],
+    "id": "employee:e36",
+    "items": [
+     {
+      "endMinute": 1380,
+      "id": "2027-03-01-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 900,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 5700,
+      "id": "2027-03-04-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 5220,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 10500,
+      "id": "2027-03-07-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a, weekend",
+      "startMinute": 10020,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 13380,
+      "id": "2027-03-09-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 12900,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 21060,
+      "id": "2027-03-15-ward-c-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 20580,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 22500,
+      "id": "2027-03-16-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 22020,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 27300,
+      "id": "2027-03-19-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 26820,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 32100,
+      "id": "2027-03-22-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 31620,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 33540,
+      "id": "2027-03-23-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 33060,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 34980,
+      "id": "2027-03-24-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 34500,
+      "tone": "violet"
+     }
+    ],
+    "label": "Kai South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 28800,
+      "label": "Unavailable",
+      "startMinute": 27360,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 21540,
+      "label": "Rather not",
+      "startMinute": 21060,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 10
+     },
+     {
+      "label": "Hours",
+      "value": 80.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "senior"
+     },
+     {
+      "label": "icu"
+     }
+    ],
+    "id": "employee:e37",
+    "items": [
+     {
+      "endMinute": 3780,
+      "id": "2027-03-03-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 3300,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 6660,
+      "id": "2027-03-05-ward-a-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 6180,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 10980,
+      "id": "2027-03-08-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 10500,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 16260,
+      "id": "2027-03-11-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 15780,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 18180,
+      "id": "2027-03-13-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b, weekend",
+      "startMinute": 17700,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 23460,
+      "id": "2027-03-16-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b",
+      "startMinute": 22980,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 24900,
+      "id": "2027-03-17-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 24420,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 26820,
+      "id": "2027-03-19-ward-b-early-0",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 26340,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 33060,
+      "id": "2027-03-23-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 32580,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 39300,
+      "id": "2027-03-27-ward-b-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-b, weekend",
+      "startMinute": 38820,
+      "tone": "violet"
+     }
+    ],
+    "label": "Lea South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 36000,
+      "label": "Unavailable",
+      "startMinute": 34560,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 10980,
+      "label": "Preferred",
+      "startMinute": 10500,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 10
+     },
+     {
+      "label": "Hours",
+      "value": 80.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "wound-care"
+     }
+    ],
+    "id": "employee:e38",
+    "items": [
+     {
+      "endMinute": 3780,
+      "id": "2027-03-03-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 3300,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 6480,
+      "id": "2027-03-05-clinic-0",
+      "label": "clinic",
+      "meta": "08:00–12:00 · clinic, ward-c",
+      "startMinute": 6240,
+      "tone": "emerald"
+     },
+     {
+      "endMinute": 11940,
+      "id": "2027-03-08-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 11460,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 14820,
+      "id": "2027-03-10-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 14340,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 20100,
+      "id": "2027-03-14-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c, weekend",
+      "startMinute": 19620,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 24420,
+      "id": "2027-03-17-ward-c-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 23940,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 29220,
+      "id": "2027-03-20-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a, weekend",
+      "startMinute": 28740,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 30660,
+      "id": "2027-03-21-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a, weekend",
+      "startMinute": 30180,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 35460,
+      "id": "2027-03-25-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 34980,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 36900,
+      "id": "2027-03-26-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 36420,
+      "tone": "amber"
+     }
+    ],
+    "label": "Max South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 40320,
+      "label": "Unavailable",
+      "startMinute": 38880,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 18660,
+      "label": "Rather not",
+      "startMinute": 18180,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 10
+     },
+     {
+      "label": "Hours",
+      "value": 76.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e39",
+    "items": [
+     {
+      "endMinute": 1380,
+      "id": "2027-03-01-ward-c-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-c",
+      "startMinute": 900,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 2820,
+      "id": "2027-03-02-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 2340,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 7140,
+      "id": "2027-03-05-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 6660,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 14820,
+      "id": "2027-03-10-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 14340,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 20580,
+      "id": "2027-03-14-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a, weekend",
+      "startMinute": 20100,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 22020,
+      "id": "2027-03-15-ward-a-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-a",
+      "startMinute": 21540,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 23460,
+      "id": "2027-03-16-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 22980,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 28740,
+      "id": "2027-03-20-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b, weekend",
+      "startMinute": 28260,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 31140,
+      "id": "2027-03-22-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 30660,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 35460,
+      "id": "2027-03-25-ward-c-early-1",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 34980,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 36900,
+      "id": "2027-03-26-ward-b-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-b",
+      "startMinute": 36420,
+      "tone": "amber"
+     }
+    ],
+    "label": "Nia South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 34560,
+      "label": "Unavailable",
+      "startMinute": 33120,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 35460,
+      "label": "Preferred",
+      "startMinute": 34980,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 11
+     },
+     {
+      "label": "Hours",
+      "value": 88.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e40",
+    "items": [
+     {
+      "endMinute": 1380,
+      "id": "2027-03-01-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b",
+      "startMinute": 900,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 3780,
+      "id": "2027-03-03-ward-a-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-a",
+      "startMinute": 3300,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 10020,
+      "id": "2027-03-07-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a, weekend",
+      "startMinute": 9540,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 11940,
+      "id": "2027-03-08-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 11460,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 13380,
+      "id": "2027-03-09-ward-c-night-0",
+      "label": "night",
+      "meta": "23:00–07:00 · night, ward-c",
+      "startMinute": 12900,
+      "tone": "violet"
+     },
+     {
+      "endMinute": 30180,
+      "id": "2027-03-21-ward-a-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a, weekend",
+      "startMinute": 29700,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 35460,
+      "id": "2027-03-25-ward-c-early-2",
+      "label": "early",
+      "meta": "07:00–15:00 · early, ward-c",
+      "startMinute": 34980,
+      "tone": "amber"
+     },
+     {
+      "endMinute": 37380,
+      "id": "2027-03-26-ward-a-late-1",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-a",
+      "startMinute": 36900,
+      "tone": "blue"
+     },
+     {
+      "endMinute": 38820,
+      "id": "2027-03-27-ward-b-late-0",
+      "label": "late",
+      "meta": "15:00–23:00 · late, ward-b, weekend",
+      "startMinute": 38340,
+      "tone": "blue"
+     }
+    ],
+    "label": "Oto South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 5760,
+      "label": "Unavailable",
+      "startMinute": 4320,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 20100,
+      "label": "Rather not",
+      "startMinute": 19620,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 9
+     },
+     {
+      "label": "Hours",
+      "value": 72.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "wound-care"
+     }
+    ],
+    "id": "employee:e41",
+    "items": [],
+    "label": "Pia South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 14400,
+      "label": "Unavailable",
+      "startMinute": 12960,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 16740,
+      "label": "Preferred",
+      "startMinute": 16260,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 0
+     },
+     {
+      "label": "Hours",
+      "value": 0.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e42",
+    "items": [],
+    "label": "Quin South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 12960,
+      "label": "Unavailable",
+      "startMinute": 11520,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 1380,
+      "label": "Rather not",
+      "startMinute": 900,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 0
+     },
+     {
+      "label": "Hours",
+      "value": 0.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e43",
+    "items": [],
+    "label": "Rui South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 37440,
+      "label": "Unavailable",
+      "startMinute": 36000,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 26820,
+      "label": "Preferred",
+      "startMinute": 26340,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 0
+     },
+     {
+      "label": "Hours",
+      "value": 0.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "wound-care"
+     }
+    ],
+    "id": "employee:e44",
+    "items": [],
+    "label": "Sol South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 20160,
+      "label": "Unavailable",
+      "startMinute": 18720,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 34500,
+      "label": "Rather not",
+      "startMinute": 34020,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 0
+     },
+     {
+      "label": "Hours",
+      "value": 0.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e45",
+    "items": [],
+    "label": "Tao South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 12960,
+      "label": "Unavailable",
+      "startMinute": 11520,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 900,
+      "label": "Preferred",
+      "startMinute": 420,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 0
+     },
+     {
+      "label": "Hours",
+      "value": 0.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e46",
+    "items": [],
+    "label": "Uma South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 34560,
+      "label": "Unavailable",
+      "startMinute": 33120,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 34500,
+      "label": "Rather not",
+      "startMinute": 34020,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 0
+     },
+     {
+      "label": "Hours",
+      "value": 0.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "wound-care"
+     }
+    ],
+    "id": "employee:e47",
+    "items": [],
+    "label": "Vic South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 11520,
+      "label": "Unavailable",
+      "startMinute": 10080,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 13860,
+      "label": "Preferred",
+      "startMinute": 13380,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 0
+     },
+     {
+      "label": "Hours",
+      "value": 0.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e48",
+    "items": [],
+    "label": "Wes South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 30240,
+      "label": "Unavailable",
+      "startMinute": 28800,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 28740,
+      "label": "Rather not",
+      "startMinute": 28260,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 0
+     },
+     {
+      "label": "Hours",
+      "value": 0.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     }
+    ],
+    "id": "employee:e49",
+    "items": [],
+    "label": "Yan South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 37440,
+      "label": "Unavailable",
+      "startMinute": 36000,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 2340,
+      "label": "Preferred",
+      "startMinute": 1860,
+      "tone": "emerald"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 0
+     },
+     {
+      "label": "Hours",
+      "value": 0.0
+     }
+    ]
+   },
+   {
+    "badges": [
+     {
+      "label": "nurse"
+     },
+     {
+      "label": "wound-care"
+     }
+    ],
+    "id": "employee:e50",
+    "items": [],
+    "label": "Zoe South",
+    "mode": "detailed",
+    "overlays": [
+     {
+      "endMinute": 17280,
+      "label": "Unavailable",
+      "startMinute": 15840,
+      "tone": {
+       "background": "rgba(75, 85, 99, 0.16)",
+       "border": "#6b7280",
+       "overlay": "rgba(75, 85, 99, 0.16)",
+       "text": "#374151"
+      }
+     },
+     {
+      "endMinute": 10020,
+      "label": "Rather not",
+      "startMinute": 9540,
+      "tone": {
+       "background": "rgba(156, 163, 175, 0.12)",
+       "border": "#9ca3af",
+       "overlay": "rgba(156, 163, 175, 0.12)",
+       "text": "#4b5563"
+      }
+     }
+    ],
+    "stats": [
+     {
+      "label": "Shifts",
+      "value": 0
+     },
+     {
+      "label": "Hours",
+      "value": 0.0
+     }
+    ]
+   }
+  ]
+ },
+ "subtitle": "536 shifts · 50 employees · 41 open · red: breaks a hard rule, on a shift or an employee's row · rose: a medium one · grey: time off",
+ "title": "Roster"
+}

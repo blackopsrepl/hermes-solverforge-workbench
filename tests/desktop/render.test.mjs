@@ -14,7 +14,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 const here = dirname(fileURLToPath(import.meta.url))
 mkdirSync(join(here, '.build'), { recursive: true })
 cpSync(join(here, '../../desktop/plugin.js'), join(here, '.build/plugin.mjs'))
-const { default: plugin, Workbench, RunView, ScoreChart, StatusChip, parseScore, openBeside, openPage } = await import('./.build/plugin.mjs')
+const { default: plugin, Workbench, RunView, ScoreChart, StatusChip, FillPanel, TrendLine, parseScore, openBeside, openPage } = await import('./.build/plugin.mjs')
 
 // React reports misuse (lost keys, bad props) through console.error; any of it fails the run.
 const reactErrors = []
@@ -38,8 +38,8 @@ test('scores parse into levels, including medium and decimals', () => {
 test('the catalog lists each model with its constraints by level', () => {
   setFixture(real)
   const page = text(render(h(Workbench, {})))
-  assert.match(page, /SolverForge Workbench Models Datasets Runs/)
-  assert.match(page, /Toy roster toy stock 3 · 2 hard · 1 soft 1/)
+  assert.match(page, /SolverForge Workbench Models Datasets Runs Experiments/)
+  assert.match(page, /Toy roster toy stock 3 · 2 hard · 1 soft 2/)
 })
 
 test('a model shows its constraints grouped, with the profile’s weights and its demos', () => {
@@ -137,9 +137,9 @@ test('the chip, the palette and chat cards open the Workbench section at the ask
   assert.deepEqual(navigated, ['/solverforge-workbench'])
 })
 
-test('a model with a schedule view draws the run as a schedule in a sandboxed frame', () => {
+test('a model with a timeline view draws the run as a schedule in a sandboxed frame', () => {
   const model = structuredClone(real.model)
-  model.model.schedule_view = true
+  model.model.view = 'timeline'
   setFixture({ ...real, model })
   const html = render(h(RunView, { id: real.run.run.id }))
   assert.match(text(html), /Schedule/)
@@ -149,6 +149,78 @@ test('a model with a schedule view draws the run as a schedule in a sandboxed fr
 test('a model without one shows no schedule', () => {
   setFixture(real)
   assert.doesNotMatch(render(h(RunView, { id: real.run.run.id })), /<iframe/)
+})
+
+test('a model with a routes view draws the run as routes in a taller frame', () => {
+  const model = structuredClone(real.model)
+  model.model.view = 'routes'
+  setFixture({ ...real, model })
+  const html = render(h(RunView, { id: real.run.run.id }))
+  assert.match(text(html), /Routes/)
+  assert.match(html, /<iframe title="Routes"/)
+})
+
+test('a model lists its parameters with their values, trends and experiments', () => {
+  const model = structuredClone(real.model)
+  model.model.parameters = [{ name: 'speed_kmh', kind: 'number', default: 40, description: 'Driving speed without a road network' }]
+  setFixture({ ...real, model })
+  const page = text(render(h(Workbench, { start: { view: 'model', id: 'toy' } })))
+  assert.match(page, /Parameters · 1 Parameter Kind Value speed_kmh Driving speed without a road network number/)
+  assert.match(page, /Trends New experiment/)
+  assert.match(page, /change a weight or a parameter/)
+})
+
+test('a dataset can freeze the past, fill open items and start an experiment', () => {
+  setFixture(real)
+  const html = render(h(Workbench, { start: { view: 'dataset', id: real.dataset.dataset.id } }))
+  assert.match(html, /type="datetime-local"/)
+  assert.match(text(html), /Freeze before .*Solve Evaluate as is Experiment…/)
+  assert.match(text(html), /Find places for open items/)
+})
+
+test('fill ranks places for every open item, each with its score change and an apply button', () => {
+  setFixture(real)
+  const page = text(render(h(FillPanel, { dataset: real.dataset.dataset.id, open: true })))
+  const first = real.fill.items[0]
+  assert.match(page, /Fill · 6 open/)
+  assert.match(page, new RegExp(`${first.label} · Shift Shift#0`))
+  assert.match(page, /Place Change Constraints it moves/)
+  assert.match(page, new RegExp(`${first.options[0].label} · infeasible 1 hard / 0 soft Unassigned shift 1hard/0soft Apply`))
+  assert.equal((render(h(FillPanel, { dataset: real.dataset.dataset.id, open: true })).match(/<button/g) || []).length, 18)
+})
+
+test('fill starts closed until asked', () => {
+  setFixture(real)
+  assert.equal(text(render(h(FillPanel, { dataset: real.dataset.dataset.id }))), 'Find places for open items')
+})
+
+test('an experiment ranks its profiles and shows each dataset × profile cell', () => {
+  setFixture(real)
+  const x = real.experiment.experiment
+  const page = text(render(h(Workbench, { start: { view: 'experiment', id: x.id } })))
+  assert.match(page, /datasets × 2 profiles × 1 · judged by Standard/)
+  assert.match(page, /done/)
+  assert.match(page, /# Profile Feasible Average place 1 Standard 2 of 2 1 2 Blind 2 of 2/)
+  assert.match(page, /Dataset Standard Blind Demo Week 0 hard \/ 0 soft median 0hard\/0soft · 1\/1 feasible/)
+  const list = text(render(h(Workbench, { start: { view: 'experiments' } })))
+  assert.match(list, /2 × 2 × 1 4 done/)
+})
+
+test('a new experiment counts the solves it will queue', () => {
+  setFixture(real)
+  const page = text(render(h(Workbench, { start: { view: 'experiment-new', id: 'toy', datasets: [real.dataset.dataset.id] } })))
+  assert.match(page, /New experiment · Toy roster/)
+  assert.match(page, /Pick datasets and profiles/)
+  assert.match(page, /Standard Lenient|Lenient/)
+})
+
+test('trends draw every KPI across finished solves', () => {
+  setFixture(real)
+  const page = text(render(h(Workbench, { start: { view: 'trends', id: 'toy' } })))
+  assert.match(page, /Trends · toy/)
+  assert.match(page, /finished solves · 100% feasible/)
+  assert.match(page, /Assigned shifts · \d+ solves · latest 6 shifts/)
+  assert.equal(render(h(TrendLine, { kpi: { label: 'X', unit: '', points: [] } })).includes('no data'), true)
 })
 
 test('every surface registers', () => {

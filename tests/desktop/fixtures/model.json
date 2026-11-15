@@ -10,6 +10,9 @@
    "WEEK"
   ],
   "weights": true,
+  "parameters": [],
+  "kpis": [],
+  "view": null,
   "constraints": [
    {
     "description": "Every shift needs a nurse.",
@@ -45,10 +48,25 @@
     "is_default": 0,
     "read_only": 1,
     "revision": 1,
-    "updated_at": "2026-11-15T08:30:53.736+00:00"
+    "updated_at": "2026-11-15T17:48:08.650+00:00"
    },
    {
-    "id": "ac24c4ba4ac5",
+    "id": "ae7f37cf1637",
+    "model_id": "toy",
+    "name": "Blind",
+    "description": "",
+    "weights": {
+     "Shift for the first nurse": 0
+    },
+    "params": {},
+    "solve": {},
+    "is_default": 0,
+    "read_only": 0,
+    "revision": 1,
+    "updated_at": "2026-11-15T17:48:10.910+00:00"
+   },
+   {
+    "id": "cb8ce54301fb",
     "model_id": "toy",
     "name": "Lenient",
     "description": "",
@@ -60,10 +78,9 @@
     "is_default": 0,
     "read_only": 0,
     "revision": 1,
-    "updated_at": "2026-11-15T08:30:53.751+00:00"
+    "updated_at": "2026-11-15T17:48:08.664+00:00"
    }
   ],
-  "default_profile": "toy-standard",
-  "schedule_view": false
+  "default_profile": "toy-standard"
  }
 }

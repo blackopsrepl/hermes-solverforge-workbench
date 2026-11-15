@@ -1,13 +1,13 @@
 /**
  * SolverForge Workbench — Desktop half.
  *
- * Surfaces: the SolverForge Workbench section (models, datasets, runs, compare) with its
- * own sidebar row and page, the same surface beside the chat on request, a ::solverforge-workbench{run="…"} card
- * in the transcript, a status-bar chip while solves run, and palette
- * commands. Every byte comes from this package's backend
- * (dashboard/plugin_api.py) through ctx.rest. The only writes are solve,
- * evaluate, cancel, new dataset from a demo, and saving a profile, each a
- * button the user clicks.
+ * Surfaces: the SolverForge Workbench section (models, datasets, runs, experiments,
+ * compare, trends) with its own sidebar row and page, the same surface beside the chat
+ * on request, a ::solverforge-workbench{run="…"} card in the transcript, a status-bar
+ * chip while solves run, and palette commands. Every byte comes from this package's
+ * backend (dashboard/plugin_api.py) through ctx.rest. The only writes are solve,
+ * evaluate, cancel, new dataset from a demo, saving a profile, applying a fill option
+ * and starting or stopping an experiment, each a button the user clicks.
  */
 
 import {
@@ -319,20 +319,41 @@ function SearchBox({ value, onChange, shown, total, extra }) {
     extra || null)
 }
 
+function ParamCell({ param, value, editable, onChange }) {
+  if (!editable) return e('span', null, String(value))
+  if (param.kind === 'boolean') {
+    return e('input', { type: 'checkbox', checked: Boolean(value), 'aria-label': param.name, onChange: event => onChange(event.target.checked) })
+  }
+  if (param.kind === 'string') {
+    return e('input', { value: value ?? '', 'aria-label': param.name, style: { ...input, width: 140 }, onChange: event => onChange(event.target.value) })
+  }
+  const whole = param.kind === 'integer' || param.kind === 'duration'
+  return e('input', {
+    type: 'number', step: whole ? 1 : 'any', value: value ?? '', 'aria-label': param.name, style: { ...input, width: 96, textAlign: 'right' },
+    onChange: event => {
+      const n = Number(event.target.value)
+      if (event.target.value !== '' && Number.isFinite(n)) onChange(whole ? Math.trunc(n) : n)
+    }
+  })
+}
+
 function ModelView({ id, go }) {
   const query = useRead('model', { model: id })
   const [picked, setPicked] = useState(null)
   const [draft, setDraft] = useState({})
+  const [draftParams, setDraftParams] = useState({})
   const [name, setName] = useState('')
   const [search, setSearch] = useState('')
   const create = useAction('dataset_create', r => r.dataset && go({ view: 'dataset', id: r.dataset.id }))
-  const save = useAction('profile_save', r => { setDraft({}); setName(''); r.profile && setPicked(r.profile.id) })
+  const save = useAction('profile_save', r => { setDraft({}); setDraftParams({}); setName(''); r.profile && setPicked(r.profile.id) })
   const makeDefault = useAction('profile_default')
   return e(Loading, { query }, ({ model }) => {
     const profile = model.profiles.find(p => p.id === picked) || model.profiles.find(p => p.id === model.default_profile) || model.profiles[0]
     const weights = { ...(profile ? profile.weights : {}), ...draft }
+    const params = { ...(profile ? profile.params : {}), ...draftParams }
     const editable = model.weights
-    const changed = Object.keys(draft).length > 0
+    const parameters = model.parameters || []
+    const changed = Object.keys(draft).length > 0 || Object.keys(draftParams).length > 0
     // Groups in catalog order; while searching, groups and their rows rank by the best match.
     const results = searchConstraints(model.constraints, search)
     const groups = []
@@ -342,7 +363,7 @@ function ModelView({ id, go }) {
       if (!found) groups.push((found = { name: group, items: [], size: model.constraints.filter(c => (c.group || 'Constraints') === group).length }))
       found.items.push(r)
     }
-    const settings = { weights, params: profile ? profile.params : {}, solve: profile ? profile.solve : {} }
+    const settings = { weights, params, solve: profile ? profile.solve : {} }
     return e(
       'div', { style: section },
       e(Title, null, model.name),
@@ -355,7 +376,7 @@ function ModelView({ id, go }) {
       e(Sub, null, 'Profile'),
       e('div', { style: bar },
         e('select', { value: profile ? profile.id : '', style: input, 'aria-label': 'Profile',
-          onChange: event => { setPicked(event.target.value); setDraft({}) } },
+          onChange: event => { setPicked(event.target.value); setDraft({}); setDraftParams({}) } },
           model.profiles.map(p => e('option', { key: p.id, value: p.id }, `${p.name}${p.id === model.default_profile ? ' (default)' : ''}`))),
         profile && profile.id !== model.default_profile
           ? e(Button, { size: 'xs', variant: 'text', onClick: () => makeDefault.mutate({ model: model.id, profile: profile.id }) }, 'Make default')
@@ -369,10 +390,27 @@ function ModelView({ id, go }) {
               e('input', { value: name, placeholder: 'New profile name', style: input, 'aria-label': 'New profile name', onChange: event => setName(event.target.value) }),
               e(Button, { size: 'xs', variant: 'outline', disabled: !name.trim() || save.isPending,
                 onClick: () => save.mutate({ model: model.id, name: name.trim(), settings }) }, 'Save as new'),
-              e(Button, { size: 'xs', variant: 'text', onClick: () => setDraft({}) }, 'Discard'))
+              e(Button, { size: 'xs', variant: 'text', onClick: () => { setDraft({}); setDraftParams({}) } }, 'Discard'))
           : null),
-      profile && profile.read_only && editable ? e('div', { style: faint }, 'Standard is read-only: change a weight, then save it as a new profile.') : null,
+      profile && profile.read_only && (editable || parameters.length) ? e('div', { style: faint }, 'Standard is read-only: change a weight or a parameter, then save it as a new profile.') : null,
       !editable ? e('div', { style: faint }, 'This model has no adjustable weights.') : null,
+      parameters.length
+        ? e('div', { style: section },
+            e(Sub, null, `Parameters · ${parameters.length}`),
+            e(Table, {
+              columns: [{ id: 'name', label: 'Parameter' }, { id: 'kind', label: 'Kind', width: 96 }, { id: 'value', label: 'Value', num: true, width: 160 }],
+              rows: parameters.map(prm => ({
+                key: prm.name,
+                name: e('div', null, prm.name, prm.description ? e('div', { style: faint }, prm.description) : null),
+                kind: prm.kind === 'duration' ? 'minutes' : prm.kind,
+                value: e(ParamCell, { param: prm, value: params[prm.name] ?? prm.default, editable: true,
+                  onChange: v => setDraftParams({ ...draftParams, [prm.name]: v }) })
+              }))
+            }))
+        : null,
+      e('div', { style: bar },
+        e(Button, { size: 'xs', variant: 'outline', onClick: () => go({ view: 'trends', id: model.id }) }, 'Trends'),
+        e(Button, { size: 'xs', variant: 'outline', onClick: () => go({ view: 'experiment-new', id: model.id }) }, 'New experiment')),
       e(SearchBox, { value: search, onChange: setSearch, shown: results.length, total: model.constraints.length }),
       search.trim() && !results.length ? e('div', { style: muted }, `No constraint matches “${search.trim()}”.`) : null,
       groups.map(g => e('div', { key: g.name, style: section },
@@ -431,24 +469,33 @@ function DatasetView({ id, go }) {
   const query = useRead('dataset', { dataset: id }, { refetchInterval: 2_000 })
   const [profile, setProfile] = useState('')
   const [seconds, setSeconds] = useState('')
+  const [freeze, setFreeze] = useState('')
   const [selected, setSelected] = useState([])
   const solve = useAction('solve', r => r.run && go({ view: 'run', id: r.run.id }))
   const evaluate = useAction('evaluate', r => r.run && go({ view: 'run', id: r.run.id }))
   return e(Loading, { query }, ({ dataset }) => {
-    const overrides = seconds ? { solve: { seconds: Number(seconds) } } : undefined
+    const solveSettings = { ...(seconds ? { seconds: Number(seconds) } : {}), ...(freeze ? { freeze_before: freeze.slice(0, 16) } : {}) }
+    const overrides = Object.keys(solveSettings).length ? { solve: solveSettings } : undefined
     const body = { dataset: dataset.id, ...(profile ? { profile } : {}), ...(overrides ? { overrides } : {}) }
     return e(
       'div', { style: section },
       e(Title, null, dataset.name),
       e('div', { style: muted }, `${dataset.model_id} · ${size(dataset.size)} · ${dataset.origin}${dataset.parent_id ? ` · from ${dataset.parent_id}` : ''}`),
+      dataset.origin === 'fill' && dataset.patch ? e('div', { style: faint }, dataset.patch.map(p => `placed ${p.item} at ${p.value}`).join(' · ')) : null,
       e('div', { style: bar },
         e(ProfilePicker, { model: dataset.model_id, value: profile, onChange: setProfile }),
         e('input', { type: 'number', min: 1, placeholder: 'seconds', value: seconds, style: { ...input, width: 80 }, 'aria-label': 'Time limit in seconds',
           onChange: event => setSeconds(event.target.value ? String(Math.max(1, Math.trunc(Number(event.target.value) || 1))) : '') }),
+        e('label', { style: { ...faint, display: 'inline-flex', alignItems: 'center', gap: 4 } }, 'Freeze before',
+          e('input', { type: 'datetime-local', value: freeze, style: input, 'aria-label': 'Freeze everything that starts before',
+            onChange: event => setFreeze(event.target.value) })),
         e(Button, { size: 'xs', disabled: solve.isPending, onClick: () => solve.mutate(body) }, solve.isPending ? 'Queuing…' : 'Solve'),
         e(Button, { size: 'xs', variant: 'outline', disabled: evaluate.isPending, onClick: () => evaluate.mutate(body) }, 'Evaluate as is'),
+        e(Button, { size: 'xs', variant: 'outline', onClick: () => go({ view: 'experiment-new', id: dataset.model_id, datasets: [dataset.id] }) }, 'Experiment…'),
         selected.length >= 2 ? e(Button, { size: 'xs', variant: 'secondary', onClick: () => go({ view: 'compare', id: selected.join(',') }) }, `Compare ${selected.length}`) : null),
-      e(DatasetSchedule, { dataset }),
+      freeze ? e('div', { style: faint }, `Everything that starts before ${freeze.replace('T', ' ')} keeps its current assignment.`) : null,
+      e(DatasetPlan, { dataset }),
+      e(FillPanel, { dataset: dataset.id, profile, go }),
       dataset.runs.length
         ? e(RunsTable, { runs: dataset.runs, go, selected,
             onSelect: run => setSelected(selected.includes(run) ? selected.filter(r => r !== run) : [...selected, run]) })
@@ -457,12 +504,45 @@ function DatasetView({ id, go }) {
   })
 }
 
-function DatasetSchedule({ dataset }) {
+function DatasetPlan({ dataset }) {
   const [shown, setShown] = useState(false)
-  if (!useHasSchedule(dataset.model_id)) return null
+  const kind = useViewKind(dataset.model_id)
+  if (!kind) return null
   return e('div', { style: section },
-    e('div', null, e(Button, { size: 'xs', variant: 'text', onClick: () => setShown(!shown) }, shown ? 'Hide the input schedule' : 'Show the input schedule')),
-    shown ? e(Schedule, { dataset: dataset.id }) : null)
+    e('div', null, e(Button, { size: 'xs', variant: 'text', onClick: () => setShown(!shown) },
+      `${shown ? 'Hide' : 'Show'} the input ${kind === 'routes' ? 'routes' : 'schedule'}`)),
+    shown ? e(PlanView, { dataset: dataset.id, kind }) : null)
+}
+
+/** Fill: the best places for a plan's open items, ranked by the score each reaches; one click applies one. */
+export function FillPanel({ run, dataset, profile, go, open = false }) {
+  const [asked, setAsked] = useState(open)
+  const query = useRead('fill', { run, dataset, profile, top: 3 }, { enabled: asked })
+  const apply = useAction('fill_apply', r => r.dataset && go && go({ view: 'dataset', id: r.dataset.id }))
+  if (!asked) {
+    return e('div', null, e(Button, { size: 'xs', variant: 'outline', onClick: () => setAsked(true) }, 'Find places for open items'))
+  }
+  return e(Loading, { query }, data => {
+    if (!data.items.length) return e('div', { style: muted }, 'Nothing is open in this plan.')
+    return e('div', { style: section },
+      e(Sub, null, `Fill · ${data.items.length} open`),
+      e('div', { style: faint }, 'Each option is scored by the model with the item placed; applying one makes a new dataset.'),
+      data.items.map(item => e('div', { key: `${item.type}:${item.id}`, style: section },
+        e('div', null, e('strong', null, item.label), e('span', { style: faint }, ` · ${item.type} ${item.id}`)),
+        item.options.length
+          ? e(Table, {
+              columns: [{ id: 'place', label: 'Place' }, { id: 'delta', label: 'Change', num: true, width: 180 }, { id: 'why', label: 'Constraints it moves' }, { id: 'act', label: '', width: 72 }],
+              rows: item.options.map(option => ({
+                key: option.id || option.label,
+                place: e('div', null, option.label, option.feasible ? null : e('span', { style: faint }, ' · infeasible')),
+                delta: e(ScoreText, { score: option.delta }),
+                why: e('span', { style: faint }, option.changes.map(c => `${c.constraint} ${c.delta}`).join(' · ') || 'no constraint changes'),
+                act: e(Button, { size: 'xs', disabled: apply.isPending,
+                  onClick: () => apply.mutate({ ...(run ? { run } : { dataset }), item: item.id, value: option.id, ...(profile ? { profile } : {}) }) }, 'Apply')
+              }))
+            })
+          : e('div', { style: faint }, 'No place fits this item.'))))
+  })
 }
 
 function ProfilePicker({ model, value, onChange }) {
@@ -473,23 +553,26 @@ function ProfilePicker({ model, value, onChange }) {
     profiles.map(p => e('option', { key: p.id, value: p.id }, p.name)))
 }
 
-/** The plan drawn as a schedule (solverforge-ui's timeline) in a sandboxed frame. */
-export function Schedule({ run, dataset, version, height = 560 }) {
+/** The plan as its model draws it (solverforge-ui's timeline, or routes on a map over a
+ *  per-vehicle timeline) in a sandboxed frame. */
+export function PlanView({ run, dataset, version, kind = 'timeline' }) {
   const query = useRead('view', { run, dataset, v: version })
   const data = query.data
-  if (query.isLoading) return e('div', { style: muted }, 'Drawing the schedule…')
-  if (!data || data.ok === false) return e('div', { style: faint }, errorText(data, 'The schedule could not be drawn.'))
+  const what = kind === 'routes' ? 'routes' : 'schedule'
+  if (query.isLoading) return e('div', { style: muted }, `Drawing the ${what}…`)
+  if (!data || data.ok === false) return e('div', { style: faint }, errorText(data, `The ${what} could not be drawn.`))
   return e(SandboxedFrame, {
     src: 'data:text/html;charset=utf-8,' + encodeURIComponent(data.document),
     sandbox: 'allow-scripts',
-    title: 'Schedule',
-    style: { width: '100%', height, border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, display: 'block', background: '#fff' }
+    title: kind === 'routes' ? 'Routes' : 'Schedule',
+    style: { width: '100%', height: kind === 'routes' ? 1040 : 560, border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, display: 'block', background: '#fff' }
   })
 }
 
-function useHasSchedule(model) {
+/** "timeline", "routes", or null when the model draws no plan view. */
+function useViewKind(model) {
   const query = useRead('model', { model })
-  return Boolean(query.data && query.data.ok && query.data.model.schedule_view)
+  return (query.data && query.data.ok && query.data.model.view) || null
 }
 
 function Matches({ item }) {
@@ -542,7 +625,8 @@ export function RunView({ id, compact = false, go }) {
               e('div', { style: faint }, k.label),
               e('div', { style: { fontWeight: 600, fontVariantNumeric: 'tabular-nums' } }, `${Number(k.value).toLocaleString()} ${k.unit || ''}`))))
         : null,
-      drawable ? e(RunSchedule, { run }) : null,
+      drawable ? e(RunPlan, { run }) : null,
+      !compact && ['completed', 'incomplete'].includes(run.status) ? e(FillPanel, { run: run.id, go }) : null,
       !compact && all.length
         ? e(SearchBox, {
             value: search, onChange: setSearch, shown: rows.length, total: all.length,
@@ -570,10 +654,12 @@ export function RunView({ id, compact = false, go }) {
   })
 }
 
-function RunSchedule({ run }) {
-  if (!useHasSchedule(run.model_id)) return null
+function RunPlan({ run }) {
+  const kind = useViewKind(run.model_id)
+  if (!kind) return null
   // The score names the plan: a better plan redraws, an unchanged one keeps its frame.
-  return e('div', { style: section }, e(Sub, null, 'Schedule'), e(Schedule, { run: run.id, version: `${run.status}:${run.score}` }))
+  return e('div', { style: section }, e(Sub, null, kind === 'routes' ? 'Routes' : 'Schedule'),
+    e(PlanView, { run: run.id, kind, version: `${run.status}:${run.score}` }))
 }
 
 function CompareView({ ids }) {
@@ -593,6 +679,139 @@ function CompareView({ ids }) {
   })
 }
 
+// ---- experiments and trends ------------------------------------------------------
+
+function ExperimentsView({ go }) {
+  const query = useRead('experiments', {}, { refetchInterval: 3_000 })
+  return e(Loading, { query }, data =>
+    data.experiments.length
+      ? e(Table, {
+          columns: [{ id: 'name', label: 'Experiment' }, { id: 'model', label: 'Model' }, { id: 'shape', label: 'Datasets × profiles × repeats' }, { id: 'progress', label: 'Solves', num: true }],
+          rows: data.experiments.map(x => ({
+            key: x.id, id: x.id,
+            name: e('div', null, e('strong', null, x.name), e('div', { style: faint }, `${x.id} · ${when(x.created_at)}`)),
+            model: x.model_id,
+            shape: `${x.datasets.length} × ${x.profiles.length} × ${x.repeats}`,
+            progress: x.done ? `${x.runs} done` : `${x.finished} of ${x.runs}`
+          })),
+          onRow: row => go({ view: 'experiment', id: row.id })
+        })
+      : e(EmptyState, { title: 'No experiments yet', description: 'Open a model or a dataset and start one: every dataset solved under every profile, ranked.' }))
+}
+
+function Picks({ label, options, chosen, onChange }) {
+  return e('fieldset', { style: { ...section, border: '1px solid var(--ui-stroke-tertiary)', borderRadius: 6, padding: 8, margin: 0 } },
+    e('legend', { style: faint }, label),
+    options.length
+      ? options.map(o => e('label', { key: o.id, style: { ...muted, display: 'flex', alignItems: 'center', gap: 6 } },
+          e('input', { type: 'checkbox', checked: chosen.includes(o.id), onChange: () => onChange(chosen.includes(o.id) ? chosen.filter(c => c !== o.id) : [...chosen, o.id]) }),
+          o.label))
+      : e('div', { style: faint }, 'None yet.'))
+}
+
+function ExperimentNew({ model, datasets: initial, go }) {
+  const modelQuery = useRead('model', { model })
+  const datasetQuery = useRead('datasets', { model })
+  const [datasets, setDatasets] = useState(initial || [])
+  const [profiles, setProfiles] = useState([])
+  const [repeats, setRepeats] = useState('2')
+  const [seconds, setSeconds] = useState('30')
+  const [judge, setJudge] = useState('')
+  const [name, setName] = useState('')
+  const create = useAction('experiment_create', r => r.experiment && go({ view: 'experiment', id: r.experiment.id }))
+  return e(Loading, { query: modelQuery }, ({ model: m }) => {
+    const all = datasetQuery.data && datasetQuery.data.ok ? datasetQuery.data.datasets : []
+    const total = datasets.length * profiles.length * Number(repeats || 0)
+    return e('div', { style: section },
+      e(Title, null, `New experiment · ${m.name}`),
+      e('div', { style: muted }, 'Every dataset is solved under every profile, repeats times each. Profiles weigh constraints differently, so each plan is scored again under the judge profile to rank them.'),
+      e('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 8 } },
+        e(Picks, { label: 'Datasets', chosen: datasets, onChange: setDatasets, options: all.map(d => ({ id: d.id, label: `${d.name} · ${size(d.size)}` })) }),
+        e(Picks, { label: 'Profiles', chosen: profiles, onChange: setProfiles, options: m.profiles.map(p => ({ id: p.id, label: p.name })) })),
+      e('div', { style: bar },
+        e('input', { value: name, placeholder: 'Name', style: input, 'aria-label': 'Experiment name', onChange: event => setName(event.target.value) }),
+        e('label', { style: faint }, 'Repeats ', e('input', { type: 'number', min: 1, max: 20, value: repeats, style: { ...input, width: 56 }, 'aria-label': 'Repeats', onChange: event => setRepeats(event.target.value) })),
+        e('label', { style: faint }, 'Seconds each ', e('input', { type: 'number', min: 1, value: seconds, style: { ...input, width: 64 }, 'aria-label': 'Seconds per solve', onChange: event => setSeconds(event.target.value) })),
+        e('label', { style: faint }, 'Judge ',
+          e('select', { value: judge, style: input, 'aria-label': 'Judge profile', onChange: event => setJudge(event.target.value) },
+            e('option', { value: '' }, 'Standard'),
+            m.profiles.filter(p => !p.read_only).map(p => e('option', { key: p.id, value: p.id }, p.name)))),
+        e(Button, { size: 'xs', disabled: !total || total > 200 || create.isPending,
+          onClick: () => create.mutate({ datasets, profiles, repeats: Math.max(1, Math.trunc(Number(repeats) || 1)), ...(name.trim() ? { name: name.trim() } : {}),
+            ...(judge ? { judge } : {}), ...(Number(seconds) > 0 ? { overrides: { solve: { seconds: Math.trunc(Number(seconds)) } } } : {}) }) },
+          total ? `Queue ${total} solve${total === 1 ? '' : 's'}` : 'Pick datasets and profiles')),
+      total > 200 ? e('div', { role: 'alert', style: muted }, 'At most 200 solves per experiment.') : null)
+  })
+}
+
+function ExperimentView({ id, go }) {
+  const query = useRead('experiment', { experiment: id }, {
+    refetchInterval: q => (q && q.state && q.state.data && q.state.data.experiment && !q.state.data.experiment.done ? 2_000 : false)
+  })
+  const cancel = useAction('experiment_cancel')
+  return e(Loading, { query }, ({ experiment: x }) => {
+    const finished = Object.entries(x.statuses).filter(([k]) => !LIVE.includes(k)).reduce((n, [, v]) => n + v, 0)
+    const runs = Object.values(x.statuses).reduce((n, v) => n + v, 0)
+    const cell = (dataset, profile) => x.cells.find(c => c.dataset_id === dataset && c.profile_id === profile)
+    return e('div', { style: section },
+      e(Title, null, x.name),
+      e('div', { style: muted }, `${x.model_id} · ${x.datasets.length} datasets × ${x.profiles.length} profiles × ${x.repeats} · judged by ${x.judge_name}`),
+      e('div', { style: bar },
+        x.done ? e(Badge, { variant: 'success' }, 'done') : e(Badge, null, `${finished} of ${runs} solves`),
+        !x.done ? e(Button, { size: 'xs', variant: 'outline', disabled: cancel.isPending, onClick: () => cancel.mutate({ experiment: x.id }) }, 'Stop') : null),
+      e(Sub, null, 'Ranking'),
+      e('div', { style: faint }, 'Most feasible solves first, then the best average place across datasets (each dataset ranks the profiles by their best plan under the judge).'),
+      e(Table, {
+        columns: [{ id: 'place', label: '#', width: 32 }, { id: 'profile', label: 'Profile' }, { id: 'feasible', label: 'Feasible', num: true }, { id: 'avg', label: 'Average place', num: true }],
+        rows: x.ranking.map(r => ({
+          key: r.profile_id, place: r.place, profile: e('strong', null, r.profile),
+          feasible: r.finished ? `${r.feasible} of ${r.finished}` : '—',
+          avg: r.average_place == null ? '—' : r.average_place
+        }))
+      }),
+      e(Sub, null, 'By dataset'),
+      e(Table, {
+        columns: [{ id: 'dataset', label: 'Dataset' }, ...x.profiles.map(p => ({ id: p, label: x.profile_names[p] || p }))],
+        rows: x.datasets.map(d => ({
+          key: d, dataset: x.dataset_names[d] || d,
+          ...Object.fromEntries(x.profiles.map(p => {
+            const c = cell(d, p)
+            return [p, c && c.best
+              ? e('div', { style: rowLink, onClick: () => go({ view: 'run', id: c.best.run_id }) },
+                  e(ScoreText, { score: c.best.score }),
+                  e('div', { style: faint }, `median ${c.median} · ${c.feasible}/${c.finished} feasible${c.mean_elapsed_ms ? ` · ${(c.mean_elapsed_ms / 1000).toFixed(1)} s` : ''}`))
+              : e('span', { style: faint }, c ? `${c.finished}/${c.runs} done` : '—')]
+          }))
+        }))
+      }))
+  })
+}
+
+/** One KPI over time: a line through every finished solve, oldest on the left. */
+export function TrendLine({ kpi, width = 520, height = 64 }) {
+  const values = kpi.points.map(p => p[1])
+  if (values.length < 2) return e('div', { style: faint }, `${kpi.label}: ${values.length ? `${values[0]} ${kpi.unit || ''}` : 'no data'}`)
+  const low = Math.min(...values)
+  const high = Math.max(...values)
+  const span = high - low || 1
+  const pad = 4
+  const d = values.map((v, i) => `${i ? 'L' : 'M'}${(pad + (i / (values.length - 1)) * (width - 2 * pad)).toFixed(1)},${(pad + ((high - v) / span) * (height - 2 * pad)).toFixed(1)}`).join('')
+  return e('figure', { style: { margin: 0 } },
+    e('svg', { role: 'img', 'aria-label': `${kpi.label} over time`, viewBox: `0 0 ${width} ${height}`, width: '100%', height, preserveAspectRatio: 'none', style: { display: 'block' } },
+      e('path', { d, fill: 'none', stroke: 'var(--ui-accent)', strokeWidth: 1.5, vectorEffect: 'non-scaling-stroke' })),
+    e('figcaption', { style: faint }, `${kpi.label} · ${values.length} solves · latest ${values[values.length - 1].toLocaleString()} ${kpi.unit || ''} · range ${low.toLocaleString()}–${high.toLocaleString()}`))
+}
+
+function TrendsView({ model }) {
+  const query = useRead('trends', { model })
+  return e(Loading, { query }, data => e('div', { style: section },
+    e(Title, null, `Trends · ${data.model_id}`),
+    data.solves.length
+      ? e('div', { style: muted }, `${data.solves.length} finished solves · ${Math.round(data.feasible_share * 100)}% feasible · ${when(data.solves[0].finished_at)} to ${when(data.solves[data.solves.length - 1].finished_at)}`)
+      : e(EmptyState, { title: 'No finished solves yet', description: 'Trends appear once this model has solved plans.' }),
+    data.kpis.map(k => e(TrendLine, { key: k.id, kpi: k }))))
+}
+
 function RunsView({ go }) {
   const query = useRead('runs', {}, { refetchInterval: 3_000 })
   return e(Loading, { query }, data =>
@@ -602,7 +821,8 @@ function RunsView({ go }) {
 const TABS = [
   { id: 'models', label: 'Models' },
   { id: 'datasets', label: 'Datasets' },
-  { id: 'runs', label: 'Runs' }
+  { id: 'runs', label: 'Runs' },
+  { id: 'experiments', label: 'Experiments' }
 ]
 
 // Requests to show a view in the SolverForge Workbench section, from the chip, the palette or a chat card.
@@ -632,7 +852,11 @@ export function Workbench({ start }) {
     dataset: () => e(DatasetView, { id: here.id, go }),
     runs: () => e(RunsView, { go }),
     run: () => e(RunView, { id: here.id, go }),
-    compare: () => e(CompareView, { ids: here.id })
+    compare: () => e(CompareView, { ids: here.id }),
+    experiments: () => e(ExperimentsView, { go }),
+    experiment: () => e(ExperimentView, { id: here.id, go }),
+    'experiment-new': () => e(ExperimentNew, { model: here.id, datasets: here.datasets, go }),
+    trends: () => e(TrendsView, { model: here.id })
   }[here.view]
   return e(
     'div', { style: { display: 'flex', flexDirection: 'column', gap: 12, padding: 16, height: '100%', overflow: 'auto', color: 'var(--ui-text-primary)' } },
@@ -693,7 +917,7 @@ function RunCard({ attrs, streaming }) {
 export default {
   id: ID,
   name: 'SolverForge Workbench',
-  description: 'Optimization models: catalog, datasets, profiles, runs and their explanations.',
+  description: 'Optimization models: catalog, datasets, profiles, runs, fill, experiments and their explanations.',
   register(ctx) {
     rest = (path, opts) => ctx.rest(path, opts)
     const refresh = () => queryClient.invalidateQueries({ queryKey: [ID] })

@@ -1,93 +1,64 @@
-"""The roster view on the engine's own output (tests/fixtures/ess-small-week-run.json)."""
+"""Plan-view pages on views the engine really draws (tests/fixtures/*-view.json)."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-import pytest
-
 from solverforge_workbench_plugin import views
 
-FIXTURE = json.loads((Path(__file__).parent / "fixtures" / "ess-small-week-run.json").read_text())
+FIXTURES = Path(__file__).parent / "fixtures"
+ROSTER = json.loads((FIXTURES / "ess-month-view.json").read_text())
+RUN = json.loads((FIXTURES / "ess-month-run.json").read_text())
+ROUTES = json.loads((FIXTURES / "routes-view.json").read_text())
 
 
 def lanes(view: dict) -> dict[str, dict]:
     return {lane["id"]: lane for lane in view["model"]["lanes"]}
 
 
-def test_one_lane_per_employee_and_open_shifts_on_top():
-    view = views.timeline("employee-scheduling", FIXTURE["plan"], FIXTURE["analysis"])
-    found = view["model"]["lanes"]
-    assert found[0]["id"] == "open"
-    assert [i["id"] for i in found[0]["items"]] == [FIXTURE["opened"]]
-    assert len(found) == 1 + len(FIXTURE["plan"]["employees"])
-    placed = sum(len(lane["items"]) for lane in found)
-    assert placed == len(FIXTURE["plan"]["shifts"])
+def test_the_engine_draws_the_roster_with_open_shifts_on_top_and_an_employees_broken_rules_on_their_row():
+    assert ROSTER["kind"] == "timeline"
+    found = lanes(ROSTER)
+    assert ROSTER["model"]["lanes"][0]["id"] == "open"
+    assert RUN["opened"] in [i["id"] for i in found["open"]["items"]]
+    assert len(found) == 1 + len(RUN["plan"]["employees"])
+    # The overlap is a rule over the employee's roster: a red badge on the row, no red shift.
+    moved_to = next(s["employee"] for s in RUN["plan"]["shifts"] if s["id"] == RUN["moved"])
+    row = found[f"employee:{moved_to}"]
+    assert row["badges"][0]["label"] == "Overlapping shifts"
+    assert row["badges"][0]["style"]["color"] == "#b91c1c"
+    assert all(item["tone"] != "red" for item in row["items"])
+    assert all(o["tone"] not in ("red", "rose") for lane in found.values() for o in lane.get("overlays", []))
 
 
-def test_times_are_integer_minutes_from_the_first_day():
-    view = views.timeline("employee-scheduling", FIXTURE["plan"], FIXTURE["analysis"])
-    axis = view["model"]["axis"]
-    assert axis["startMinute"] == 0 and axis["endMinute"] == 7 * 1440
-    assert [d["isWeekend"] for d in axis["days"]] == [False] * 5 + [True] * 2
-    shift = next(s for s in FIXTURE["plan"]["shifts"] if s["start"] == "2027-03-01T07:00")
-    item = next(i for lane in view["model"]["lanes"] for i in lane["items"] if i["id"] == shift["id"])
-    assert (item["startMinute"], item["endMinute"]) == (7 * 60, 15 * 60)
-    every = [i for lane in view["model"]["lanes"] for i in lane["items"]]
-    assert all(isinstance(i["startMinute"], int) and isinstance(i["endMinute"], int) for i in every)
-
-
-def test_a_shift_the_engine_names_in_a_costly_match_is_marked_with_the_rule():
-    view = views.timeline("employee-scheduling", FIXTURE["plan"], FIXTURE["analysis"])
-    item = lanes(view)["open"]["items"][0]
-    assert item["tone"] == "rose"
-    assert "breaks: Mandatory shift left open" in item["meta"]
-
-
-def test_a_rule_over_an_employees_whole_roster_marks_their_row_not_every_shift():
-    # The engine justifies a per-employee rule by the employee and every shift
-    # they work; only two of Amina's shifts overlap.
-    view = views.timeline("employee-scheduling", FIXTURE["plan"], FIXTURE["analysis"])
-    amina = lanes(view)["employee:amina"]
-    # Her broken rules, costliest first: the overlap (-480), then the run it makes (-1).
-    assert [b["label"] for b in amina["badges"]][:2] == [
-        "Overlapping shifts", "Consecutive shifts outside required range"]
-    assert amina["badges"][0]["style"] == views.BROKEN_BADGE["hard"]
-    assert len(amina["badges"]) <= views.MAX_LANE_BADGES
-    assert all("Overlapping shifts" not in item["meta"] for item in amina["items"])
-    assert all(item["tone"] != "red" for item in amina["items"])
-
-
-def test_lane_badges_put_hard_rules_first_then_the_costliest_and_count_the_rest():
-    badges = views._rule_badges([("medium", "Late", 900), ("hard", "Rest", 1), ("hard", "Overlap", 480),
-                                 ("hard", "Rest", 2)])
-    assert [b["label"] for b in badges] == ["Overlap", "Rest", "+1 more"]
-    assert badges[2]["style"] == views.BROKEN_BADGE["medium"]
-
-
-def test_time_off_and_preferences_are_drawn_behind_the_shifts():
-    view = views.timeline("employee-scheduling", FIXTURE["plan"], FIXTURE["analysis"])
-    amina = lanes(view)["employee:amina"]
-    unavailable = next(o for o in amina["overlays"] if o["label"] == "Unavailable")
-    assert (unavailable["startMinute"], unavailable["endMinute"]) == (2 * 1440, 3 * 1440)
-    # Red is reserved for broken rules; time off is drawn in grey.
-    assert all(o["tone"] not in ("red", "rose") for o in amina["overlays"])
-    assert amina["stats"][0]["label"] == "Shifts"
-
-
-def test_a_plan_without_a_schedule_is_refused_with_the_reason():
-    with pytest.raises(views.ViewError, match="schedule needs a start and an end"):
-        views.timeline("employee-scheduling", {"shifts": []})
-    with pytest.raises(views.ViewError, match="has no schedule view"):
-        views.timeline("toy", {})
-
-
-def test_the_document_is_self_contained_and_cannot_be_broken_out_of():
-    plan = json.loads(json.dumps(FIXTURE["plan"]))
-    plan["employees"][0]["name"] = "</script><script>alert(1)</script>"
-    page = views.document(views.timeline("employee-scheduling", plan))
-    assert "default-src 'none'" in page
+def test_a_timeline_page_is_self_contained_and_cannot_be_broken_out_of():
+    view = json.loads(json.dumps(ROSTER))
+    view["model"]["lanes"][1]["label"] = "</script><script>alert(1)</script>"
+    page = views.document(view)
+    assert "default-src 'none'" in page and "img-src" not in page
     assert "</script><script>alert(1)" not in page
     assert "SF.rail.createTimeline" in page
-    assert "http://" not in page.split("<script id=\"view-data\"")[1].split("</script>")[0]
+    data = page.split("<script id=\"view-data\" type=\"application/json\">")[1].split("</script>")[0]
+    assert json.loads(data.replace("<\\/", "</"))["model"]["lanes"][1]["label"].startswith("</script>")
+
+
+def test_the_engine_draws_routes_with_every_stop_on_a_vehicle_or_left_unplanned():
+    view = ROUTES["view"]
+    assert view["kind"] == "routes"
+    assert view["vehicles"] and all(v["color"].startswith("#") for v in view["vehicles"])
+    for vehicle in view["vehicles"]:
+        for point in [vehicle["start"], vehicle["end"], *vehicle["stops"]]:
+            assert -90 <= point["lat"] <= 90 and -180 <= point["lon"] <= 180
+    stops = [s["id"] for v in view["vehicles"] for s in v["stops"]] + [s["id"] for s in view["unassigned"]]
+    assert len(stops) == len(set(stops))
+    assert view["timeline"]["model"]["lanes"]
+
+
+def test_a_routes_page_loads_only_street_tiles_and_draws_the_map_and_the_timeline():
+    page = views.document(ROUTES["view"])
+    csp = page.split("Content-Security-Policy\" content=\"")[1].split("\"")[0]
+    assert "default-src 'none'" in csp and "connect-src" not in csp
+    assert csp.split("img-src ")[1].split(";")[0] == "data: " + views.TILES
+    assert "SF.map.create" in page and "drawTimeline(view.timeline" in page
+    assert "Leaflet 1.9.4" in page

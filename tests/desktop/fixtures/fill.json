@@ -1,0 +1,333 @@
+{
+ "ok": true,
+ "source": "dataset 5a8c2a1e6a13",
+ "dataset_id": "5a8c2a1e6a13",
+ "run_id": null,
+ "items": [
+  {
+   "id": "Shift#0",
+   "label": "Shift 0",
+   "options": [
+    {
+     "changes": [
+      {
+       "constraint": "Unassigned shift",
+       "delta": "1hard/0soft",
+       "level": "hard"
+      }
+     ],
+     "delta": "1hard/0soft",
+     "feasible": false,
+     "id": "Nurse#1",
+     "label": "Nurse 1",
+     "score": "-5hard/0soft"
+    },
+    {
+     "changes": [
+      {
+       "constraint": "Unassigned shift",
+       "delta": "1hard/0soft",
+       "level": "hard"
+      }
+     ],
+     "delta": "1hard/0soft",
+     "feasible": false,
+     "id": "Nurse#2",
+     "label": "Nurse 2",
+     "score": "-5hard/0soft"
+    },
+    {
+     "changes": [
+      {
+       "constraint": "Unassigned shift",
+       "delta": "1hard/0soft",
+       "level": "hard"
+      },
+      {
+       "constraint": "Shift for the first nurse",
+       "delta": "0hard/-1soft",
+       "level": "soft"
+      }
+     ],
+     "delta": "1hard/-1soft",
+     "feasible": false,
+     "id": "Nurse#0",
+     "label": "Nurse 0",
+     "score": "-5hard/-1soft"
+    }
+   ],
+   "type": "Shift"
+  },
+  {
+   "id": "Shift#1",
+   "label": "Shift 1",
+   "options": [
+    {
+     "changes": [
+      {
+       "constraint": "Unassigned shift",
+       "delta": "1hard/0soft",
+       "level": "hard"
+      }
+     ],
+     "delta": "1hard/0soft",
+     "feasible": false,
+     "id": "Nurse#1",
+     "label": "Nurse 1",
+     "score": "-5hard/0soft"
+    },
+    {
+     "changes": [
+      {
+       "constraint": "Unassigned shift",
+       "delta": "1hard/0soft",
+       "level": "hard"
+      }
+     ],
+     "delta": "1hard/0soft",
+     "feasible": false,
+     "id": "Nurse#2",
+     "label": "Nurse 2",
+     "score": "-5hard/0soft"
+    },
+    {
+     "changes": [
+      {
+       "constraint": "Unassigned shift",
+       "delta": "1hard/0soft",
+       "level": "hard"
+      },
+      {
+       "constraint": "Shift for the first nurse",
+       "delta": "0hard/-1soft",
+       "level": "soft"
+      }
+     ],
+     "delta": "1hard/-1soft",
+     "feasible": false,
+     "id": "Nurse#0",
+     "label": "Nurse 0",
+     "score": "-5hard/-1soft"
+    }
+   ],
+   "type": "Shift"
+  },
+  {
+   "id": "Shift#2",
+   "label": "Shift 2",
+   "options": [
+    {
+     "changes": [
+      {
+       "constraint": "Unassigned shift",
+       "delta": "1hard/0soft",
+       "level": "hard"
+      }
+     ],
+     "delta": "1hard/0soft",
+     "feasible": false,
+     "id": "Nurse#1",
+     "label": "Nurse 1",
+     "score": "-5hard/0soft"
+    },
+    {
+     "changes": [
+      {
+       "constraint": "Unassigned shift",
+       "delta": "1hard/0soft",
+       "level": "hard"
+      }
+     ],
+     "delta": "1hard/0soft",
+     "feasible": false,
+     "id": "Nurse#2",
+     "label": "Nurse 2",
+     "score": "-5hard/0soft"
+    },
+    {
+     "changes": [
+      {
+       "constraint": "Unassigned shift",
+       "delta": "1hard/0soft",
+       "level": "hard"
+      },
+      {
+       "constraint": "Shift for the first nurse",
+       "delta": "0hard/-1soft",
+       "level": "soft"
+      }
+     ],
+     "delta": "1hard/-1soft",
+     "feasible": false,
+     "id": "Nurse#0",
+     "label": "Nurse 0",
+     "score": "-5hard/-1soft"
+    }
+   ],
+   "type": "Shift"
+  },
+  {
+   "id": "Shift#3",
+   "label": "Shift 3",
+   "options": [
+    {
+     "changes": [
+      {
+       "constraint": "Unassigned shift",
+       "delta": "1hard/0soft",
+       "level": "hard"
+      }
+     ],
+     "delta": "1hard/0soft",
+     "feasible": false,
+     "id": "Nurse#1",
+     "label": "Nurse 1",
+     "score": "-5hard/0soft"
+    },
+    {
+     "changes": [
+      {
+       "constraint": "Unassigned shift",
+       "delta": "1hard/0soft",
+       "level": "hard"
+      }
+     ],
+     "delta": "1hard/0soft",
+     "feasible": false,
+     "id": "Nurse#2",
+     "label": "Nurse 2",
+     "score": "-5hard/0soft"
+    },
+    {
+     "changes": [
+      {
+       "constraint": "Unassigned shift",
+       "delta": "1hard/0soft",
+       "level": "hard"
+      },
+      {
+       "constraint": "Shift for the first nurse",
+       "delta": "0hard/-1soft",
+       "level": "soft"
+      }
+     ],
+     "delta": "1hard/-1soft",
+     "feasible": false,
+     "id": "Nurse#0",
+     "label": "Nurse 0",
+     "score": "-5hard/-1soft"
+    }
+   ],
+   "type": "Shift"
+  },
+  {
+   "id": "Shift#4",
+   "label": "Shift 4",
+   "options": [
+    {
+     "changes": [
+      {
+       "constraint": "Unassigned shift",
+       "delta": "1hard/0soft",
+       "level": "hard"
+      }
+     ],
+     "delta": "1hard/0soft",
+     "feasible": false,
+     "id": "Nurse#1",
+     "label": "Nurse 1",
+     "score": "-5hard/0soft"
+    },
+    {
+     "changes": [
+      {
+       "constraint": "Unassigned shift",
+       "delta": "1hard/0soft",
+       "level": "hard"
+      }
+     ],
+     "delta": "1hard/0soft",
+     "feasible": false,
+     "id": "Nurse#2",
+     "label": "Nurse 2",
+     "score": "-5hard/0soft"
+    },
+    {
+     "changes": [
+      {
+       "constraint": "Unassigned shift",
+       "delta": "1hard/0soft",
+       "level": "hard"
+      },
+      {
+       "constraint": "Shift for the first nurse",
+       "delta": "0hard/-1soft",
+       "level": "soft"
+      }
+     ],
+     "delta": "1hard/-1soft",
+     "feasible": false,
+     "id": "Nurse#0",
+     "label": "Nurse 0",
+     "score": "-5hard/-1soft"
+    }
+   ],
+   "type": "Shift"
+  },
+  {
+   "id": "Shift#5",
+   "label": "Shift 5",
+   "options": [
+    {
+     "changes": [
+      {
+       "constraint": "Unassigned shift",
+       "delta": "1hard/0soft",
+       "level": "hard"
+      }
+     ],
+     "delta": "1hard/0soft",
+     "feasible": false,
+     "id": "Nurse#1",
+     "label": "Nurse 1",
+     "score": "-5hard/0soft"
+    },
+    {
+     "changes": [
+      {
+       "constraint": "Unassigned shift",
+       "delta": "1hard/0soft",
+       "level": "hard"
+      }
+     ],
+     "delta": "1hard/0soft",
+     "feasible": false,
+     "id": "Nurse#2",
+     "label": "Nurse 2",
+     "score": "-5hard/0soft"
+    },
+    {
+     "changes": [
+      {
+       "constraint": "Unassigned shift",
+       "delta": "1hard/0soft",
+       "level": "hard"
+      },
+      {
+       "constraint": "Shift for the first nurse",
+       "delta": "0hard/-1soft",
+       "level": "soft"
+      }
+     ],
+     "delta": "1hard/-1soft",
+     "feasible": false,
+     "id": "Nurse#0",
+     "label": "Nurse 0",
+     "score": "-5hard/-1soft"
+    }
+   ],
+   "type": "Shift"
+  }
+ ],
+ "issues": []
+}

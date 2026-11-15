@@ -1,0 +1,32 @@
+{
+ "ok": true,
+ "experiments": [
+  {
+   "id": "84531df7eec8",
+   "model_id": "toy",
+   "name": "Experiment 1",
+   "datasets": [
+    "5a8c2a1e6a13",
+    "1701c4d2c54b"
+   ],
+   "profiles": [
+    "toy-standard",
+    "ae7f37cf1637"
+   ],
+   "judge": "toy-standard",
+   "repeats": 1,
+   "overrides": {
+    "weights": {},
+    "params": {},
+    "solve": {
+     "seconds": 30,
+     "best_score": "0hard/0soft"
+    }
+   },
+   "created_at": "2026-11-15T17:48:10.917+00:00",
+   "runs": 4,
+   "finished": 4,
+   "done": true
+  }
+ ]
+}
