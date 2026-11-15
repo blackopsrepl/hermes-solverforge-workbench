@@ -34,7 +34,7 @@ pub fn solve<M: Model, W: Write>(
     controls: impl BufRead + Send + 'static,
     out: &mut Output<W>,
 ) -> Result<(), EngineError> {
-    let (mut plan, issues) = parse::<M>(request.plan)?;
+    let (mut plan, issues) = parse::<M>(request.plan, request.freeze_before.as_deref())?;
     apply_weights::<M>(&mut plan, &request.weights)?;
     let manager = M::manager();
     let started = match &request.termination {

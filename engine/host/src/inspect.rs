@@ -6,6 +6,7 @@ use serde_json::json;
 use solverforge::{ConstraintSet, PlanningSolution};
 
 use crate::analysis::analyze;
+use crate::fill::FillAnswer;
 use crate::model::{Kpi, Level, Model};
 use crate::output::Output;
 use crate::plan::{apply_weights, parse};
@@ -41,6 +42,7 @@ pub fn describe<M: Model, W: Write>(out: &mut Output<W>) {
             "name": M::name(),
             "demos": M::demos(),
             "weights": has_weights,
+            "parameters": M::parameters(),
             "constraints": entries,
         }),
     );
@@ -70,7 +72,7 @@ pub fn evaluate<M: Model, W: Write>(
     request: Request,
     out: &mut Output<W>,
 ) -> Result<(), EngineError> {
-    let (mut plan, issues) = parse::<M>(request.plan)?;
+    let (mut plan, issues) = parse::<M>(request.plan, request.freeze_before.as_deref())?;
     apply_weights::<M>(&mut plan, &request.weights)?;
     let kpis: Vec<Kpi> = M::kpis(&plan);
     let analysis = analyze::<M>(plan, request.max_matches);
@@ -84,5 +86,33 @@ pub fn evaluate<M: Model, W: Write>(
             "issues": issues,
         }),
     );
+    Ok(())
+}
+
+/// Most matches read when a view marks broken items.
+const VIEW_MATCHES: usize = 10_000;
+
+pub fn view<M: Model, W: Write>(request: Request, out: &mut Output<W>) -> Result<(), EngineError> {
+    let (mut plan, _) = parse::<M>(request.plan, request.freeze_before.as_deref())?;
+    apply_weights::<M>(&mut plan, &request.weights)?;
+    let analysis = analyze::<M>(plan.clone(), VIEW_MATCHES);
+    let view = M::view(&plan, &analysis).ok_or_else(|| {
+        EngineError::new("no_view", format!("model {} has no plan view", M::id()))
+    })?;
+    out.event("view", json!({ "view": view }));
+    Ok(())
+}
+
+pub fn fill<M: Model, W: Write>(request: Request, out: &mut Output<W>) -> Result<(), EngineError> {
+    let (mut plan, issues) = parse::<M>(request.plan, request.freeze_before.as_deref())?;
+    apply_weights::<M>(&mut plan, &request.weights)?;
+    let fill = request.fill.unwrap_or_default();
+    match M::fill(plan, &fill)? {
+        FillAnswer::Options(items) => out.event("filled", json!({ "items": items, "issues": issues })),
+        FillAnswer::Applied(plan) => out.event(
+            "filled",
+            json!({ "applied": fill.apply.map(|c| json!({"item": c.item, "value": c.value})), "plan": M::present(&plan) }),
+        ),
+    }
     Ok(())
 }

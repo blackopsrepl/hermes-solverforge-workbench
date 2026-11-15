@@ -31,6 +31,9 @@ impl Model for EmployeeScheduling {
     fn demo(id: &str) -> Option<Plan> {
         crate::demo::build(id)
     }
+    fn descriptor() -> solverforge::domain::SolutionDescriptor {
+        Plan::descriptor()
+    }
     fn prepare(plan: &mut Plan) -> Vec<Issue> {
         crate::prepare::prepare(plan)
     }

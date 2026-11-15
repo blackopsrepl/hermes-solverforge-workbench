@@ -19,6 +19,10 @@ pub enum Command {
     Solve,
     /// Score a plan as it stands, without solving it.
     Evaluate,
+    /// The plan drawn for people.
+    View,
+    /// Ranked placements for open items, or one applied.
+    Fill,
 }
 
 /// One request, read as the first line of stdin.
@@ -42,6 +46,12 @@ pub struct Request {
     /// Most matches reported per constraint.
     #[serde(default = "default_max_matches")]
     pub max_matches: usize,
+    /// Pin everything that starts before this local date-time.
+    #[serde(default)]
+    pub freeze_before: Option<String>,
+    /// What to fill, for `fill`.
+    #[serde(default)]
+    pub fill: Option<crate::fill::FillRequest>,
 }
 
 fn default_max_matches() -> usize {

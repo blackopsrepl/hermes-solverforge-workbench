@@ -10,7 +10,10 @@ use crate::protocol::EngineError;
 
 /// Deserializes and prepares the plan. Returns it with the model's warnings;
 /// any error-level issue refuses the request with every issue attached.
-pub fn parse<M: Model>(plan: Option<Value>) -> Result<(M::Plan, Vec<Issue>), EngineError> {
+pub fn parse<M: Model>(
+    plan: Option<Value>,
+    freeze_before: Option<&str>,
+) -> Result<(M::Plan, Vec<Issue>), EngineError> {
     let plan = plan.ok_or_else(|| EngineError::new("missing_plan", "the request has no plan"))?;
     let mut plan: M::Plan = serde_json::from_value(plan).map_err(|error| {
         EngineError::new(
@@ -29,6 +32,16 @@ pub fn parse<M: Model>(plan: Option<Value>) -> Result<(M::Plan, Vec<Issue>), Eng
             format!("the dataset has {errors} error(s)"),
         )
         .with_detail(json!({ "issues": issues })));
+    }
+    let mut issues = issues;
+    if let Some(until) = freeze_before {
+        let pinned = M::freeze(&mut plan, until)?;
+        issues.push(Issue::warning(
+            "frozen",
+            format!(
+                "{pinned} item(s) starting before {until} are pinned to their current assignment"
+            ),
+        ));
     }
     Ok((plan, issues))
 }

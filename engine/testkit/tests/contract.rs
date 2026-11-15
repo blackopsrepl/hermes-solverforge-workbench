@@ -250,3 +250,68 @@ fn request_held(body: Value, limit: Duration, cancel_after: Option<Duration>) ->
     drop(writer);
     (engine.join().unwrap(), sink.events())
 }
+
+#[test]
+fn fill_ranks_every_value_for_each_open_item_by_the_score_it_reaches() {
+    let (code, events) = request(json!({
+        "command": "fill", "model": "toy", "plan": plan_json(toy::week()), "fill": {"top": 2}
+    }));
+    assert_eq!(code, 0);
+    let items = last(&events)["items"].as_array().unwrap().clone();
+    // Six open shifts, each with its two best nurses of three.
+    assert_eq!(items.len(), 6);
+    assert_eq!(items[0]["type"], "Shift");
+    assert_eq!(items[0]["id"], "Shift#0");
+    let options = items[0]["options"].as_array().unwrap();
+    assert_eq!(options.len(), 2);
+    // Placing one shift removes one unassigned-shift penalty.
+    assert_eq!(options[0]["delta"], "1hard/0soft");
+    assert!(options[0]["id"].as_str().unwrap().starts_with("Nurse#"));
+    let change = &options[0]["changes"][0];
+    assert_eq!(change["constraint"], "Unassigned shift");
+    assert_eq!(change["delta"], "1hard/0soft");
+}
+
+#[test]
+fn fill_applies_one_option_and_returns_the_plan() {
+    let (code, events) = request(json!({
+        "command": "fill", "model": "toy", "plan": plan_json(toy::week()),
+        "fill": {"apply": {"item": "Shift#3", "value": "Nurse#2"}}
+    }));
+    assert_eq!(code, 0);
+    let filled = last(&events);
+    assert_eq!(filled["applied"]["item"], "Shift#3");
+    let shifts = filled["plan"]["shifts"].as_array().unwrap();
+    assert_eq!(shifts[3]["nurse_idx"], 2);
+    assert!(shifts
+        .iter()
+        .enumerate()
+        .all(|(n, s)| n == 3 || s["nurse_idx"].is_null()));
+}
+
+#[test]
+fn fill_refuses_a_value_that_is_not_a_place_for_the_item() {
+    let (code, events) = request(json!({
+        "command": "fill", "model": "toy", "plan": plan_json(toy::week()),
+        "fill": {"apply": {"item": "Shift#3", "value": "Nurse#9"}}
+    }));
+    assert_eq!(code, 1);
+    assert_eq!(last(&events)["error"]["code"], "unknown_value");
+}
+
+#[test]
+fn view_is_refused_for_a_model_without_one() {
+    let (code, events) =
+        request(json!({"command": "view", "model": "toy", "plan": plan_json(toy::week())}));
+    assert_eq!(code, 1);
+    assert_eq!(last(&events)["error"]["code"], "no_view");
+}
+
+#[test]
+fn freeze_is_refused_for_a_model_without_time() {
+    let (code, events) = request(json!({
+        "command": "evaluate", "model": "toy", "plan": plan_json(toy::week()), "freeze_before": "2027-03-01T00:00"
+    }));
+    assert_eq!(code, 1);
+    assert_eq!(last(&events)["error"]["code"], "freeze_unsupported");
+}

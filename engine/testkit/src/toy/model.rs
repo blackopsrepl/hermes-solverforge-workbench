@@ -30,6 +30,9 @@ impl Model for Toy {
     fn demo(id: &str) -> Option<Roster> {
         (id == "WEEK").then(week)
     }
+    fn descriptor() -> solverforge::domain::SolutionDescriptor {
+        Roster::descriptor()
+    }
     fn prepare(plan: &mut Roster) -> Vec<Issue> {
         let mut issues = Vec::new();
         let nurses = plan.nurses.len();

@@ -2,7 +2,13 @@
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use solverforge::domain::SolutionDescriptor;
 use solverforge::{ConstraintSet, ConstraintWeights, PlanningSolution, Solvable, SolverManager};
+
+use crate::analysis::Analysis;
+use crate::fill::{FillAnswer, FillRequest};
+use crate::protocol::EngineError;
+use crate::view::View;
 
 /// Score type of a model's plan.
 pub type ScoreOf<M> = <<M as Model>::Plan as PlanningSolution>::Score;
@@ -12,7 +18,7 @@ pub type ScoreOf<M> = <<M as Model>::Plan as PlanningSolution>::Score;
 /// Stock models implement it in this workspace. A model built with
 /// solverforge-cli gets a generated implementation that points at its
 /// `domain::Plan`, `constraints::create_constraints` and `data` module.
-pub trait Model: 'static {
+pub trait Model: 'static + Sized {
     /// The planning solution.
     type Plan: Solvable + Serialize + DeserializeOwned;
 
@@ -28,6 +34,8 @@ pub trait Model: 'static {
     fn demos() -> Vec<&'static str>;
     /// Builds one demo dataset.
     fn demo(id: &str) -> Option<Self::Plan>;
+    /// The planning descriptor the macros generate: `Plan::descriptor()`.
+    fn descriptor() -> SolutionDescriptor;
 
     /// Checks a plan and fills its derived fields before it is scored or solved.
     ///
@@ -60,6 +68,42 @@ pub trait Model: 'static {
     fn name_entity(_plan: &Self::Plan, _type_name: &str, _planning_id: &str) -> Option<EntityName> {
         None
     }
+    /// Model parameters a dataset or profile may set under `parameters`.
+    fn parameters() -> Vec<ParameterInfo> {
+        Vec::new()
+    }
+    /// The plan drawn for people, its broken rules marked from `analysis`.
+    fn view(_plan: &Self::Plan, _analysis: &Analysis) -> Option<View> {
+        None
+    }
+    /// Ranked placements for open items, or one applied. The default places
+    /// single-value planning variables; models with list variables override it.
+    fn fill(
+        plan: Self::Plan,
+        request: &FillRequest,
+    ) -> Result<FillAnswer<Self::Plan>, EngineError> {
+        crate::fill::scalar::<Self>(plan, request)
+    }
+    /// Pins every item that starts before `until` (a local date-time in the
+    /// model's wire format) to its current assignment; returns how many were
+    /// pinned. Called after [`Model::prepare`].
+    fn freeze(_plan: &mut Self::Plan, _until: &str) -> Result<usize, EngineError> {
+        Err(EngineError::new(
+            "freeze_unsupported",
+            format!("model {} has no notion of time to freeze", Self::id()),
+        ))
+    }
+}
+
+/// A model parameter: a setting of the model itself rather than a constraint
+/// weight (a travel speed, a planning horizon, a default break length).
+#[derive(Debug, Clone, Serialize)]
+pub struct ParameterInfo {
+    pub name: &'static str,
+    /// `integer`, `number`, `boolean`, `string` or `duration` (minutes).
+    pub kind: &'static str,
+    pub default: serde_json::Value,
+    pub description: &'static str,
 }
 
 /// An entity named in a constraint match, as the caller shows it.
