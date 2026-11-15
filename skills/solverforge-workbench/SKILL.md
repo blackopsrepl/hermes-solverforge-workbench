@@ -6,7 +6,9 @@ description: "Use when solving, tuning or explaining SolverForge Workbench model
 # SolverForge Workbench
 
 The SolverForge Workbench hosts optimization models (employee scheduling, field service
-routing, pick-up and delivery, task scheduling and more) on the user's machine.
+routing, pick-up and delivery, task scheduling, lessons timetabling, flight crew
+scheduling, order picking, fleet readiness, furnace heat treatment, electric vehicle
+routing, and the user's own models) on the user's machine.
 Every score, analysis, match and KPI comes from the engine. Never estimate or
 invent one; read it from a tool result.
 
@@ -44,23 +46,41 @@ invent one; read it from a tool result.
 6. Change the problem with `solverforge_workbench_dataset_patch` (JSON Patch; address
    records by id with `[id=X]` path segments). To replan a published plan,
    patch with `from_run` set to the solved run, pin what must stay, then solve
-   the new dataset.
-7. Compare alternatives with `solverforge_workbench_compare` over two or more runs.
+   the new dataset. To keep what has already started, solve with
+   `overrides: {solve: {freeze_before: "YYYY-MM-DDTHH:MM"}}`.
+7. Place one new or uncovered item without a full solve:
+   `solverforge_workbench_fill` ranks its best places (each with the score it
+   reaches and the constraints it moves); `solverforge_workbench_fill_apply`
+   makes a new dataset with the chosen one. Offer the top options with their
+   score changes; apply only the one the user picks.
+8. Compare alternatives with `solverforge_workbench_compare` over two or more runs.
+   To find the best settings, `solverforge_workbench_experiment_create` solves
+   datasets × profiles with repeats; `solverforge_workbench_experiment` ranks the
+   profiles under one judge profile (scores of different weights do not compare).
+9. `solverforge_workbench_trends` shows a model's KPIs across all finished solves.
+10. Show a run in the chat with `::solverforge-workbench{run="<run id>"}`: the
+   card shows the score and what costs it; the Workbench section draws the plan
+   (a schedule, or routes on a map).
 
 ## Settings
 
 - Weights multiply a constraint's penalty: 1 is as designed, 0 switches the
   constraint off, 10 makes it ten times as important. Hard constraints define
   feasibility; raise soft weights to trade one business goal against another.
+- Model parameters (`params`) are settings of the model itself, such as a
+  travel speed or a road-network switch; `solverforge_workbench_model` lists
+  each with its kind and default. Unknown names are refused.
 - Solve settings: `seconds` (time limit), `unimproved_seconds` (stop when no
-  better plan was found for this long), step limits, `best_score`.
+  better plan was found for this long), step limits, `best_score`,
+  `freeze_before`.
 - Order, later winning: model defaults, parent dataset, profile, one-off
   `overrides`, the dataset's own settings. Use `overrides` for an experiment;
   save a profile when the user wants to keep the settings.
 
 ## Rules
 
-- Deleting a dataset or profile asks the user; never try to work around a refusal.
+- Deleting a dataset, profile or experiment asks the user; never try to work
+  around a refusal.
 - Updating a profile needs the revision you last read; on a `stale` refusal,
   read the profile again and redo the change.
 - A run marked invalid lists the dataset's problems in `error.issues`: fix the
