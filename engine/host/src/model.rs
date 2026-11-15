@@ -72,6 +72,10 @@ pub trait Model: 'static + Sized {
     fn parameters() -> Vec<ParameterInfo> {
         Vec::new()
     }
+    /// The kind of view [`Model::view`] draws: `"timeline"` or `"routes"`.
+    fn view_kind() -> Option<&'static str> {
+        None
+    }
     /// The plan drawn for people, its broken rules marked from `analysis`.
     fn view(_plan: &Self::Plan, _analysis: &Analysis) -> Option<View> {
         None

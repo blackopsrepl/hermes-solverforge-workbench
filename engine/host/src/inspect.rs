@@ -43,6 +43,7 @@ pub fn describe<M: Model, W: Write>(out: &mut Output<W>) {
             "demos": M::demos(),
             "weights": has_weights,
             "parameters": M::parameters(),
+            "view": M::view_kind(),
             "constraints": entries,
         }),
     );
