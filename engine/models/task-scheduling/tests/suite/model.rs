@@ -65,31 +65,45 @@ fn bad_records_are_refused_with_the_reason() {
 }
 
 #[test]
-fn incremental_scores_match_full_ones_on_both_demos() {
-    assert_incremental_matches_full(demo_plan("WORKSHOP"), 400, 7);
-    assert_incremental_matches_full(demo_plan("FACTORY"), 150, 11);
+fn incremental_scores_match_full_ones_on_the_demo() {
+    assert_incremental_matches_full(demo_plan("FACTORY"), 300, 11);
 }
 
-/// The workshop demo with tasks crowded onto the first resources, so most
+/// The factory demo with tasks crowded onto the first resources, so most
 /// rules have matches.
 fn crowded() -> Value {
-    let mut plan = TaskScheduling::present(&TaskScheduling::demo("WORKSHOP").unwrap());
+    let mut plan = TaskScheduling::present(&TaskScheduling::demo("FACTORY").unwrap());
+    let pinned: HashSet<String> = plan["tasks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|t| t["pinned"] == true)
+        .map(|t| t["id"].as_str().unwrap().to_string())
+        .collect();
     let ids: Vec<Value> = plan["tasks"]
         .as_array()
         .unwrap()
         .iter()
+        .filter(|t| t["pinned"] != true)
         .map(|t| t["id"].clone())
         .collect();
     let resources = plan["resources"].as_array_mut().unwrap();
-    let count = resources.len();
+    // Pinned tasks stay first where they are; everything else crowds onto two resources.
     for resource in resources.iter_mut() {
-        resource["tasks"] = json!([]);
+        let kept: Vec<Value> = resource["tasks"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|a| pinned.contains(a["task"].as_str().unwrap()))
+            .cloned()
+            .collect();
+        resource["tasks"] = json!(kept);
     }
     for (n, id) in ids.iter().enumerate() {
         if n % 5 == 4 {
             continue;
         }
-        resources[n % 2 % count]["tasks"]
+        resources[n % 2]["tasks"]
             .as_array_mut()
             .unwrap()
             .push(json!({"task": id}));
@@ -120,7 +134,7 @@ fn every_blamed_task_and_resource_is_named_by_id_and_label() {
 }
 
 #[test]
-fn the_crowded_workshop_breaks_hard_rules_the_demo_does_not() {
+fn the_crowded_factory_breaks_hard_rules_the_demo_does_not() {
     let crowded = scores(crowded());
     let costing: Vec<&String> = crowded
         .iter()
@@ -133,7 +147,7 @@ fn the_crowded_workshop_breaks_hard_rules_the_demo_does_not() {
 
 #[test]
 fn fill_ranks_places_for_an_open_task_and_applies_one() {
-    let plan = TaskScheduling::present(&TaskScheduling::demo("WORKSHOP").unwrap());
+    let plan = TaskScheduling::present(&TaskScheduling::demo("FACTORY").unwrap());
     let first = plan["tasks"][0]["id"].as_str().unwrap().to_string();
     let (code, answer) =
         engine(json!({"command": "fill", "plan": plan, "fill": {"items": [first], "top": 3}}));
@@ -182,22 +196,13 @@ fn the_view_has_a_lane_per_resource_and_one_for_unscheduled_tasks() {
 
 #[test]
 fn freezing_pins_the_tasks_that_start_before_the_moment() {
-    let mut plan = TaskScheduling::present(&TaskScheduling::demo("WORKSHOP").unwrap());
-    // Every task on the band saw, in order, from 07:00: only the first starts before 07:01.
-    let saw: Vec<Value> = plan["tasks"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .filter(|t| {
-            t["requiredResources"]
-                .as_array()
-                .is_some_and(|r| r.contains(&json!("SAW")))
-        })
-        .map(|t| json!({"task": t["id"]}))
-        .collect();
-    plan["resources"][0]["tasks"] = json!(saw);
+    let plan = dataset(json!({
+        "tasks": [task("A", 60, json!({})), task("B", 60, json!({})), task("C", 60, json!({}))],
+        "resources": [machine("M1", &["A", "B", "C"], json!({}))],
+    }));
+    // A starts 08:00, B 09:00: both before 09:30.
     let (code, answer) =
-        engine(json!({"command": "evaluate", "plan": plan, "freeze_before": "2027-03-01T07:01"}));
+        engine(json!({"command": "evaluate", "plan": plan, "freeze_before": at(9, 30)}));
     assert_eq!(code, 0, "{answer}");
     let frozen = answer["issues"]
         .as_array()
@@ -206,7 +211,7 @@ fn freezing_pins_the_tasks_that_start_before_the_moment() {
         .find(|i| i["code"] == "frozen")
         .unwrap();
     assert!(
-        frozen["message"].as_str().unwrap().starts_with("1 item(s)"),
+        frozen["message"].as_str().unwrap().starts_with("2 item(s)"),
         "{frozen}"
     );
     let (code, refused) =
