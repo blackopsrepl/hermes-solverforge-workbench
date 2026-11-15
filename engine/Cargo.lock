@@ -329,6 +329,7 @@ version = "0.1.0"
 dependencies = [
  "solverforge-workbench-employee-scheduling",
  "solverforge-workbench-host",
+ "solverforge-workbench-task-scheduling",
 ]
 
 [[package]]
@@ -349,6 +350,16 @@ dependencies = [
  "serde_json",
  "solverforge",
  "solverforge-scoring",
+]
+
+[[package]]
+name = "solverforge-workbench-task-scheduling"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "solverforge",
+ "solverforge-workbench-host",
 ]
 
 [[package]]
