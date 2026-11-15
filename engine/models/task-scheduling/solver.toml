@@ -29,8 +29,3 @@ type = "list_swap_move_selector"
 type = "sublist_change_move_selector"
 min_sublist_size = 2
 max_sublist_size = 4
-
-[[phases.move_selector.selectors]]
-type = "list_ruin_move_selector"
-min_ruin_count = 2
-max_ruin_count = 6
