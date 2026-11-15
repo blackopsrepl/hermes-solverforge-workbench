@@ -1,0 +1,37 @@
+[termination]
+seconds_spent_limit = 30
+
+[[phases]]
+type = "construction_heuristic"
+construction_heuristic_type = "list_cheapest_insertion"
+
+[[phases]]
+type = "local_search"
+
+[phases.acceptor]
+type = "late_acceptance"
+late_acceptance_size = 400
+
+[phases.forager]
+type = "accepted_count"
+limit = 16
+
+[phases.move_selector]
+type = "union_move_selector"
+
+[[phases.move_selector.selectors]]
+type = "list_change_move_selector"
+
+[[phases.move_selector.selectors]]
+type = "list_swap_move_selector"
+
+[[phases.move_selector.selectors]]
+type = "sublist_change_move_selector"
+min_sublist_size = 2
+max_sublist_size = 4
+
+[[phases.move_selector.selectors]]
+type = "list_ruin_move_selector"
+min_ruin_count = 2
+max_ruin_count = 6
+
