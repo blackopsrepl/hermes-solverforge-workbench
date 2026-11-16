@@ -65,6 +65,7 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
     }
     for (task, tf) in plan.tasks.iter_mut().zip(&facts.tasks) {
         task.open_cost = tf.priority;
+        task.link_cost = facts.broken_link;
     }
     let queue = plan.resources.len();
     // Open tasks start on no list at all, so construction places every one

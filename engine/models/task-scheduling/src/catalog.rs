@@ -25,11 +25,11 @@ fn describe(rule: Rule) -> (&'static str, &'static str) {
         ),
         Rule::DependencyUnassigned => (
             DEPENDENCIES,
-            "A task is planned while a task it depends on is not: left unassigned or impossible to time; costs the broken-link penalty.",
+            "A task is planned while a task it depends on is left unassigned; costs the broken-link penalty.",
         ),
         Rule::DependencyTiming => (
             DEPENDENCIES,
-            "A task starts outside the offsets its dependency allows after the preceding task's end or start; costs the minutes outside.",
+            "A task starts outside the offsets its dependency allows after the preceding task's end or start; costs the minutes outside. A task that cannot be timed, because it waits on a task queued after it on its resource or follows one that does, costs the broken-link penalty.",
         ),
         Rule::DependencySplit => (
             DEPENDENCIES,
@@ -53,7 +53,7 @@ fn describe(rule: Rule) -> (&'static str, &'static str) {
         ),
         Rule::Unassigned => (
             THROUGHPUT,
-            "A task is left unassigned, or cannot be timed because it waits on a task queued after it on its resource or follows one that does; costs its priority, so the most important tasks are planned first.",
+            "A task is left unassigned; costs its priority, so the most important tasks are planned first.",
         ),
         Rule::Makespan => (
             THROUGHPUT,

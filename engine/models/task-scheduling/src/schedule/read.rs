@@ -38,20 +38,19 @@ impl Schedule {
             order: vec![Vec::new(); resources],
         };
         for (r, resource) in plan.resources.iter().enumerate().take(resources) {
+            let start = facts.resources[r].start;
             for &t in resource.frozen.iter().chain(&resource.sequence) {
-                // A task that cannot be timed (it waits on a task queued
-                // after it) is not scheduled.
-                let Some(slot) = plan.tasks[t].slot.filter(Slot::placed) else {
-                    continue;
-                };
                 let order = &mut schedule.order[r];
                 schedule.resource[t] = r;
                 schedule.position[t] = order.len();
                 order.push(t);
-                schedule.start[t] = slot.start;
-                schedule.end[t] = slot.end;
-                schedule.changeover[t] = slot.changeover;
-                schedule.idle[t] = slot.idle;
+                // A task that cannot be timed (it waits on a task queued
+                // after it) shows at the resource's start.
+                let slot = plan.tasks[t].slot.filter(Slot::placed);
+                schedule.start[t] = slot.map_or(start, |s| s.start);
+                schedule.end[t] = slot.map_or(start, |s| s.end);
+                schedule.changeover[t] = slot.and_then(|s| s.changeover);
+                schedule.idle[t] = slot.map_or(0, |s| s.idle);
             }
         }
         schedule

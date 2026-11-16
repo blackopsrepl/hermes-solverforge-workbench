@@ -264,7 +264,8 @@ fn score(plan: &Plan, t: usize, slot: &mut Slot) {
     add(Rule::IdleTime, slot.idle);
     for dep in &tf.deps {
         // Only the predecessor's slot counts: it is what SolverForge
-        // recomputes this slot on. Without one, or in the queue, the
+        // recomputes this slot on. Without one (in no list, or on a
+        // resource where it cannot be timed) or in the queue, the
         // predecessor is not scheduled.
         let Some(before) = plan.tasks[dep.task].slot.filter(Slot::placed) else {
             add(Rule::DependencyUnassigned, link);

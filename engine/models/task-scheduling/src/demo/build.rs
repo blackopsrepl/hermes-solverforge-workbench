@@ -56,6 +56,7 @@ pub fn task(id: &str, name: &str, minutes: i64) -> Task {
         frozen_rank: 0,
         frozen_last: false,
         open_cost: 0,
+        link_cost: 0,
         lane: None,
         previous: None,
         next: None,

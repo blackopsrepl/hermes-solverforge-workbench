@@ -71,6 +71,10 @@ pub struct Task {
     /// What leaving the task in no list at all costs: its priority.
     #[serde(skip)]
     pub open_cost: i64,
+    /// What the task costs on a resource where it cannot be timed: the
+    /// broken-link penalty.
+    #[serde(skip)]
+    pub link_cost: i64,
 
     /// The lane holding the task (list shadow).
     #[serde(skip)]

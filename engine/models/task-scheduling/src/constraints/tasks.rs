@@ -1,11 +1,11 @@
 //! The seventeen rules as incremental streams over tasks.
 //!
-//! Every per-task rule reads only the task's slot, so a move rescores
-//! exactly the tasks whose slots it changed. A task without a slot is not
-//! scheduled and costs its priority as unassigned: it is in no list, or it
-//! cannot be timed because it waits on a task queued after it (or follows
-//! one that does). Makespan is the longest span among each resource's last
-//! planned task and last frozen task.
+//! Every per-task rule reads the task's slot, so a move rescores exactly
+//! the tasks whose slots it changed. Two cases have no slot: a task in no
+//! list costs its priority as unassigned, and a task on a resource that
+//! cannot be timed (it waits on a task queued after it, or follows one that
+//! does) costs a broken link. Makespan is the longest span among each
+//! resource's last planned task and last frozen task.
 
 use solverforge::prelude::*;
 
@@ -17,10 +17,11 @@ pub type Score = HardMediumSoftScore;
 
 /// What task `task` costs under per-task rule `rule`.
 fn amount(task: &Task, rule: Rule) -> i64 {
-    match &task.slot {
-        Some(slot) => slot.amount(rule),
-        None if rule == Rule::Unassigned => task.open_cost,
-        None => 0,
+    match (&task.slot, task.lane) {
+        (Some(slot), _) => slot.amount(rule),
+        (None, None) if rule == Rule::Unassigned => task.open_cost,
+        (None, Some(_)) if rule == Rule::DependencyTiming => task.link_cost,
+        (None, _) => 0,
     }
 }
 
