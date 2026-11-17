@@ -333,7 +333,11 @@ class Workbench:
         return self.profile_view(profile)
 
     def _check_weight_names(self, model_id: str, weights: dict[str, int]) -> None:
-        known = {c["name"] for c in self.model_record(model_id)["manifest"].get("constraints", [])}
+        manifest = self.model_record(model_id)["manifest"]
+        if weights and not manifest.get("weights", False):
+            raise WorkbenchError("weights_unsupported", f"model {model_id} has no #[constraint_weights] field, so its "
+                                 "constraint weights are fixed; a profile can set only its solve settings and parameters")
+        known = {c["name"] for c in manifest.get("constraints", [])}
         unknown = sorted(set(weights) - known)
         if unknown:
             raise WorkbenchError("unknown_constraint", f"model {model_id} has no constraint named {unknown[0]!r}",
