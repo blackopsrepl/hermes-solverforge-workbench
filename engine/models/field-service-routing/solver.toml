@@ -1,0 +1,58 @@
+[termination]
+seconds_spent_limit = 30
+
+[[phases]]
+type = "construction_heuristic"
+construction_heuristic_type = "list_cheapest_insertion"
+max_member_distance = 8
+max_group_owners = 4
+
+[[phases]]
+type = "local_search"
+
+[phases.acceptor]
+type = "late_acceptance"
+late_acceptance_size = 400
+
+[phases.forager]
+type = "accepted_count"
+limit = 16
+
+[phases.move_selector]
+type = "union_move_selector"
+
+[[phases.move_selector.selectors]]
+type = "list_change_move_selector"
+
+[[phases.move_selector.selectors]]
+type = "list_swap_move_selector"
+
+[[phases.move_selector.selectors]]
+type = "sublist_change_move_selector"
+min_sublist_size = 2
+max_sublist_size = 4
+
+[[phases.move_selector.selectors]]
+type = "list_group_change_move_selector"
+max_member_distance = 8
+
+[[phases.move_selector.selectors]]
+type = "list_group_swap_move_selector"
+
+[[phases.move_selector.selectors]]
+type = "list_ruin_move_selector"
+min_ruin_count = 2
+max_ruin_count = 6
+max_member_distance = 8
+max_group_owners = 4
+
+# Route removal: ruin a whole route and recreate its visits, so a linked
+# trip used for local work, or a day standing in the way of one, can empty
+# in one move instead of one visit at a time.
+[[phases.move_selector.selectors]]
+type = "list_ruin_move_selector"
+min_ruin_count = 64
+max_ruin_count = 64
+moves_per_step = 2
+max_member_distance = 8
+max_group_owners = 4

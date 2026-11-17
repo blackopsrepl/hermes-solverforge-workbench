@@ -2,6 +2,7 @@
 //! `solverforge-workbench --version` lists the engine version and its models.
 
 use solverforge_workbench_employee_scheduling::EmployeeScheduling;
+use solverforge_workbench_field_service_routing::FieldServiceRouting;
 use solverforge_workbench_host::{entry, run};
 use solverforge_workbench_pickup_delivery_routing::PickupDeliveryRouting;
 use solverforge_workbench_task_scheduling::TaskScheduling;
@@ -13,6 +14,7 @@ fn main() {
             entry::<EmployeeScheduling>(),
             entry::<TaskScheduling>(),
             entry::<PickupDeliveryRouting>(),
+            entry::<FieldServiceRouting>(),
         ],
     ));
 }
