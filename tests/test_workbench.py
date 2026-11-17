@@ -303,6 +303,24 @@ def test_an_experiment_solves_every_dataset_under_every_profile_and_ranks_the_pr
     assert wb.experiments("toy") == [] and wb.runs(model_id="toy") == []
 
 
+def test_an_experiment_is_not_done_while_a_finished_plan_awaits_the_judge(wb, monkeypatch):
+    dataset = demo(wb)
+    experiment = wb.create_experiment(datasets=[dataset["id"]], profiles=["Standard"], repeats=1,
+                                      overrides={"solve": {"seconds": 30, "best_score": "0hard/0soft"}})
+    deadline = time.monotonic() + 60
+    while not wb.experiment(experiment["id"])["done"] and time.monotonic() < deadline:
+        time.sleep(0.3)
+    [run] = wb.store.runs(experiment_id=experiment["id"], limit=None)
+    # The run finished after this read's judging pass: done waits for its judged score.
+    wb.store.update_run(run["id"], judged_score=None, judged_feasible=None)
+    monkeypatch.setattr(wb, "_judge", lambda experiment: None)
+    late = wb.experiment(experiment["id"])
+    assert late["statuses"] == {"completed": 1} and late["done"] is False
+    monkeypatch.undo()
+    judged = wb.experiment(experiment["id"])
+    assert judged["done"] is True and judged["ranking"][0]["finished"] == 1
+
+
 def test_an_experiment_refuses_mixed_models_and_too_many_solves(wb):
     dataset = demo(wb)
     with pytest.raises(WorkbenchError) as error:

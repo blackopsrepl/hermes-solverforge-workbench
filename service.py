@@ -822,7 +822,8 @@ class Workbench:
             statuses[run["status"]] = statuses.get(run["status"], 0) + 1
         return {**experiment, "judge_name": (self.store.profile(experiment["judge"]) or {}).get("name"),
                 "dataset_names": names, "profile_names": profile_names, "statuses": statuses,
-                "done": all(r["status"] in TERMINAL for r in runs), "cells": cells, "ranking": ranking}
+                "done": all(r["status"] in TERMINAL and not _awaiting_judge(r) for r in runs),
+                "cells": cells, "ranking": ranking}
 
     def _judge(self, experiment: dict[str, Any]) -> None:
         """Scores every finished plan of the experiment not yet judged under the judge profile."""
@@ -950,6 +951,11 @@ def _cell(dataset_id: str, profile_id: str, runs: list[dict[str, Any]]) -> dict[
         "kpis": {kpi_id: round(statistics.mean(values), 3) for kpi_id, values in kpis.items()},
         "run_ids": [r["id"] for r in runs],
     }
+
+
+def _awaiting_judge(run: dict[str, Any]) -> bool:
+    """A finished plan the judge has not scored yet: it ended after this read's judging pass."""
+    return run["status"] in ("completed", "incomplete") and bool(run.get("score")) and not run.get("judged_score")
 
 
 def _tags(tags: list[str] | None) -> list[str]:
