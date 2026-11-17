@@ -395,6 +395,11 @@ fn the_dataset_is_checked_before_it_is_scored() {
         .unwrap()
         .remove("minStartTime");
     assert!(issue_codes(start).contains(&"shift_without_start".to_string()));
+    let mut types = base();
+    types["drivers"][0]["shifts"][0]["capacities"] = (0..9)
+        .map(|k| json!({"type": format!("seat{k}"), "quantity": 1}))
+        .collect();
+    assert!(issue_codes(types).contains(&"too_many_capacity_types".to_string()));
     let mut priority = base();
     priority["jobs"][0]["priority"] = json!("urgent");
     assert!(issue_codes(priority).contains(&"unknown_priority".to_string()));

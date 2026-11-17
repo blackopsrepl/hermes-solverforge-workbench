@@ -188,6 +188,17 @@ pub fn build(plan: &Plan, issues: &mut Vec<Issue>) -> Option<Built> {
     )
     .into_iter()
     .collect();
+    if capacity_types.len() > crate::route::MAX_LOAD_TYPES {
+        issues.push(Issue::error(
+            "too_many_capacity_types",
+            format!(
+                "the dataset declares {} capacity types; at most {} are supported",
+                capacity_types.len(),
+                crate::route::MAX_LOAD_TYPES
+            ),
+        ));
+        return None;
+    }
     let type_of = |name: &str| capacity_types.iter().position(|t| t == name);
 
     // Shifts.

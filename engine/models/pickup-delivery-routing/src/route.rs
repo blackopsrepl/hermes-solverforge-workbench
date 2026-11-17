@@ -161,140 +161,214 @@ fn choose(windows: &[Window], arrival: i64, duration: i64) -> Option<Window> {
         .or_else(|| windows.last().copied())
 }
 
-/// Plans shift `s` driving `list`, without touching the plan.
-pub fn drive(facts: &Facts, s: usize, list: &[usize]) -> Route {
+/// Most capacity types a dataset may declare: a route's running load is a
+/// fixed array, so a visit's planned state stays `Copy`.
+pub const MAX_LOAD_TYPES: usize = 8;
+
+/// Where a shift's route stands after a visit: the drive so far.
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct State {
+    /// The place the driver is at.
+    pub place: usize,
+    /// When the driver is free to leave.
+    pub clock: i64,
+    pub load: [i64; MAX_LOAD_TYPES],
+    /// A stop was served already.
+    pub active: bool,
+    /// When the driver sets off: just in time for the first stop.
+    pub start: i64,
+    /// When the last stop served so far ends.
+    pub last_departure: i64,
+    pub travel: i64,
+    pub distance: i64,
+    pub unreachable_legs: i64,
+}
+
+/// The drive back to the end location, after the last visit.
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct End {
+    pub travel: i64,
+    pub distance: i64,
+    pub unreachable: bool,
+    pub arrival: i64,
+    pub late: i64,
+    pub soft_late: i64,
+    pub last_late: i64,
+    pub last_soft_late: i64,
+}
+
+/// Shift `s` before its first visit.
+pub fn begin(facts: &Facts, s: usize) -> State {
     let shift = &facts.shifts[s];
-    let types = facts.capacity_types.len();
-    let mut route = Route {
-        visits: vec![At::default(); list.len()],
+    State {
+        place: shift.start_location,
+        clock: shift.min_start,
         start: shift.min_start,
-        ..Route::default()
+        ..State::default()
+    }
+}
+
+/// Visit `v` driven by shift `s` from `state`: the visit as planned and the
+/// state after it.
+pub fn visit(facts: &Facts, s: usize, state: &State, v: usize) -> (At, State) {
+    let shift = &facts.shifts[s];
+    let fact = &facts.visits[v];
+    let mut at = At::default();
+    let mut next = *state;
+    let leg = fact
+        .location
+        .map(|to| (to, facts.travel.leg(state.place, to)));
+    let (travel, distance, reachable) = match leg {
+        Some((_, Some((secs, meters)))) => (secs, meters, true),
+        Some((_, None)) => (0, 0, false),
+        None => (0, 0, true),
     };
-    let mut place = shift.start_location;
-    let mut clock = shift.min_start;
-    let mut load = vec![0i64; types];
-    let mut first_stop = true;
-    for (position, &v) in list.iter().enumerate() {
-        let fact = &facts.visits[v];
-        let at = &mut route.visits[position];
-        let leg = fact.location.map(|to| (to, facts.travel.leg(place, to)));
-        let (travel, distance, reachable) = match leg {
-            Some((_, Some((secs, meters)))) => (secs, meters, true),
-            Some((_, None)) => (0, 0, false),
-            None => (0, 0, true),
-        };
-        if !reachable {
-            at.unreachable = true;
-            route.unreachable_legs += 1;
-        }
-        at.travel = travel;
-        at.distance = distance;
-        route.travel += travel;
-        route.distance += distance;
-        match &fact.kind {
-            Kind::Stop { job, .. } => {
-                let fit = facts.fit(*job, s);
-                let depart = fact.min_start_travel.map_or(clock, |m| clock.max(m));
-                let mut arrival = depart + travel;
-                if first_stop {
-                    if let Some(m) = shift.min_first_arrival {
-                        arrival = arrival.max(m);
-                    }
+    if !reachable {
+        at.unreachable = true;
+        next.unreachable_legs += 1;
+    }
+    at.travel = travel;
+    at.distance = distance;
+    next.travel += travel;
+    next.distance += distance;
+    let clock = state.clock;
+    match &fact.kind {
+        Kind::Stop { job, .. } => {
+            let first_stop = !state.active;
+            let fit = facts.fit(*job, s);
+            let depart = fact.min_start_travel.map_or(clock, |m| clock.max(m));
+            let mut arrival = depart + travel;
+            if first_stop {
+                if let Some(m) = shift.min_first_arrival {
+                    arrival = arrival.max(m);
                 }
-                let duration = ((fact.duration as f64) * fit.multiplier).round() as i64;
-                let window = choose(&fact.windows, arrival, duration);
-                let mut start = window.map_or(arrival, |w| arrival.max(w.min_start));
-                if let Some((_, kept)) = fact.pin {
-                    // A pinned stop waits for its kept start; arriving later moves it.
-                    start = start.max(kept);
-                    at.pin_moved = (start - kept) * PIN_START_WEIGHT;
-                }
-                if first_stop {
-                    // The driver sets off just in time for the first stop.
-                    route.start = (start - travel).max(shift.min_start);
-                    at.wait = (start - (route.start + travel)).max(0);
-                } else {
-                    at.wait = start - arrival;
-                }
-                first_stop = false;
-                let end = start + duration;
-                if let Some(w) = window {
-                    at.late_start = w.max_start.map_or(0, |m| (start - m).max(0));
-                    at.late_end = (end - w.max_end).max(0);
-                }
-                for (k, slot) in load.iter_mut().enumerate() {
-                    *slot += fact.load[k];
-                    at.over_capacity += (*slot - shift.capacity[k]).max(0);
-                }
-                at.sla_late = fact.sla.map_or(0, |sla| (end - sla).max(0));
-                at.earliest_day = fact
-                    .earliest_day
-                    .map_or(0, |day| (start.div_euclid(crate::time::DAY) - day).max(0))
-                    * crate::constraints::DAY_COST;
-                at.not_required = fit.not_required;
-                at.prohibited = fit.prohibited;
-                at.not_preferred = fit.not_preferred;
-                at.skills_missing = fit.skills_missing;
-                at.tags_missing = fit.tags_missing;
-                at.overqualified = fit.overqualified * duration;
-                at.arrival = arrival;
-                at.start = start;
-                at.end = end;
-                route.active = true;
-                route.last_departure = end;
-                clock = end;
             }
-            Kind::Break(b) => {
-                let arrival = clock + travel;
-                let (start, end) = if b.fixed {
-                    at.break_late = (arrival - b.start).max(0);
-                    let start = arrival.max(b.start);
-                    (start, start + b.duration)
-                } else {
-                    let start = arrival.max(b.start);
-                    let end = start + b.duration;
-                    at.break_late = b.end.map_or(0, |m| (end - m).max(0));
-                    (start, end)
-                };
-                at.arrival = arrival;
-                at.start = start;
-                at.end = end;
+            let duration = ((fact.duration as f64) * fit.multiplier).round() as i64;
+            let window = choose(&fact.windows, arrival, duration);
+            let mut start = window.map_or(arrival, |w| arrival.max(w.min_start));
+            if let Some((_, kept)) = fact.pin {
+                // A pinned stop waits for its kept start; arriving later moves it.
+                start = start.max(kept);
+                at.pin_moved = (start - kept) * PIN_START_WEIGHT;
+            }
+            if first_stop {
+                // The driver sets off just in time for the first stop.
+                next.start = (start - travel).max(shift.min_start);
+                at.wait = (start - (next.start + travel)).max(0);
+            } else {
                 at.wait = start - arrival;
-                clock = end;
             }
+            let end = start + duration;
+            if let Some(w) = window {
+                at.late_start = w.max_start.map_or(0, |m| (start - m).max(0));
+                at.late_end = (end - w.max_end).max(0);
+            }
+            for (k, slot) in next.load.iter_mut().enumerate().take(shift.capacity.len()) {
+                *slot += fact.load[k];
+                at.over_capacity += (*slot - shift.capacity[k]).max(0);
+            }
+            at.sla_late = fact.sla.map_or(0, |sla| (end - sla).max(0));
+            at.earliest_day = fact
+                .earliest_day
+                .map_or(0, |day| (start.div_euclid(crate::time::DAY) - day).max(0))
+                * crate::constraints::DAY_COST;
+            at.not_required = fit.not_required;
+            at.prohibited = fit.prohibited;
+            at.not_preferred = fit.not_preferred;
+            at.skills_missing = fit.skills_missing;
+            at.tags_missing = fit.tags_missing;
+            at.overqualified = fit.overqualified * duration;
+            at.arrival = arrival;
+            at.start = start;
+            at.end = end;
+            next.active = true;
+            next.last_departure = end;
+            next.clock = end;
         }
-        if let Some((to, _)) = leg {
-            place = to;
+        Kind::Break(b) => {
+            let arrival = clock + travel;
+            let (start, end) = if b.fixed {
+                at.break_late = (arrival - b.start).max(0);
+                let start = arrival.max(b.start);
+                (start, start + b.duration)
+            } else {
+                let start = arrival.max(b.start);
+                let end = start + b.duration;
+                at.break_late = b.end.map_or(0, |m| (end - m).max(0));
+                (start, end)
+            };
+            at.arrival = arrival;
+            at.start = start;
+            at.end = end;
+            at.wait = start - arrival;
+            next.clock = end;
         }
     }
-    if route.active {
-        let (travel, distance) = match facts.travel.leg(place, shift.end_location) {
-            Some(leg) => leg,
-            None => {
-                route.unreachable_legs += 1;
-                (0, 0)
-            }
+    if let Some((to, _)) = leg {
+        next.place = to;
+    }
+    (at, next)
+}
+
+/// The drive back to the end location from `state`, the state after the
+/// last visit; nothing for a shift that served no stop.
+pub fn finish(facts: &Facts, s: usize, state: &State) -> End {
+    let shift = &facts.shifts[s];
+    if !state.active {
+        return End {
+            arrival: shift.min_start,
+            ..End::default()
         };
-        route.travel += travel;
-        route.distance += distance;
-        route.end_arrival = clock + travel;
-        route.end_late = shift.max_end.map_or(0, |m| (route.end_arrival - m).max(0));
-        route.end_soft_late = shift
-            .max_soft_end
-            .map_or(0, |m| (route.end_arrival - m).max(0));
-        route.last_late = shift
+    }
+    let (travel, distance, unreachable) = match facts.travel.leg(state.place, shift.end_location) {
+        Some((travel, distance)) => (travel, distance, false),
+        None => (0, 0, true),
+    };
+    let arrival = state.clock + travel;
+    End {
+        travel,
+        distance,
+        unreachable,
+        arrival,
+        late: shift.max_end.map_or(0, |m| (arrival - m).max(0)),
+        soft_late: shift.max_soft_end.map_or(0, |m| (arrival - m).max(0)),
+        last_late: shift
             .max_last_departure
-            .map_or(0, |m| (route.last_departure - m).max(0));
-        route.last_soft_late = shift
+            .map_or(0, |m| (state.last_departure - m).max(0)),
+        last_soft_late: shift
             .max_soft_last_departure
-            .map_or(0, |m| (route.last_departure - m).max(0));
+            .map_or(0, |m| (state.last_departure - m).max(0)),
+    }
+}
+
+/// Plans shift `s` driving `list`, without touching the plan.
+pub fn drive(facts: &Facts, s: usize, list: &[usize]) -> Route {
+    let mut route = Route {
+        visits: vec![At::default(); list.len()],
+        ..Route::default()
+    };
+    let mut state = begin(facts, s);
+    for (position, &v) in list.iter().enumerate() {
+        let (at, next) = visit(facts, s, &state, v);
+        route.visits[position] = at;
+        state = next;
+    }
+    let end = finish(facts, s, &state);
+    route.active = state.active;
+    route.start = state.start;
+    route.last_departure = state.last_departure;
+    if state.active {
+        route.travel = state.travel + end.travel;
+        route.distance = state.distance + end.distance;
+        route.unreachable_legs = state.unreachable_legs + i64::from(end.unreachable);
+        route.end_arrival = end.arrival;
+        route.end_late = end.late;
+        route.end_soft_late = end.soft_late;
+        route.last_late = end.last_late;
+        route.last_soft_late = end.last_soft_late;
     } else {
         // An idle shift drives nowhere: no travel, not even to a break.
-        route.travel = 0;
-        route.distance = 0;
-        route.unreachable_legs = 0;
-        route.start = shift.min_start;
-        route.end_arrival = shift.min_start;
+        route.end_arrival = end.arrival;
         for at in &mut route.visits {
             at.travel = 0;
             at.distance = 0;
