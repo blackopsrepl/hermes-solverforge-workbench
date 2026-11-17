@@ -38,11 +38,16 @@ sidebar then opens the same models, datasets and runs.
 | Model | Constraints | What it plans |
 | --- | --- | --- |
 | Employee scheduling | 127: 56 hard, 3 medium, 68 soft, in 14 groups | Shifts to employees: skills and risks, availability, contract work limits over periods and rolling windows, time off, rotations and shift patterns, rest, travel and locations, teams and pairings, hourly demand, alternative shifts, cost, fairness and replanning |
+| Task scheduling | 17: 9 hard, 1 medium, 7 soft, in 7 groups | Tasks to machines and people over time: time windows, dependencies, resource fit and hand-overs, changeovers, due dates, makespan and idle time |
+| Pick-up and delivery routing | 36: 26 hard, 1 medium, 9 soft, in 12 groups | Multi-stop jobs to drivers' shifts and their order: stop order, vehicle capacity, time burden and pooling, skills and tags, breaks and appointments, time windows and SLAs, priorities, overtime and replanning |
+| Field service routing | 64: 32 hard, 3 medium, 29 soft, in 17 groups | Visits to technicians' shifts and their order: skills and levels, tags, time windows and SLAs, breaks, visit dependencies, multi-technician visits, linked multi-day shifts, coverage areas, shift limits, cost, fairness and replanning |
 
 Every constraint has a name, a group, a level and a description you can read
-in the model's page or ask Hermes about. Two demos ship with it: a small week
-(10 employees, 36 shifts) and a hospital month (50 employees, 536 shifts, three
-wards on two sites) that uses every rule.
+in the model's page or ask Hermes about. Each model ships one large demo that
+uses its rules: a hospital month (50 employees, 536 shifts, three wards on two
+sites), a factory week (24 machines and people, 409 operations), two days of
+Milan patient transport and medical courier work (15 drivers, 155 jobs), and
+two days of Turin building services (30 technicians, 238 visits).
 
 ## What you can do
 
