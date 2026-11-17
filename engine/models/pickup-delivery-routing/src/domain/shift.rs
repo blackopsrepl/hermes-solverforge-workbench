@@ -15,6 +15,7 @@ pub struct Shift {
     #[planning_list_variable(
         element_collection = "visits",
         element_owner_fn = "visit_owner",
+        element_group_fn = "job_stops",
         construction_element_order_key = "visit_order"
     )]
     pub visits: Vec<usize>,
@@ -59,27 +60,19 @@ impl Shift {
     }
 }
 
-/// The one shift a visit may move to, if any: a break's own shift, a
-/// pinned stop's shift, or the shift already holding another stop of the
-/// same job (the bench included).
-///
-/// Read against the current plan, so a job only changes shift whole: a
-/// ruin move takes all its stops out, and the first one put back decides
-/// where the others go.
+/// The one shift a visit may move to, if any: a break's own shift or a
+/// pinned stop's shift.
 pub fn visit_owner(plan: &super::Plan, visit: usize) -> Option<usize> {
     let fact = plan.facts.visits.get(visit)?;
-    if let Some(owner) = fact.owner {
-        return Some(owner);
+    fact.owner.or(fact.pin.map(|(shift, _)| shift))
+}
+
+/// A job's stops in service order: SolverForge keeps them on one shift and
+/// moves, ruins and places them as one unit. A break has no group.
+pub fn job_stops(plan: &super::Plan, visit: usize, members: &mut Vec<usize>) {
+    if let Some((job, _)) = plan.facts.stop(visit) {
+        members.extend_from_slice(&plan.facts.jobs[job].stops);
     }
-    if let Some((shift, _)) = fact.pin {
-        return Some(shift);
-    }
-    let (job, _) = plan.facts.stop(visit)?;
-    plan.facts.jobs[job]
-        .stops
-        .iter()
-        .filter(|&&other| other != visit)
-        .find_map(|&other| plan.visits[other].shift)
 }
 
 /// List construction places jobs in dataset order, each job's stops in

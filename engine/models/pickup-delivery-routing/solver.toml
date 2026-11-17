@@ -4,6 +4,8 @@ seconds_spent_limit = 30
 [[phases]]
 type = "construction_heuristic"
 construction_heuristic_type = "list_cheapest_insertion"
+max_member_distance = 8
+max_group_owners = 4
 
 [[phases]]
 type = "local_search"
@@ -31,7 +33,16 @@ min_sublist_size = 2
 max_sublist_size = 4
 
 [[phases.move_selector.selectors]]
+type = "list_group_change_move_selector"
+max_member_distance = 8
+
+[[phases.move_selector.selectors]]
+type = "list_group_swap_move_selector"
+
+[[phases.move_selector.selectors]]
 type = "list_ruin_move_selector"
 min_ruin_count = 2
 max_ruin_count = 6
+max_member_distance = 8
+max_group_owners = 4
 
