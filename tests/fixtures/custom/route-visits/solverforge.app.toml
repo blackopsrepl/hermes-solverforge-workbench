@@ -1,0 +1,57 @@
+facts = []
+scalar_groups = []
+conflict_repairs = []
+
+[app]
+name = "route-visits"
+starter = "neutral-shell"
+shell = "cli"
+cli_version = "4.0.4"
+
+[runtime]
+target = "solverforge 0.31.1"
+runtime_source = "crates.io: solverforge 0.31.1"
+
+[demo]
+default_size = "standard"
+available_sizes = [
+    "small",
+    "standard",
+    "large",
+]
+
+[solution]
+name = "Plan"
+score = "HardSoftScore"
+scalar_groups_path = ""
+conflict_repairs_path = ""
+
+[[entities]]
+name = "visit"
+plural = "visits"
+kind = "planning_entity"
+
+[[entities]]
+name = "route"
+plural = "routes"
+kind = "planning_entity"
+
+[[variables]]
+entity = "route"
+entity_plural = "routes"
+field = "visits"
+kind = "list"
+range = ""
+elements = "visits"
+allows_unassigned = false
+enabled = true
+
+[[constraints]]
+name = "route_capacity"
+module = "route_capacity"
+enabled = true
+
+[[constraints]]
+name = "short_routes"
+module = "short_routes"
+enabled = true

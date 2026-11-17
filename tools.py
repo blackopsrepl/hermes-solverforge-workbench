@@ -46,6 +46,13 @@ class Tools:
     def model(self, args: dict) -> str:
         return ok(model=self.wb.model(args["model"]))
 
+    def model_register(self, args: dict) -> str:
+        return ok(**self.wb.register_custom(args["path"], args.get("model"), args.get("name")))
+
+    def model_remove(self, args: dict) -> str:
+        self.wb.remove_custom(args["model"])
+        return ok(removed=args["model"])
+
     def dataset_create(self, args: dict) -> str:
         dataset = self.wb.create_dataset(model_id=args["model"], name=args.get("name", ""), tags=args.get("tags"),
                                          demo=args.get("demo"), plan=args.get("plan"), path=args.get("path"),

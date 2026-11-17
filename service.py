@@ -8,15 +8,18 @@ fixed order and queues solves for the detached worker.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
+import shutil
 import statistics
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Callable
 
+from . import custom
 from .engine_bin import ENGINE_VERSION, EngineError, StockEngine, call, engine_env
 from .patching import PatchError, apply_patch
 from .store import Store, new_id
@@ -163,6 +166,7 @@ class Workbench:
             constraints = description.get("constraints", [])
             out.append({
                 "id": model["id"], "kind": model["kind"], "name": model["name"], "version": model["version"],
+                "source": model.get("source"), "changed": self._changed_since_registration(model),
                 "view": description.get("view"), "constraints": len(constraints),
                 "levels": {level: sum(1 for c in constraints if c.get("level") == level)
                            for level in ("hard", "medium", "soft")},
@@ -176,7 +180,8 @@ class Workbench:
         model = self.model_record(model_id)
         description = model["manifest"]
         return {"id": model["id"], "kind": model["kind"], "name": model["name"], "version": model["version"],
-                "source": model.get("source"), "demos": description.get("demos", []),
+                "source": model.get("source"), "changed": self._changed_since_registration(model),
+                "demos": description.get("demos", []),
                 "weights": description.get("weights", False),
                 "parameters": description.get("parameters", []),
                 "kpis": description.get("kpis", []),
@@ -184,6 +189,69 @@ class Workbench:
                 "constraints": description.get("constraints", []),
                 "profiles": [self.profile_view(p) for p in self.store.profiles(model_id)],
                 "default_profile": (self.profile_record(model_id, None) or {}).get("id")}
+
+    # ---- custom models --------------------------------------------------------
+
+    def _custom_version(self, project_root: Path) -> str:
+        """The project's tree hash and the hash of the code that hosts it: a
+        change to either needs a new engine."""
+        host = custom.tree_hash(custom.HOST_CRATE)
+        generator = hashlib.sha256(Path(custom.__file__).read_bytes()).hexdigest()
+        return hashlib.sha256(f"{custom.tree_hash(project_root)}:{host}:{generator}".encode()).hexdigest()
+
+    def register_custom(self, path: str, model_id: str | None = None, name: str | None = None) -> dict[str, Any]:
+        """Builds a solverforge-cli project's engine and registers it as a model;
+        builds again only when the project or the workbench changed."""
+        try:
+            project = custom.inspect(Path(os.path.expanduser(path)))
+        except custom.CustomError as exc:
+            raise WorkbenchError(exc.code, exc.message, **exc.detail) from exc
+        model_id = model_id or custom.default_id(project)
+        if not custom.ID_PATTERN.match(model_id):
+            raise WorkbenchError("invalid_id", f"{model_id!r} is not a model id: use 2-48 lowercase letters, "
+                                 "digits and dashes, starting with a letter")
+        self.sync_stock()
+        existing = self.store.model(model_id)
+        if existing and existing["kind"] == "stock":
+            raise WorkbenchError("id_taken", f"{model_id} is a stock model; register the project under another id")
+        if existing and existing.get("source") != str(project.root):
+            raise WorkbenchError("id_taken", f"{model_id} is the project at {existing['source']}; register this "
+                                 "one under another id, or remove that model first", source=existing["source"])
+        name = name or (existing["name"] if existing else project.crate.replace("-", " ").replace("_", " ").title())
+        version = self._custom_version(project.root)
+        current = (existing is not None and existing["version"] == version and existing["name"] == name
+                   and Path(existing["engine"] or "").is_file())
+        if not current:
+            try:
+                engine = custom.build(project, model_id, name, self.data_dir / "custom")
+            except custom.CustomError as exc:
+                raise WorkbenchError(exc.code, exc.message, **exc.detail) from exc
+            description = call(engine, {"command": "describe", "model": model_id}, timeout_s=60)
+            self.store.put_model({"id": model_id, "kind": "custom", "name": name, "manifest": description,
+                                  "engine": str(engine), "source": str(project.root), "version": version})
+            self.ensure_standard_profile(model_id)
+            self.changed("models", model=model_id)
+        return {"model": self.model(model_id), "built": not current, "warnings": project.warnings}
+
+    def remove_custom(self, model_id: str) -> None:
+        """Forgets a custom model with its datasets, runs, profiles and engine;
+        the project itself is left as it is."""
+        model = self.model_record(model_id)
+        if model["kind"] != "custom":
+            raise WorkbenchError("stock_model", f"{model_id} is a stock model; only custom models can be removed")
+        busy = [r["id"] for r in self.store.runs(model_id=model_id) if r["status"] in ("queued", "solving")]
+        if busy:
+            raise WorkbenchError("model_busy", f"{model_id} has {len(busy)} solve(s) queued or running; cancel them "
+                                 "first", runs=busy)
+        self.store.delete_model(model_id)
+        shutil.rmtree(self.data_dir / "custom" / model_id, ignore_errors=True)
+        self.changed("models", model=model_id)
+
+    def _changed_since_registration(self, model: dict[str, Any]) -> bool | None:
+        source = model.get("source")
+        if model["kind"] != "custom" or not source or not Path(source).is_dir():
+            return None
+        return self._custom_version(Path(source)) != model["version"]
 
     # ---- datasets -----------------------------------------------------------
 

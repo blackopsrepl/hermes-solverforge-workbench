@@ -18,6 +18,8 @@ provides_tools:
   - solverforge_workbench_status
   - solverforge_workbench_models
   - solverforge_workbench_model
+  - solverforge_workbench_model_register
+  - solverforge_workbench_model_remove
   - solverforge_workbench_dataset_create
   - solverforge_workbench_datasets
   - solverforge_workbench_dataset

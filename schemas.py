@@ -51,6 +51,21 @@ SCHEMAS: list[dict[str, Any]] = [
           "One model in full: every constraint with its group, level (hard/medium/soft) and description, "
           "its parameters and KPIs, the demo datasets, the kind of plan view it draws, and its settings profiles.",
           {"model": {"type": "string", "description": "Model id, e.g. employee-scheduling"}}, ["model"]),
+    _tool("solverforge_workbench_model_register",
+          "Register a solverforge-cli project as a custom model, or bring a registered one up to date: the "
+          "workbench reads the project (solverforge.app.toml, the domain and constraint sources), builds its "
+          "engine with cargo (a few minutes the first time, then incremental) and lists it beside the stock "
+          "models with datasets, profiles, solves, analysis, fill, the plan view, experiments and trends. The "
+          "project must depend on the SolverForge release the workbench hosts. Answers with the model and "
+          "warnings to act on (a constraint without a description, a plan without constraint weights).",
+          {"path": {"type": "string", "description": "The project directory (holds solverforge.app.toml)"},
+           "model": {"type": "string", "description": "Model id; defaults to the crate name"},
+           "name": {"type": "string", "description": "Display name; defaults to the crate name in words"}},
+          ["path"]),
+    _tool("solverforge_workbench_model_remove",
+          "Forget a custom model with all its datasets, runs, profiles and experiments, and delete its built "
+          "engine. The project itself is left untouched. Asks the user first.",
+          {"model": {"type": "string"}}, ["model"]),
     _tool("solverforge_workbench_dataset_create",
           "Create a dataset (a planning problem) for a model from exactly one source: a demo id, an inline "
           "JSON plan, or a path to a JSON file.",

@@ -21,7 +21,7 @@ NAME = "solverforge-workbench"
 TOOLSET = "solverforge-workbench"
 # Tools that delete the user's data. Each needs a human yes, every time.
 GATED = {"solverforge_workbench_dataset_delete", "solverforge_workbench_profile_delete",
-         "solverforge_workbench_experiment_delete"}
+         "solverforge_workbench_experiment_delete", "solverforge_workbench_model_remove"}
 
 _lock = threading.Lock()
 # One workbench per plugin data directory. The data directory follows the Hermes
@@ -65,6 +65,12 @@ def workbench(get_config=None) -> Workbench:
 
 
 def approval_text(wb: Workbench, tool_name: str, args: dict) -> str:
+    if tool_name == "solverforge_workbench_model_remove":
+        model_id = args.get("model", "")
+        model = wb.store.model(model_id) or {}
+        datasets = len(wb.store.datasets(model_id))
+        return (f"Remove the custom model “{model.get('name', model_id)}” with its {datasets} dataset(s) and "
+                "their runs? The project's files stay.")
     if tool_name == "solverforge_workbench_dataset_delete":
         dataset = wb.store.dataset(args.get("dataset", "")) or {}
         runs = len(wb.store.runs(dataset_id=args.get("dataset", "")))
@@ -90,7 +96,7 @@ def register(ctx) -> None:
             return None
         args = args or {}
         # Scope "always allow" to this exact record, so one approval never covers a later deletion.
-        target = args.get("dataset") or args.get("profile") or args.get("experiment") or ""
+        target = args.get("dataset") or args.get("profile") or args.get("experiment") or args.get("model") or ""
         return {"action": "approve", "message": approval_text(wb(), tool_name, args),
                 "rule_key": f"{tool_name}:{target}"}
 

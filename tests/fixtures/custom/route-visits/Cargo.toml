@@ -1,0 +1,28 @@
+[package]
+name = "route-visits"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.95"
+description = "Constraint optimizer built with SolverForge"
+
+[[bin]]
+name = "route_visits"
+path = "src/main.rs"
+
+[dependencies]
+solverforge = { version = "0.31.1", features = ["serde", "console", "verbose-logging"] }
+
+# Command-line shell
+clap = { version = "4.6.1", features = ["derive"] }
+tokio = { version = "1.52.3", features = ["full"] }
+
+# Serialization
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.150"
+schemars = { version = "1.0", optional = true }
+
+# Utilities
+parking_lot = "0.12.5"
+
+[features]
+schema = ["dep:schemars"]
