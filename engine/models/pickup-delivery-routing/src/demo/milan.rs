@@ -505,10 +505,12 @@ fn patient_jobs(rng: &mut Rng, day: i64, n: usize, jobs: &mut Vec<Job>) {
             name: Some(format!("{area} home")),
             location: home,
             duration: if wheelchair { 10 } else { 5 },
-            // Collected in time to reach the appointment.
+            // Collected in time to reach the appointment, and no earlier than
+            // the hospital lets the patient in less the ride: a pick-up any
+            // earlier would hold the patient on board.
             time_windows: vec![TimeWindow {
                 max_start_time: Some(at(day, appointment - 30)),
-                ..window(day, appointment - 120, appointment - 15)
+                ..window(day, appointment - 75, appointment - 15)
             }],
             ..Stop::default()
         };
@@ -574,6 +576,9 @@ fn courier_jobs(rng: &mut Rng, day: i64, n: usize, jobs: &mut Vec<Job>) {
         let drops = if rng.chance(30) { 2 } else { 1 };
         let parcels = 2 + rng.below(8) as i64;
         let ready = round5(7 * 60 + 30 + rng.below(9 * 60) as i64);
+        // The cold-chain hub dispatches by 14:00, while the refrigerated
+        // vans still have the hours to deliver before their last departure.
+        let ready = if vaccines { ready.min(14 * 60) } else { ready };
         // A third of the routine runs may go on either day.
         let movable = day == 0 && !stat && !vaccines && rng.chance(30);
         let windows = |from: i64, to: i64| {
