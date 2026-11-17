@@ -1050,7 +1050,7 @@ pub fn build(plan: &Plan, issues: &mut Vec<Issue>) -> Option<Built> {
                 movable: false,
                 remote: false,
                 chain: None,
-                order: i64::MAX / 2 + index as i64,
+                order: i64::MIN / 2 + index as i64,
                 earliest_day: None,
                 dependencies: Vec::new(),
                 has_dependents: false,

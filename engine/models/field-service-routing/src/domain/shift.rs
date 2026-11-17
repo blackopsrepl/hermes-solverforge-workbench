@@ -79,11 +79,12 @@ pub fn shift_chain(plan: &super::Plan, element: usize, members: &mut Vec<usize>)
     }
 }
 
-/// List construction's order, worked out by `prepare`; breaks go last,
-/// between the visits.
+/// List construction's order, worked out by `prepare`: breaks go first, so
+/// every visit is inserted around its shift's breaks and pays for pushing one
+/// late; placed last, a break only fits wherever the visits left room.
 pub fn element_order(plan: &super::Plan, element: usize) -> i64 {
     plan.facts
         .visits
         .get(element)
-        .map_or(i64::MAX / 2 + element as i64, |fact| fact.order)
+        .map_or(i64::MIN / 2 + element as i64, |fact| fact.order)
 }
