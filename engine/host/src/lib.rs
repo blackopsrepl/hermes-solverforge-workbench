@@ -13,6 +13,7 @@ mod plan;
 mod protocol;
 mod run;
 mod solve;
+mod stdio;
 pub mod view;
 
 pub use analysis::{Analysis, ConstraintReport, EntityReport, MatchReport};

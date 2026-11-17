@@ -48,15 +48,17 @@ fn dispatch<M: Model>(
 }
 
 /// Runs the engine on the process's arguments, stdin and stdout, and returns
-/// the exit code.
+/// the exit code. Only events reach stdout: anything a model prints goes to
+/// stderr.
 pub fn run(version: &str, models: &[Entry]) -> i32 {
     let version_flag = std::env::args().nth(1).as_deref() == Some("--version");
+    crate::stdio::quiet_tracing();
     run_io(
         version,
         models,
         version_flag,
         io::stdin(),
-        Box::new(io::stdout()),
+        crate::stdio::protocol_stdout(),
     )
 }
 
