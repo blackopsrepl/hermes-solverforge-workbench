@@ -186,14 +186,16 @@ function ModelsView({ go }) {
           columns: [{ id: 'name', label: 'Model' }, { id: 'kind', label: 'Kind' }, { id: 'constraints', label: 'Constraints' }, { id: 'datasets', label: 'Datasets', num: true }],
           rows: data.models.map(m => ({
             key: m.id, id: m.id,
-            name: e('div', null, e('strong', null, m.name), e('div', { style: faint }, m.id)),
-            kind: m.kind,
+            name: e('div', null, e('strong', null, m.name), e('div', { style: faint }, m.kind === 'custom' && m.source ? m.source : m.id)),
+            kind: m.kind === 'custom'
+              ? e('div', null, 'Your model', m.changed ? e('div', null, e(Badge, { variant: 'warn' }, 'Project changed')) : null)
+              : 'Stock',
             constraints: `${m.constraints} · ${levels(m.levels)}`,
             datasets: m.datasets
           })),
           onRow: row => go({ view: 'model', id: row.id })
         })
-      : e(EmptyState, { title: 'No models yet', description: 'Install the engine: type /solverforge-workbench install in the chat.' })
+      : e(EmptyState, { title: 'No models yet', description: 'Install the engine: type /solverforge-workbench install in the chat. To add your own, ask Hermes to register a solverforge-cli project.' })
   )
 }
 
@@ -394,6 +396,9 @@ function ModelView({ id, go }) {
           : null),
       profile && profile.read_only && (editable || parameters.length) ? e('div', { style: faint }, 'Standard is read-only: change a weight or a parameter, then save it as a new profile.') : null,
       !editable ? e('div', { style: faint }, 'This model has no adjustable weights.') : null,
+      model.kind === 'custom'
+        ? e('div', { style: faint }, `From ${model.source}`, model.changed ? ' · the project changed since this build: ask Hermes to register it again.' : '')
+        : null,
       parameters.length
         ? e('div', { style: section },
             e(Sub, null, `Parameters · ${parameters.length}`),
@@ -510,7 +515,7 @@ function DatasetPlan({ dataset }) {
   if (!kind) return null
   return e('div', { style: section },
     e('div', null, e(Button, { size: 'xs', variant: 'text', onClick: () => setShown(!shown) },
-      `${shown ? 'Hide' : 'Show'} the input ${kind === 'routes' ? 'routes' : 'schedule'}`)),
+      `${shown ? 'Hide' : 'Show'} the input ${viewName(kind).toLowerCase()}`)),
     shown ? e(PlanView, { dataset: dataset.id, kind }) : null)
 }
 
@@ -553,23 +558,28 @@ function ProfilePicker({ model, value, onChange }) {
     profiles.map(p => e('option', { key: p.id, value: p.id }, p.name)))
 }
 
+/** What a model's plan view is called: a schedule, routes on a map, or boards of assignments. */
+function viewName(kind) {
+  return kind === 'routes' ? 'Routes' : kind === 'assignments' ? 'Assignments' : 'Schedule'
+}
+
 /** The plan as its model draws it (solverforge-ui's timeline, or routes on a map over a
  *  per-vehicle timeline) in a sandboxed frame. */
 export function PlanView({ run, dataset, version, kind = 'timeline' }) {
   const query = useRead('view', { run, dataset, v: version })
   const data = query.data
-  const what = kind === 'routes' ? 'routes' : 'schedule'
+  const what = viewName(kind).toLowerCase()
   if (query.isLoading) return e('div', { style: muted }, `Drawing the ${what}…`)
   if (!data || data.ok === false) return e('div', { style: faint }, errorText(data, `The ${what} could not be drawn.`))
   return e(SandboxedFrame, {
     src: 'data:text/html;charset=utf-8,' + encodeURIComponent(data.document),
     sandbox: 'allow-scripts',
-    title: kind === 'routes' ? 'Routes' : 'Schedule',
+    title: viewName(kind),
     style: { width: '100%', height: kind === 'routes' ? 1040 : 560, border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, display: 'block', background: '#fff' }
   })
 }
 
-/** "timeline", "routes", or null when the model draws no plan view. */
+/** "timeline", "routes", "assignments", or null when the model draws no plan view. */
 function useViewKind(model) {
   const query = useRead('model', { model })
   return (query.data && query.data.ok && query.data.model.view) || null
@@ -658,7 +668,7 @@ function RunPlan({ run }) {
   const kind = useViewKind(run.model_id)
   if (!kind) return null
   // The score names the plan: a better plan redraws, an unchanged one keeps its frame.
-  return e('div', { style: section }, e(Sub, null, kind === 'routes' ? 'Routes' : 'Schedule'),
+  return e('div', { style: section }, e(Sub, null, viewName(kind)),
     e(PlanView, { run: run.id, kind, version: `${run.status}:${run.score}` }))
 }
 

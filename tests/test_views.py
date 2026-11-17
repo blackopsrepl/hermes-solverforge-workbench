@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 import json
+import shutil
+import subprocess
 from pathlib import Path
+
+import pytest
 
 from solverforge_workbench_plugin import views
 
@@ -62,3 +66,31 @@ def test_a_routes_page_loads_only_street_tiles_and_draws_the_map_and_the_timelin
     assert csp.split("img-src ")[1].split(";")[0] == "data: " + views.TILES
     assert "SF.map.create" in page and "drawTimeline(view.timeline" in page
     assert "Leaflet 1.9.4" in page
+
+
+ASSIGNMENTS = {"kind": "assignments", "title": "Crew tasks", "subtitle": "1 unassigned",
+               "boards": [{"title": "Task by Resource", "item": "Task", "lane": "Resource",
+                           "lanes": [{"id": "r-0", "label": "Ada", "items": [
+                               {"id": "t-1", "label": "plumbing job 1",
+                                "broken": [{"level": "hard", "constraint": "skill_match", "cost": 1,
+                                            "shared": False}]}]}],
+                           "unassigned": [{"id": "t-0", "label": "electrical job 0"}]}]}
+
+
+def test_an_assignments_page_is_self_contained_and_draws_from_its_data():
+    page = views.document(ASSIGNMENTS)
+    assert "default-src 'none'" in page and "img-src" not in page
+    assert "<script src" not in page and "https://" not in page
+    assert '"skill_match"' in page and 'id="filter"' in page
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="needs Node")
+def test_the_assignments_filter_matches_like_the_desktop_search():
+    guest = views.document(ASSIGNMENTS).split("<script>")[-1].split("</script>")[0]
+    matcher = guest[guest.index("var WORD_START"):guest.index("var tone")]
+    cases = [["rst btwn", "Rest between shifts", True], ["cdo", "Consecutive days off", True],
+             ["fair", "Rest between shifts", False], ["elc jb", "electrical job 4", True],
+             ["ecl", "electrical", True], ["ti", "Rest between", False], ["xyz", "electrical job", False]]
+    script = matcher + f"console.log(JSON.stringify({json.dumps(cases)}.map(([q, h]) => matches(q, h))))"
+    found = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout)
+    assert found == [want for _, _, want in cases]

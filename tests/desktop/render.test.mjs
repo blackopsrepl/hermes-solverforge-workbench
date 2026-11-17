@@ -39,7 +39,7 @@ test('the catalog lists each model with its constraints by level', () => {
   setFixture(real)
   const page = text(render(h(Workbench, {})))
   assert.match(page, /SolverForge Workbench Models Datasets Runs Experiments/)
-  assert.match(page, /Toy roster toy stock 3 · 2 hard · 1 soft 2/)
+  assert.match(page, /Toy roster toy Stock 3 · 2 hard · 1 soft 2/)
 })
 
 test('a model shows its constraints grouped, with the profile’s weights and its demos', () => {
@@ -144,6 +144,27 @@ test('a model with a timeline view draws the run as a schedule in a sandboxed fr
   const html = render(h(RunView, { id: real.run.run.id }))
   assert.match(text(html), /Schedule/)
   assert.match(html, /<iframe title="Schedule" data-length="\d{6,}"/)
+})
+
+test('a custom model shows its project, and says when the project changed since its build', () => {
+  const models = structuredClone(real.models)
+  Object.assign(models.models[0], { kind: 'custom', source: '/home/user/crew-tasks', changed: true })
+  const model = structuredClone(real.model)
+  Object.assign(model.model, { kind: 'custom', source: '/home/user/crew-tasks', changed: true })
+  setFixture({ ...real, models, model })
+  const list = text(render(h(Workbench, { start: { view: 'models' } })))
+  assert.match(list, /Toy roster \/home\/user\/crew-tasks Your model Project changed/)
+  const page = text(render(h(Workbench, { start: { view: 'model', id: 'toy' } })))
+  assert.match(page, /From \/home\/user\/crew-tasks · the project changed since this build: ask Hermes to register it again\./)
+})
+
+test('a model with an assignments view draws the run as boards in a sandboxed frame', () => {
+  const model = structuredClone(real.model)
+  model.model.view = 'assignments'
+  setFixture({ ...real, model })
+  const html = render(h(RunView, { id: real.run.run.id }))
+  assert.match(text(html), /Assignments/)
+  assert.match(html, /<iframe title="Assignments"/)
 })
 
 test('a model without one shows no schedule', () => {
