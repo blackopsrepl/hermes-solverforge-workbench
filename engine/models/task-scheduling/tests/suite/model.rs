@@ -227,6 +227,29 @@ fn freezing_pins_the_tasks_that_start_before_the_moment() {
 }
 
 #[test]
+fn a_frozen_task_keeps_its_time_when_its_predecessor_runs_on_a_later_resource() {
+    // M1 comes first, so its MILL is collected into the frozen lane before
+    // the CUT on M2 it depends on; both start before 09:30 and stay timed.
+    let plan = dataset(json!({
+        "tasks": [
+            task("CUT", 60, json!({})),
+            task("MILL", 60, json!({"dependencies": [{"task": "CUT"}]})),
+        ],
+        "resources": [machine("M1", &["MILL"], json!({})), machine("M2", &["CUT"], json!({}))],
+    }));
+    let open = score_of(json!({"command": "evaluate", "plan": plan}));
+    let frozen = score_of(json!({"command": "evaluate", "plan": plan, "freeze_before": at(9, 30)}));
+    assert!(open.starts_with("0hard"), "{open}");
+    assert_eq!(frozen, open);
+}
+
+fn score_of(request: Value) -> String {
+    let (code, answer) = engine(request);
+    assert_eq!(code, 0, "{answer}");
+    answer["score"].as_str().unwrap().to_string()
+}
+
+#[test]
 fn the_broken_link_penalty_parameter_sets_the_cost_of_a_broken_link() {
     let plan = dataset(json!({
         "parameters": {"brokenLinkPenalty": 50},

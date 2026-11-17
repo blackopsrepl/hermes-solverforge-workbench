@@ -43,6 +43,22 @@ pub fn freeze(plan: &mut Plan, until: &str) -> Result<usize, EngineError> {
             pinned += 1;
         }
     }
+    order_frozen_lane(plan);
     plan.update_all_shadows();
     Ok(pinned)
+}
+
+/// Orders the frozen lane so every task comes after the tasks it depends on.
+///
+/// The lane's slots cascade in list order, and a task is timed only once
+/// the tasks it depends on are. Collected resource by resource, a frozen
+/// task could precede its own predecessor (a mill before the cut it
+/// follows) and leave itself and every later frozen task untimed. A task's
+/// dependency depth is always greater than its predecessors', so ordering
+/// by depth is a dependency order.
+pub(crate) fn order_frozen_lane(plan: &mut Plan) {
+    let facts = std::sync::Arc::clone(&plan.facts);
+    plan.resources[facts.frozen]
+        .sequence
+        .sort_by_key(|&t| (facts.tasks[t].depth, t));
 }

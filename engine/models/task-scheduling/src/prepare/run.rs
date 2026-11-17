@@ -79,6 +79,7 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
         .collect();
     plan.resources.push(frozen_lane);
     plan.facts = Arc::new(facts);
+    crate::freeze::order_frozen_lane(plan);
     start_frozen_tasks(plan);
     // Idle time is off unless a weight turns it on.
     if plan.weights.get(Rule::IdleTime.name()).is_none() {
