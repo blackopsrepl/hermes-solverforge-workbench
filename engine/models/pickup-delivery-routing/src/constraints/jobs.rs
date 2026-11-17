@@ -45,7 +45,10 @@ fn pair(name: &'static str, amount: PairAmount) -> impl IncrementalConstraint<Pl
 fn out_of_order(next: &Visit, previous: &Visit) -> i64 {
     match (next.status(), previous.status()) {
         (Status::Planned, Status::Planned) if next.shift == previous.shift => {
-            match previous.end - next.start {
+            let (Some(next_at), Some(previous_at)) = (next.at(), previous.at()) else {
+                return 0;
+            };
+            match previous_at.end - next_at.start {
                 overlap if overlap > 0 => overlap + BROKEN_LINK,
                 _ => 0,
             }

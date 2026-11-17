@@ -24,18 +24,6 @@ pub struct Shift {
     pub pinned: bool,
     /// This is the bench, not a driver shift.
     pub bench: bool,
-    /// Route totals, written by the shift's update.
-    pub active: bool,
-    pub start: i64,
-    pub end_arrival: i64,
-    pub last_departure: i64,
-    pub travel: i64,
-    pub distance: i64,
-    pub unreachable_legs: i64,
-    pub end_late: i64,
-    pub end_soft_late: i64,
-    pub last_late: i64,
-    pub last_soft_late: i64,
 }
 
 impl Shift {
@@ -45,17 +33,6 @@ impl Shift {
             visits: Vec::new(),
             pinned: false,
             bench,
-            active: false,
-            start: 0,
-            end_arrival: 0,
-            last_departure: 0,
-            travel: 0,
-            distance: 0,
-            unreachable_legs: 0,
-            end_late: 0,
-            end_soft_late: 0,
-            last_late: 0,
-            last_soft_late: 0,
         }
     }
 }

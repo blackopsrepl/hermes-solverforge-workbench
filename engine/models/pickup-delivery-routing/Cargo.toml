@@ -13,3 +13,4 @@ solverforge-workbench-host = { path = "../../host" }
 solverforge.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+smallvec = "1"

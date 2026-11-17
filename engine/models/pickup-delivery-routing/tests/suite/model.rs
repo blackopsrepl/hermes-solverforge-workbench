@@ -1,10 +1,10 @@
 //! The model as a whole: scoring, wire format, names, fill, view, freeze.
 
 use serde_json::{json, Value};
-use solverforge::ScoreDirector;
+use solverforge::{PlanningSolution, ScoreDirector};
 use solverforge_workbench_host::Model;
 use solverforge_workbench_pickup_delivery_routing::constraints::{define_constraints, PIN_SHIFT};
-use solverforge_workbench_pickup_delivery_routing::PickupDeliveryRouting;
+use solverforge_workbench_pickup_delivery_routing::{route, PickupDeliveryRouting};
 
 use crate::common::*;
 
@@ -13,6 +13,46 @@ fn the_demo_scores_incrementally_like_in_full() {
     let mut plan = demo_plan();
     scramble(&mut plan, 7);
     assert_incremental_matches_full(plan, 400, 11);
+}
+
+#[test]
+fn every_visit_is_scored_as_the_views_drive_it() {
+    for seed in [0, 7] {
+        let mut plan = demo_plan();
+        if seed > 0 {
+            scramble(&mut plan, seed);
+        }
+        plan.update_all_shadows();
+        let routes = route::routes(&plan);
+        for (s, shift) in plan.shifts.iter().enumerate() {
+            let route = &routes[s];
+            for (position, &v) in shift.visits.iter().enumerate() {
+                let visit = &plan.visits[v];
+                let Some(slot) = visit.planned_slot() else {
+                    assert!(
+                        plan.facts.shifts[s].bench,
+                        "visit {v} on shift {s} has no slot"
+                    );
+                    continue;
+                };
+                let mut at = slot.at;
+                if !route.active {
+                    // An idle shift's views draw no drive, not even to a break.
+                    (at.travel, at.distance, at.unreachable) = (0, 0, false);
+                }
+                assert_eq!(at, route.visits[position], "seed {seed}, visit {v}");
+                if visit.route_next.is_none() {
+                    let state = &slot.state;
+                    assert_eq!(state.active, route.active);
+                    if route.active {
+                        assert_eq!(state.travel + slot.end.travel, route.travel);
+                        assert_eq!(slot.end.late, route.end_late);
+                        assert_eq!(slot.end.last_late, route.last_late);
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[test]

@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
 use solverforge::prelude::*;
 
+use crate::route::{At, Slot};
+
 /// A stop of a job or a break of a shift, with where and when it is
 /// planned.
 ///
-/// The static fields come from `prepare`; the rest are shadows the owning
-/// shift's update writes.
+/// The static fields come from `prepare`; the rest are shadows SolverForge
+/// keeps current.
 #[problem_fact]
 #[derive(Serialize, Deserialize)]
 pub struct Visit {
@@ -34,41 +36,12 @@ pub struct Visit {
 
     /// The shift holding this visit (generated inverse shadow).
     pub shift: Option<usize>,
-    /// Position in that shift's list (generated index shadow).
-    pub position: Option<usize>,
-    /// The holding shift is the bench.
-    pub benched: bool,
-    pub arrival: i64,
-    pub start: i64,
-    pub end: i64,
-    /// Travel from the previous place, seconds and meters.
-    pub travel: i64,
-    pub distance: i64,
-    pub wait: i64,
-    pub unreachable: bool,
-    pub over_capacity: i64,
-    pub late_start: i64,
-    pub late_end: i64,
-    pub sla_late: i64,
-    pub earliest_day: i64,
-    pub pin_moved: i64,
-    pub not_required: bool,
-    pub prohibited: bool,
-    pub not_preferred: bool,
-    pub skills_missing: i64,
-    pub tags_missing: i64,
-    pub overqualified: i64,
-    /// Breaks: seconds late to a fixed break, seconds a floating break
-    /// ends late, and break seconds during jobs that forbid it.
-    pub break_late: i64,
-    pub break_during_job: i64,
-    /// Rides past this job stop's place before serving it.
-    pub loops: i64,
-    /// On a job's first stop: seconds over its time burden, and seconds
-    /// on board together with jobs it may not ride with.
-    pub burden: i64,
-    pub pooling: i64,
-    pub prohibited_ride: i64,
+    /// The visits before and after it on that shift (generated shadows).
+    pub route_previous: Option<usize>,
+    pub route_next: Option<usize>,
+    /// Where and when it is planned, and what it costs (cascading shadow).
+    #[serde(skip)]
+    pub slot: Option<Slot>,
 }
 
 /// Where a visit is in the plan.
@@ -97,42 +70,28 @@ impl Visit {
             sla_unplanned: 0,
             pin_shift: None,
             shift: None,
-            position: None,
-            benched: false,
-            arrival: 0,
-            start: 0,
-            end: 0,
-            travel: 0,
-            distance: 0,
-            wait: 0,
-            unreachable: false,
-            over_capacity: 0,
-            late_start: 0,
-            late_end: 0,
-            sla_late: 0,
-            earliest_day: 0,
-            pin_moved: 0,
-            not_required: false,
-            prohibited: false,
-            not_preferred: false,
-            skills_missing: 0,
-            tags_missing: 0,
-            overqualified: 0,
-            break_late: 0,
-            break_during_job: 0,
-            loops: 0,
-            burden: 0,
-            pooling: 0,
-            prohibited_ride: 0,
+            route_previous: None,
+            route_next: None,
+            slot: None,
         }
     }
 
     pub fn status(&self) -> Status {
-        match self.shift {
-            None => Status::Pending,
-            Some(_) if self.benched => Status::Benched,
-            Some(_) => Status::Planned,
+        match (self.shift, &self.slot) {
+            (Some(_), Some(slot)) if slot.benched => Status::Benched,
+            (Some(_), Some(_)) => Status::Planned,
+            _ => Status::Pending,
         }
+    }
+
+    /// The slot of a visit on a driver shift.
+    pub fn planned_slot(&self) -> Option<&Slot> {
+        self.slot.as_ref().filter(|slot| !slot.benched)
+    }
+
+    /// The visit as planned on a driver shift.
+    pub fn at(&self) -> Option<&At> {
+        self.planned_slot().map(|slot| &slot.at)
     }
 
     pub fn planned(&self) -> bool {
@@ -146,10 +105,6 @@ impl Visit {
 
     /// Service seconds as planned, or as given while unplanned.
     pub fn effective_duration(&self) -> i64 {
-        if self.planned() {
-            self.end - self.start
-        } else {
-            self.duration
-        }
+        self.at().map_or(self.duration, |at| at.end - at.start)
     }
 }

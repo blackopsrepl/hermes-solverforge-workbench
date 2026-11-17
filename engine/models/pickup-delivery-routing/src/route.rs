@@ -1,68 +1,55 @@
 //! A shift's route: drive from the start, through each visit in order, to
-//! the end. Computes arrival, service, load and every per-visit cost, and
-//! the shift's totals, then writes them onto the plan.
+//! the end. Computes arrival, service, load, the jobs on board and every
+//! per-visit cost.
 //!
-//! Runs as the shift's list-shadow update, so it sees one shift at a time:
-//! every rule it feeds depends only on that shift's list.
+//! The drive is a step from the state after one visit to the state after
+//! the next. A visit's cascading slot takes one step from the slot before
+//! it; the views fold the steps over a whole list. Both run the same code,
+//! so the score and what the user sees never time a visit differently.
+
+use smallvec::SmallVec;
 
 use crate::derived::{Facts, Kind, Window};
 use crate::domain::Plan;
 
-/// Recomputes shift `s` and writes its visits and totals.
-pub fn refresh(plan: &mut Plan, s: usize) {
-    let facts = plan.facts.clone();
-    let list = plan.shifts[s].visits.clone();
-    let route = if facts.shifts.get(s).is_none_or(|shift| shift.bench) {
-        // The bench drives nowhere: its visits carry no times and no costs.
-        Route {
-            visits: vec![At::default(); list.len()],
-            ..Route::default()
-        }
-    } else {
-        drive(&facts, s, &list)
-    };
-    let benched = plan.shifts[s].bench;
-    for (position, at) in route.visits.iter().enumerate() {
-        let visit = &mut plan.visits[list[position]];
-        visit.benched = benched;
-        visit.arrival = at.arrival;
-        visit.start = at.start;
-        visit.end = at.end;
-        visit.travel = at.travel;
-        visit.distance = at.distance;
-        visit.wait = at.wait;
-        visit.unreachable = at.unreachable;
-        visit.over_capacity = at.over_capacity;
-        visit.late_start = at.late_start;
-        visit.late_end = at.late_end;
-        visit.sla_late = at.sla_late;
-        visit.earliest_day = at.earliest_day;
-        visit.pin_moved = at.pin_moved;
-        visit.not_required = at.not_required;
-        visit.prohibited = at.prohibited;
-        visit.not_preferred = at.not_preferred;
-        visit.skills_missing = at.skills_missing;
-        visit.tags_missing = at.tags_missing;
-        visit.overqualified = at.overqualified;
-        visit.break_late = at.break_late;
-        visit.break_during_job = at.break_during_job;
-        visit.loops = at.loops;
-        visit.burden = at.burden;
-        visit.pooling = at.pooling;
-        visit.prohibited_ride = at.prohibited_ride;
+/// A visit's cascading slot: the visit as planned, the state after it, and
+/// the drive back to the end location should the shift stop there.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
+pub struct Slot {
+    /// On the bench: no time, no place, no cost but being unplanned.
+    pub benched: bool,
+    pub at: At,
+    pub state: State,
+    pub end: End,
+}
+
+/// The slot of visit `v`: `None` while it is in no list.
+pub fn slot(plan: &Plan, v: usize) -> Option<Slot> {
+    let facts = &*plan.facts;
+    let visit = &plan.visits[v];
+    let s = visit.shift?;
+    if facts.shifts.get(s).is_none_or(|shift| shift.bench) {
+        return Some(Slot {
+            benched: true,
+            ..Slot::default()
+        });
     }
-    let shift = &mut plan.shifts[s];
-    shift.active = route.active;
-    shift.start = route.start;
-    shift.end_arrival = route.end_arrival;
-    shift.last_departure = route.last_departure;
-    shift.travel = route.travel;
-    shift.distance = route.distance;
-    shift.unreachable_legs = route.unreachable_legs;
-    shift.end_late = route.end_late;
-    shift.end_soft_late = route.end_soft_late;
-    shift.last_late = route.last_late;
-    shift.last_soft_late = route.last_soft_late;
+    let first;
+    let before = match visit.route_previous {
+        Some(p) => &plan.visits[p].slot.as_ref()?.state,
+        None => {
+            first = begin(facts, s);
+            &first
+        }
+    };
+    let (at, state) = self::visit(facts, s, before, v);
+    let end = finish(facts, s, &state);
+    Some(Slot {
+        benched: false,
+        at,
+        state,
+        end,
+    })
 }
 
 /// Every shift's route, computed from the lists alone (not from shadows,
@@ -98,7 +85,7 @@ pub fn placement(plan: &Plan) -> Vec<Option<(usize, usize)>> {
 }
 
 /// One visit as the route plans it.
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct At {
     pub arrival: i64,
     pub start: i64,
@@ -121,10 +108,20 @@ pub struct At {
     pub overqualified: i64,
     pub break_late: i64,
     pub break_during_job: i64,
+    /// Rides past the next destination of a job on board.
     pub loops: i64,
+    /// On a job's last stop: seconds over its time burden.
     pub burden: i64,
+    /// On a job's last stop: seconds it rode with each job still on board
+    /// (at least one) that forbids pooling, or that one of the two
+    /// prohibits. A job never served in full on its shift is split or
+    /// partly planned, which costs more.
     pub pooling: i64,
     pub prohibited_ride: i64,
+    /// Unreachable legs charged here: this visit's own, and on a shift's
+    /// first stop those of the breaks before it, which an idle shift never
+    /// drives.
+    pub unreachable_legs: i64,
 }
 
 /// A shift's planned route.
@@ -162,11 +159,29 @@ fn choose(windows: &[Window], arrival: i64, duration: i64) -> Option<Window> {
 }
 
 /// Most capacity types a dataset may declare: a route's running load is a
-/// fixed array, so a visit's planned state stays `Copy`.
+/// fixed array, so a visit's state never reaches for the heap.
 pub const MAX_LOAD_TYPES: usize = 8;
 
+/// A job picked up and not yet served in full.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Aboard {
+    pub job: usize,
+    /// Stops of the job served so far.
+    pub served: usize,
+    /// Where the job's next stop is.
+    pub next_location: Option<usize>,
+    /// Start of service at the job's first stop.
+    pub first_start: i64,
+    /// Seconds of direct service so far: each served stop's service and the
+    /// direct drive to the stop after it.
+    pub direct: i64,
+    /// The last served stop's place and service seconds.
+    pub last_location: Option<usize>,
+    pub last_service: i64,
+}
+
 /// Where a shift's route stands after a visit: the drive so far.
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub struct State {
     /// The place the driver is at.
     pub place: usize,
@@ -182,10 +197,14 @@ pub struct State {
     pub travel: i64,
     pub distance: i64,
     pub unreachable_legs: i64,
+    /// Unreachable legs to breaks before the first stop, charged to it.
+    pub deferred_unreachable: i64,
+    /// The jobs on board, in the order they were picked up.
+    pub aboard: SmallVec<[Aboard; 8]>,
 }
 
 /// The drive back to the end location, after the last visit.
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct End {
     pub travel: i64,
     pub distance: i64,
@@ -214,7 +233,7 @@ pub fn visit(facts: &Facts, s: usize, state: &State, v: usize) -> (At, State) {
     let shift = &facts.shifts[s];
     let fact = &facts.visits[v];
     let mut at = At::default();
-    let mut next = *state;
+    let mut next = state.clone();
     let leg = fact
         .location
         .map(|to| (to, facts.travel.leg(state.place, to)));
@@ -233,7 +252,7 @@ pub fn visit(facts: &Facts, s: usize, state: &State, v: usize) -> (At, State) {
     next.distance += distance;
     let clock = state.clock;
     match &fact.kind {
-        Kind::Stop { job, .. } => {
+        Kind::Stop { job, seq } => {
             let first_stop = !state.active;
             let fit = facts.fit(*job, s);
             let depart = fact.min_start_travel.map_or(clock, |m| clock.max(m));
@@ -281,6 +300,9 @@ pub fn visit(facts: &Facts, s: usize, state: &State, v: usize) -> (At, State) {
             at.arrival = arrival;
             at.start = start;
             at.end = end;
+            ride(facts, &mut next, *job, *seq, v, start, end, &mut at);
+            at.unreachable_legs = i64::from(at.unreachable) + state.deferred_unreachable;
+            next.deferred_unreachable = 0;
             next.active = true;
             next.last_departure = end;
             next.clock = end;
@@ -301,6 +323,21 @@ pub fn visit(facts: &Facts, s: usize, state: &State, v: usize) -> (At, State) {
             at.start = start;
             at.end = end;
             at.wait = start - arrival;
+            let held = if b.reject_jobs {
+                state.aboard.len()
+            } else {
+                state
+                    .aboard
+                    .iter()
+                    .filter(|a| !facts.jobs[a.job].interruptible)
+                    .count()
+            };
+            at.break_during_job = held as i64 * (end - start);
+            if state.active {
+                at.unreachable_legs = i64::from(at.unreachable);
+            } else {
+                next.deferred_unreachable += i64::from(at.unreachable);
+            }
             next.clock = end;
         }
     }
@@ -375,107 +412,87 @@ pub fn drive(facts: &Facts, s: usize, list: &[usize]) -> Route {
             at.unreachable = false;
         }
     }
-    jobs(facts, list, &mut route);
     route
 }
 
-/// Rules over the jobs a shift carries: time burden, pooling, rides past
-/// a destination, and breaks while a job is on board.
-fn jobs(facts: &Facts, list: &[usize], route: &mut Route) {
-    // Each job on this shift: its stops' positions, in service order.
-    let mut on: Vec<(usize, Vec<Option<usize>>)> = Vec::new();
-    for (position, &v) in list.iter().enumerate() {
-        if let Some((job, seq)) = facts.stop(v) {
-            let entry = match on.iter().position(|(j, _)| *j == job) {
-                Some(i) => &mut on[i],
-                None => {
-                    on.push((job, vec![None; facts.jobs[job].stops.len()]));
-                    on.last_mut().expect("just pushed")
-                }
+/// Whether jobs `a` and `b` may not ride together: (pooling, prohibited).
+fn conflict(facts: &Facts, a: usize, b: usize) -> (bool, bool) {
+    let (ja, jb) = (&facts.jobs[a], &facts.jobs[b]);
+    (
+        ja.no_pooling || jb.no_pooling,
+        ja.prohibited_jobs.contains(&b) || jb.prohibited_jobs.contains(&a),
+    )
+}
+
+/// Stop `seq` of job `job` (visit `v`, served from `start` to `end`) on the
+/// ride: rides past other jobs' destinations, the job boarding or moving on
+/// to its next stop, and its time burden once its last stop is served.
+#[allow(clippy::too_many_arguments)]
+fn ride(
+    facts: &Facts,
+    next: &mut State,
+    job: usize,
+    seq: usize,
+    v: usize,
+    start: i64,
+    end: i64,
+    at: &mut At,
+) {
+    let fact = &facts.jobs[job];
+    let location = facts.visits[v].location;
+    at.loops = next
+        .aboard
+        .iter()
+        .filter(|a| a.job != job && location.is_some() && a.next_location == location)
+        .count() as i64;
+    let next_location = fact
+        .stops
+        .get(seq + 1)
+        .and_then(|&s| facts.visits[s].location);
+    let service = end - start;
+    let position = match next.aboard.iter().position(|a| a.job == job) {
+        Some(i) => {
+            let a = &mut next.aboard[i];
+            let leg = match (a.last_location, location) {
+                (Some(from), Some(to)) => facts.travel.leg(from, to).map_or(0, |l| l.0),
+                _ => 0,
             };
-            entry.1[seq] = Some(position);
+            a.direct += a.last_service + leg;
+            a.served += 1;
+            a.next_location = next_location;
+            a.last_location = location;
+            a.last_service = service;
+            i
         }
-    }
-    // Span on board: from the first stop served to the last, by position.
-    let span = |positions: &[Option<usize>]| {
-        let served: Vec<usize> = positions.iter().flatten().copied().collect();
-        (
-            served.iter().copied().min().unwrap_or(0),
-            served.iter().copied().max().unwrap_or(0),
-        )
+        None => {
+            next.aboard.push(Aboard {
+                job,
+                served: 1,
+                next_location,
+                first_start: start,
+                direct: 0,
+                last_location: location,
+                last_service: service,
+            });
+            next.aboard.len() - 1
+        }
     };
-    for (job, positions) in &on {
-        let fact = &facts.jobs[*job];
-        let (first, last) = span(positions);
-        let lead = positions.iter().flatten().copied().min().unwrap_or(first);
-        // Time burden: on-board time beyond direct service, for whole jobs.
-        if let (Some(limit), true) = (fact.max_burden, positions.iter().all(Option::is_some)) {
-            let p: Vec<usize> = positions.iter().flatten().copied().collect();
-            let mut direct = 0;
-            for pair in p.windows(2) {
-                let a = &route.visits[pair[0]];
-                let from = facts.visits[list[pair[0]]].location;
-                let to = facts.visits[list[pair[1]]].location;
-                let leg = match (from, to) {
-                    (Some(from), Some(to)) => facts.travel.leg(from, to).map_or(0, |l| l.0),
-                    _ => 0,
-                };
-                direct += (a.end - a.start) + leg;
-            }
-            let taken = route.visits[p[p.len() - 1]].start - route.visits[p[0]].start;
-            route.visits[lead].burden = (taken - direct - limit).max(0);
+    let a = next.aboard[position];
+    if a.served >= fact.stops.len() {
+        if let Some(limit) = fact.max_burden {
+            at.burden = (start - a.first_start - a.direct - limit).max(0);
         }
-        // Rides past the next stop's place without serving it.
-        let served: Vec<usize> = positions.iter().flatten().copied().collect();
-        for pair in served.windows(2) {
-            let (from, to) = (pair[0], pair[1]);
-            if to <= from {
+        // The job leaves: every job still on board rode with it from the
+        // later of their first stops until now, at least a second.
+        for other in &next.aboard {
+            if other.job == job {
                 continue;
             }
-            let target = facts.visits[list[to]].location;
-            for &v in &list[from + 1..to] {
-                if facts.stop(v).is_some() && facts.visits[v].location == target {
-                    route.visits[to].loops += 1;
-                }
-            }
+            let (pooling, prohibited) = conflict(facts, job, other.job);
+            let together = (start - a.first_start.max(other.first_start)).max(1);
+            at.pooling += i64::from(pooling) * together;
+            at.prohibited_ride += i64::from(prohibited) * together;
         }
-        // Breaks while on board, where the job or the break forbids it.
-        for (q, &v) in list.iter().enumerate() {
-            if q <= first || q >= last {
-                continue;
-            }
-            if let Kind::Break(b) = &facts.visits[v].kind {
-                if !fact.interruptible || b.reject_jobs {
-                    let at = &route.visits[q];
-                    route.visits[q].break_during_job += at.end - at.start;
-                }
-            }
-        }
-    }
-    // Pairs of jobs on board together.
-    for a in 0..on.len() {
-        for b in a + 1..on.len() {
-            let (ja, jb) = (on[a].0, on[b].0);
-            let (fa, la) = span(&on[a].1);
-            let (fb, lb) = span(&on[b].1);
-            if la <= fb || lb <= fa {
-                continue;
-            }
-            let together = crate::time::overlap(
-                route.visits[fa].start,
-                route.visits[la].start,
-                route.visits[fb].start,
-                route.visits[lb].start,
-            )
-            .max(1);
-            let (job_a, job_b) = (&facts.jobs[ja], &facts.jobs[jb]);
-            if job_a.no_pooling || job_b.no_pooling {
-                let lead = if job_a.no_pooling { fa } else { fb };
-                route.visits[lead].pooling += together;
-            }
-            if job_a.prohibited_jobs.contains(&jb) || job_b.prohibited_jobs.contains(&ja) {
-                route.visits[fa].prohibited_ride += together;
-            }
-        }
+        next.aboard.remove(position);
     }
 }

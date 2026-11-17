@@ -10,9 +10,10 @@ use crate::wire::{Driver, Job, Parameters, PlanningWindow, PriorityWeight, Trave
 /// A pick-up and delivery dataset and, once solved, its route plan.
 ///
 /// Each driver shift drives an ordered list of visits: the stops of the
-/// jobs it serves and its own breaks. A shift's update recomputes its
-/// route (arrival, service, load) and writes it onto its visits, so every
-/// rule reads planned times straight from the visit or shift it blames.
+/// jobs it serves and its own breaks. Each visit's slot is its cascading
+/// shadow, computed from the slot before it on its shift, so a move
+/// re-times only the visits after the change, up to the first whose slot
+/// stays the same, and every rule reads the visit it blames.
 #[planning_solution(
     constraints = "crate::constraints::define_constraints",
     solver_toml = "../../solver.toml"
@@ -20,8 +21,10 @@ use crate::wire::{Driver, Job, Parameters, PlanningWindow, PriorityWeight, Trave
 #[shadow_variable_updates(
     list_owner = "shifts",
     inverse_field = "shift",
-    index_field = "position",
-    post_update_listener = "refresh_route"
+    previous_field = "route_previous",
+    next_field = "route_next",
+    cascading_field = "slot",
+    cascading_compute = "compute_slot"
 )]
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -58,8 +61,8 @@ pub struct Plan {
 }
 
 impl Plan {
-    /// Recomputes shift `shift`'s route and writes it onto its visits.
-    pub fn refresh_route(&mut self, shift: usize) {
-        crate::route::refresh(self, shift);
+    /// The cascading slot of visit `visit`.
+    pub fn compute_slot(&self, visit: usize) -> Option<crate::route::Slot> {
+        crate::route::slot(self, visit)
     }
 }
