@@ -6,9 +6,11 @@
 //!
 //! [`scalar`] places entities whose planning variable is a single value (a
 //! shift's employee, a lesson's room) for any model, through the planning
-//! descriptors the macros generate. Models with list variables (a vehicle's
-//! visits) override [`Model::fill`](crate::Model::fill) and use [`Ranking`] to
-//! score their own candidate insertions the same way.
+//! descriptors the macros generate. [`list`] inserts list elements (a
+//! vehicle's visits) at every position of every owner, through the
+//! [`ListVar`] accessors a model hands it. Models with richer list moves
+//! override [`Model::fill`](crate::Model::fill) and use [`Ranking`] to score
+//! their own candidate insertions the same way.
 
 use std::any::Any;
 
@@ -19,6 +21,10 @@ use solverforge_scoring::WeightedMode;
 
 use crate::model::{EntityName, Level, Model, ScoreOf};
 use crate::protocol::EngineError;
+
+mod lists;
+
+pub use lists::{list, ListVar};
 
 /// What to fill, and how many options to keep per item.
 #[derive(Debug, Clone, Deserialize)]
@@ -248,25 +254,25 @@ fn level_of_delta<M: Model>(delta: &ScoreOf<M>) -> Level {
 /// Names entity `index` of `type_name`: through the model, or by type and
 /// position when the model has no name for it.
 pub fn name_of<M: Model>(plan: &M::Plan, type_name: &str, index: usize) -> EntityName {
-    M::name_entity(plan, type_name, &index.to_string()).unwrap_or_else(|| EntityName {
+    M::name_at(plan, type_name, index).unwrap_or_else(|| EntityName {
         id: Some(format!("{type_name}#{index}")),
         label: format!("{type_name} {index}"),
     })
 }
 
-fn short(type_name: &str) -> &str {
+pub(crate) fn short(type_name: &str) -> &str {
     type_name.rsplit("::").next().unwrap_or(type_name)
 }
 
 /// One scalar planning variable the generic fill can set.
-struct Slot {
-    descriptor: usize,
-    entity_type: String,
-    variable: usize,
-    value_type: Option<String>,
+pub(crate) struct Slot {
+    pub(crate) descriptor: usize,
+    pub(crate) entity_type: String,
+    pub(crate) variable: usize,
+    pub(crate) value_type: Option<String>,
 }
 
-fn slots(descriptor: &SolutionDescriptor) -> Vec<Slot> {
+pub(crate) fn slots(descriptor: &SolutionDescriptor) -> Vec<Slot> {
     let mut out = Vec::new();
     for (index, entity) in descriptor.entity_descriptors.iter().enumerate() {
         for (variable, var) in entity.variable_descriptors.iter().enumerate() {
@@ -303,7 +309,7 @@ fn slots(descriptor: &SolutionDescriptor) -> Vec<Slot> {
 
 /// Values the variable may take for one entity: its own value provider, or
 /// every record of the value range.
-fn values(
+pub(crate) fn values(
     descriptor: &SolutionDescriptor,
     slot: &Slot,
     plan: &dyn Any,

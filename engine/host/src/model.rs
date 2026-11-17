@@ -68,6 +68,13 @@ pub trait Model: 'static + Sized {
     fn name_entity(_plan: &Self::Plan, _type_name: &str, _planning_id: &str) -> Option<EntityName> {
         None
     }
+    /// Names the record at `index` in the collection of `type_name`. The
+    /// default asks [`Model::name_entity`] with the index as the planning id,
+    /// which holds for models whose planning ids are collection indexes;
+    /// models whose planning ids are not override it.
+    fn name_at(plan: &Self::Plan, type_name: &str, index: usize) -> Option<EntityName> {
+        Self::name_entity(plan, type_name, &index.to_string())
+    }
     /// Model parameters a dataset or profile may set under `parameters`.
     fn parameters() -> Vec<ParameterInfo> {
         Vec::new()

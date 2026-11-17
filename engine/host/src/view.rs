@@ -1,4 +1,5 @@
-//! Plan views: a plan drawn for people, as a timeline or as routes.
+//! Plan views: a plan drawn for people, as a timeline, as routes, or as
+//! boards of assignments.
 //!
 //! The engine builds the view because the model knows its domain; the
 //! plugin only draws it. Both kinds reuse the timeline model of the
@@ -13,6 +14,10 @@ use serde_json::Value;
 use crate::analysis::Analysis;
 use crate::model::Level;
 
+mod assignments;
+
+pub use assignments::assignments;
+
 /// A plan view.
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
@@ -21,6 +26,51 @@ pub enum View {
     Timeline(Timeline),
     /// Vehicles driving through stops on a map, with a per-vehicle timeline.
     Routes(Routes),
+    /// Items grouped by what they are assigned to, for models with no time
+    /// or place to draw: one board per planning variable.
+    Assignments(Assignments),
+}
+
+/// Boards of items grouped by what they are assigned to.
+#[derive(Debug, Clone, Serialize)]
+pub struct Assignments {
+    pub title: String,
+    pub subtitle: String,
+    pub boards: Vec<Board>,
+}
+
+/// One planning variable: a lane per value or list owner, holding its items
+/// (in list order for list variables), and the items no lane holds.
+#[derive(Debug, Clone, Serialize)]
+pub struct Board {
+    pub title: String,
+    /// Type of the items (`Task`).
+    pub item: String,
+    /// Type of the lanes (`Resource`).
+    pub lane: String,
+    pub lanes: Vec<Lane>,
+    pub unassigned: Vec<Item>,
+}
+
+/// A value or list owner and the items it holds.
+#[derive(Debug, Clone, Serialize)]
+pub struct Lane {
+    pub id: String,
+    pub label: String,
+    pub items: Vec<Item>,
+    /// Rules the lane's own record breaks, worst first.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub broken: Vec<Broken>,
+}
+
+/// A planning entity or list element on a board.
+#[derive(Debug, Clone, Serialize)]
+pub struct Item {
+    pub id: String,
+    pub label: String,
+    /// Rules this item breaks, worst first.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub broken: Vec<Broken>,
 }
 
 /// A solverforge-ui rail timeline: `model` holds `axis` and `lanes`.
