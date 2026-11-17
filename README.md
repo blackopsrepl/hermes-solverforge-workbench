@@ -49,6 +49,16 @@ sites), a factory week (24 machines and people, 409 operations), two days of
 Milan patient transport and medical courier work (15 drivers, 155 jobs), and
 two days of Turin building services (30 technicians, 238 visits).
 
+### Your own models
+
+A project made with [solverforge-cli](https://github.com/SolverForge/solverforge-cli)
+becomes a model beside these: ask Hermes to register it, and the workbench reads
+the project, builds its engine with cargo and gives it datasets, profiles,
+solves, analysis, fill, a plan view of who holds what, experiments and trends.
+It needs a Rust toolchain and the SolverForge release the workbench is built on;
+constraint descriptions come from the doc comment on each constraint, and
+constraint weights from a `#[constraint_weights]` field on the plan.
+
 ## What you can do
 
 - **Datasets.** Start from a demo, a JSON file or JSON in the chat. Change a
@@ -110,8 +120,13 @@ Under **Settings → Plugins → SolverForge Workbench**
   input and writes JSON lines on standard output. It starts with only the
   environment a process needs (no API keys reach it) and makes no network
   calls.
+- **Custom models are built on your machine.** Registering a project runs
+  `cargo build --release` on it and on the engine host shipped with the plugin;
+  cargo downloads the crates they depend on from crates.io. The build gets only
+  the environment cargo needs (paths, the cargo and rustup homes, proxies).
 - **One folder.** `<hermes home>/plugin-data/solverforge-workbench/` holds
-  the SQLite database (models, datasets, profiles, runs) and the engine.
+  the SQLite database (models, datasets, profiles, runs), the engine, and each
+  custom model's generated engine crate and build.
   Removing the plugin keeps it; delete the folder to erase everything.
 - Deleting a dataset or a profile from the chat asks you first, every time.
   The Desktop cannot delete.

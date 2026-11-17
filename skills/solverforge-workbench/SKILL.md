@@ -5,10 +5,9 @@ description: "Use when solving, tuning or explaining SolverForge Workbench model
 
 # SolverForge Workbench
 
-The SolverForge Workbench hosts optimization models (employee scheduling, field service
-routing, pick-up and delivery, task scheduling, lessons timetabling, flight crew
-scheduling, order picking, fleet readiness, furnace heat treatment, electric vehicle
-routing, and the user's own models) on the user's machine.
+The SolverForge Workbench hosts optimization models (employee scheduling, task
+scheduling, pick-up and delivery routing, field service routing, and the user's own
+models built with solverforge-cli) on the user's machine.
 Every score, analysis, match and KPI comes from the engine. Never estimate or
 invent one; read it from a tool result.
 
@@ -60,7 +59,41 @@ invent one; read it from a tool result.
 9. `solverforge_workbench_trends` shows a model's KPIs across all finished solves.
 10. Show a run in the chat with `::solverforge-workbench{run="<run id>"}`: the
    card shows the score and what costs it; the Workbench section draws the plan
-   (a schedule, or routes on a map).
+   (a schedule, routes on a map, or boards of assignments).
+
+## Custom models
+
+The user's own models are solverforge-cli projects. Build one with the
+`solverforge` CLI and its `solverforge-modeling` skill (`solverforge new <name>
+--shell cli`, then `solverforge generate fact|entity|variable|constraint ...`),
+then host it:
+
+1. Fill in every placeholder the CLI leaves (`panic!` bodies) and give each
+   constraint a description: the doc comment on `pub fn constraint`, after its
+   level (`/// HARD: a task goes to a crew member who works its trade.`). The
+   workbench shows that text as the constraint's description.
+2. For profiles to weight its constraints, the plan needs a weights field. Add
+   to `Plan` in `src/domain/plan.rs`, outside the `@solverforge` markers:
+   `#[constraint_weights] #[serde(default)] pub constraint_weights: ConstraintWeights,`
+   and `constraint_weights: ConstraintWeights::default(),` in `Plan::new`. Later
+   `solverforge generate` commands keep both.
+3. Give records a readable label: a `name` (or `label`, `title`) String field
+   next to the `#[planning_id]`; analysis, fill and the plan view show it.
+4. `cargo test` in the project, then
+   `solverforge_workbench_model_register` with its path. The first build takes a
+   few minutes; later ones are incremental. Relay every warning in the answer.
+   A `build_failed` refusal lists the compiler errors: fix the project and
+   register again.
+5. After any change to the project, register it again; `solverforge_workbench_models`
+   marks a model whose project `changed` since its last build.
+
+The project must depend on the SolverForge release the workbench hosts; a
+`version_mismatch` refusal names both. A custom model has everything a stock
+model has: datasets from its demo data, profiles, solves, analysis, fill (a
+single-value variable or a list position), the plan view as boards of
+assignments, experiments and trends. `freeze_before` needs a model with a notion
+of time and is refused. `solverforge_workbench_model_remove` forgets a custom
+model and its data (it asks the user) and leaves the project's files.
 
 ## Settings
 
@@ -79,8 +112,8 @@ invent one; read it from a tool result.
 
 ## Rules
 
-- Deleting a dataset, profile or experiment asks the user; never try to work
-  around a refusal.
+- Deleting a dataset, profile or experiment, or removing a custom model, asks
+  the user; never try to work around a refusal.
 - Updating a profile needs the revision you last read; on a `stale` refusal,
   read the profile again and redo the change.
 - A run marked invalid lists the dataset's problems in `error.issues`: fix the
