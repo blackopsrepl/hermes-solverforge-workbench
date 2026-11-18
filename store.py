@@ -303,13 +303,19 @@ class Store:
     def datasets(self, model_id: str | None = None, query: str = "", tag: str = "",
                  limit: int = 100) -> list[dict[str, Any]]:
         sql = ("SELECT d.id, d.model_id, d.name, d.tags, d.origin, d.parent_id, d.config, d.size, d.created_at,"
-               " p.name AS parent_name FROM datasets d LEFT JOIN datasets p ON p.id = d.parent_id"
+               " d.demo, p.name AS parent_name FROM datasets d LEFT JOIN datasets p ON p.id = d.parent_id"
                " WHERE (? = '' OR d.model_id = ?) AND (? = '' OR d.name LIKE ? OR d.id LIKE ?)"
                " AND (? = '' OR EXISTS (SELECT 1 FROM json_each(d.tags) WHERE value = ?))"
                " ORDER BY d.created_at DESC LIMIT ?")
         like = f"%{query}%"
         model = model_id or ""
         return self.all(sql, model, model, query, like, f"{query}%", tag, tag, limit)
+
+    def adopt_demo(self, dataset_id: str, model_id: str, demo: str) -> None:
+        """Records an existing dataset as the one made from ``demo``."""
+        with self.tx() as db:
+            db.execute("UPDATE datasets SET demo = ? WHERE id = ?", (demo, dataset_id))
+            db.execute("INSERT OR IGNORE INTO demo_datasets (model_id, demo) VALUES (?, ?)", (model_id, demo))
 
     def demos_made(self, model_id: str) -> set[str]:
         """The model demos that have been made into a dataset, kept or since deleted."""

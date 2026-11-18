@@ -154,8 +154,18 @@ class Workbench:
         if model is None:
             return
         made = self.store.demos_made(model_id)
+        names = {d["id"]: d["name"] for d in _demo_info(model["manifest"])}
+        # A demo dataset made before demos were datasets from the start is that demo's dataset,
+        # by the name it was given then (the demo's own, or "Demo Large_Month").
+        earlier = [d for d in self.store.datasets(model_id=model_id, limit=1000) if d["origin"] == "demo"]
         for demo in model["manifest"].get("demos", []):
-            if demo not in made:
+            if demo in made:
+                continue
+            adopted = next((d for d in earlier if d.get("demo") is None
+                            and d["name"] in (names.get(demo), f"Demo {demo.title()}")), None)
+            if adopted:
+                self.store.adopt_demo(adopted["id"], model_id, demo)
+            else:
                 self.create_dataset(model_id=model_id, demo=demo)
 
     def ensure_standard_profile(self, model_id: str) -> None:
@@ -458,7 +468,7 @@ class Workbench:
 
     def dataset_view(self, dataset: dict[str, Any], with_plan: bool = False) -> dict[str, Any]:
         view = {key: dataset[key] for key in
-                ("id", "model_id", "name", "tags", "origin", "parent_id", "parent_name", "config", "created_at")
+                ("id", "model_id", "name", "tags", "origin", "parent_id", "parent_name", "config", "created_at", "demo")
                 if key in dataset}
         size = dataset.get("size")
         plan = dataset.get("plan")

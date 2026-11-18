@@ -143,6 +143,22 @@ def test_cancelling_a_solve_keeps_the_best_plan(wb):
     assert wb.run(run["id"], with_plan=True)["plan"]["shifts"]
 
 
+def test_a_demo_dataset_made_before_demos_were_datasets_is_kept_not_made_twice(tmp_path):
+    store = Store(tmp_path / "workbench.db")
+    engine = lambda: StockEngine(tmp_path, override=str(TESTKIT))  # noqa: E731
+    first = Workbench(store, tmp_path, engine)
+    first.models()
+    [made] = [d for d in first.datasets(model_id="toy") if d["origin"] == "demo"]
+    # As an earlier version left it: a demo dataset with no record of its demo.
+    with store.tx() as db:
+        db.execute("UPDATE datasets SET demo = NULL, name = ? WHERE id = ?", ("Demo " + made["demo"].title(), made["id"]))
+        db.execute("DELETE FROM demo_datasets")
+    again = Workbench(store, tmp_path, engine)
+    again.models()
+    [kept] = again.datasets(model_id="toy")
+    assert kept["id"] == made["id"] and again.store.dataset(made["id"])["demo"] == made["demo"]
+
+
 def test_a_dataset_that_travels_is_measured_on_the_roads_the_first_time_it_is_used(wb, monkeypatch):
     toy = wb.model_record("toy")
     wb.store.put_model({**toy, "manifest": {**toy["manifest"], "roads": True}})
