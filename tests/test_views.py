@@ -61,13 +61,26 @@ def test_the_engine_draws_routes_with_every_stop_on_a_vehicle_or_left_unplanned(
     assert all(isinstance(v.get("path"), str) and len(v["path"]) > 20 for v in view["vehicles"] if v["stops"])
 
 
-def test_a_routes_page_loads_only_street_tiles_and_draws_the_map_and_the_timeline():
-    page = views.document(ROUTES["view"])
+def test_a_routes_plan_comes_as_a_map_that_fills_its_frame_a_timeline_and_the_routes_as_data():
+    parts = views.drawn(ROUTES["view"])
+    page = parts["map"]
     csp = page.split("Content-Security-Policy\" content=\"")[1].split("\"")[0]
     assert "default-src 'none'" in csp and "connect-src" not in csp
     assert csp.split("img-src ")[1].split(";")[0] == "data: " + views.TILES
-    assert "SF.map.create" in page and "drawTimeline(view.timeline" in page
-    assert "Leaflet 1.9.4" in page
+    assert "SF.map.create" in page and "Leaflet 1.9.4" in page
+    # The map is the whole page: no header, legend or timeline crammed in beside it.
+    assert "#map{position:absolute;inset:0}" in page and "drawTimeline" not in page and 'id="legend"' not in page
+    assert "data.source !== 'solverforge-workbench'" in page and "event.source !== parent" in page
+    timeline = parts["timeline"]
+    assert "drawTimeline(" in timeline and "img-src" not in timeline
+    assert parts["lanes"] == len(ROUTES["view"]["timeline"]["model"]["lanes"])
+    vehicles = ROUTES["view"]["vehicles"]
+    assert [r["id"] for r in parts["routes"]] == [v["id"] for v in vehicles]
+    assert parts["routes"][0] == {"id": vehicles[0]["id"], "label": vehicles[0]["label"], "color": vehicles[0]["color"],
+                                  "stats": vehicles[0]["stats"], "stops": len(vehicles[0]["stops"]),
+                                  "broken": {"hard": 0, "medium": 0}}
+    assert parts["unassigned"] == [{"id": u["id"], "label": u["label"]} for u in ROUTES["view"]["unassigned"]]
+    assert views.drawn({"kind": "assignments", "boards": []}).keys() == {"kind", "document"}
 
 
 ASSIGNMENTS = {"kind": "assignments", "title": "Crew tasks", "subtitle": "1 unassigned",

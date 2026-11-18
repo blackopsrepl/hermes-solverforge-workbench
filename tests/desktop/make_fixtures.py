@@ -83,4 +83,4 @@ Path('tests/desktop/fixtures/view.json').write_text(
     json.dumps({'ok': True, 'kind': 'timeline', 'document': views.document(roster)}) + '\n')
 routes = json.loads(Path('tests/fixtures/routes-view.json').read_text())['view']
 Path('tests/desktop/pages/routes.json').write_text(
-    json.dumps({'ok': True, 'kind': 'routes', 'document': views.document(routes)}) + '\n')
+    json.dumps({'ok': True, **views.drawn(routes)}) + '\n')

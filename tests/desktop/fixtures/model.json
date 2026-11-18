@@ -58,10 +58,10 @@
     "is_default": 0,
     "read_only": 1,
     "revision": 1,
-    "updated_at": "2026-11-18T13:47:54.475+00:00"
+    "updated_at": "2026-11-18T15:24:59.122+00:00"
    },
    {
-    "id": "443d2f09715b",
+    "id": "37cbe1399cf5",
     "model_id": "toy",
     "name": "Blind",
     "description": "",
@@ -73,10 +73,10 @@
     "is_default": 0,
     "read_only": 0,
     "revision": 1,
-    "updated_at": "2026-11-18T13:47:56.736+00:00"
+    "updated_at": "2026-11-18T15:25:01.393+00:00"
    },
    {
-    "id": "18826894b171",
+    "id": "a67a85e815c6",
     "model_id": "toy",
     "name": "Lenient",
     "description": "",
@@ -88,7 +88,7 @@
     "is_default": 0,
     "read_only": 0,
     "revision": 1,
-    "updated_at": "2026-11-18T13:47:54.488+00:00"
+    "updated_at": "2026-11-18T15:24:59.138+00:00"
    }
   ],
   "default_profile": "toy-standard"

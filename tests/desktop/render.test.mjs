@@ -178,6 +178,19 @@ test('a model draws the run in its own view: schedule, routes or boards', () => 
     assert.match(html, new RegExp(`<h2[^>]*>${title}</h2>`))
     assert.match(html, new RegExp(`<iframe title="${title}" data-length="\\d{4,}"`))
   }
+  // A routing plan: the map beside a searchable list of the routes, the timeline below.
+  const routing = structuredClone(real.model)
+  routing.model.view = 'routes'
+  const parts = JSON.parse(readFileSync(join(here, 'pages', 'routes.json'), 'utf8'))
+  const html = at(placeOf('toy', 'runs', runId), { ...real, model: routing, view: parts })
+  const page = text(html)
+  assert.match(html, /<iframe title="Routes" data-length="\d{4,}"/)
+  assert.match(html, /<iframe title="Routes day by day" data-length="\d{4,}"/)
+  assert.match(html, /grid-template-columns:minmax\(0, 1fr\) 320px/)
+  assert.match(page, new RegExp(`${parts.routes.length} routes`))
+  assert.match(page, new RegExp(parts.routes[0].label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' ' + parts.routes[0].stats.join(' · ')))
+  assert.equal((html.match(/role="listitem" aria-pressed="false"/g) || []).length, parts.routes.length)
+  assert.match(page, /Day by day/)
   const model = structuredClone(real.model)
   model.model.view = null
   assert.doesNotMatch(at(placeOf('toy', 'runs', runId), { ...real, model }), /<iframe/)

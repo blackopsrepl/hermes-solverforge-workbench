@@ -631,8 +631,9 @@ export function PlanView({ run, dataset, version, kind = 'timeline', onItem }) {
   }, [onItem])
   const data = query.data
   const what = viewName(kind).toLowerCase()
-  if (query.isLoading) return e(Skeleton, { style: { height: kind === 'routes' ? 520 : 320, width: '100%' } })
+  if (query.isLoading) return e(Skeleton, { style: { height: kind === 'routes' ? 560 : 320, width: '100%' } })
   if (!data || data.ok === false) return e('div', { style: faint }, errorText(data, `The ${what} could not be drawn.`))
+  if (data.kind === 'routes') return e(RoutesPlan, { data, frame, onItem })
   return e(SandboxedFrame, {
     ref: frame,
     src: 'data:text/html;charset=utf-8,' + encodeURIComponent(data.document),
@@ -640,6 +641,69 @@ export function PlanView({ run, dataset, version, kind = 'timeline', onItem }) {
     title: viewName(kind),
     style: { width: '100%', height: kind === 'routes' ? 'min(78vh, 1040px)' : 560, border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, display: 'block', background: '#fff' }
   })
+}
+
+// A routing plan: the map fills the space beside the list of routes, and the per-vehicle
+// timeline sits below as its own surface. Picking a route in the list focuses it on the map.
+function RoutesPlan({ data, frame, onItem }) {
+  const { docked } = useNav()
+  const [focus, setFocus] = useState(null)
+  const [search, setSearch] = useState('')
+  const show = id => {
+    const next = focus === id ? null : id
+    setFocus(next)
+    const win = frame.current && frame.current.contentWindow
+    if (win) win.postMessage({ source: ID, focus: next }, '*')
+  }
+  const found = searchItems(data.routes, search, [['label', 1], [r => r.stats.join(' '), 0.4]])
+  const brokenWords = r => [r.broken.hard ? `${count(r.broken.hard, 'stop')} breaking a hard rule` : '',
+    r.broken.medium ? `${count(r.broken.medium, 'stop')} breaking a medium rule` : ''].filter(Boolean).join(' · ')
+  const height = docked ? '60vh' : 'max(560px, calc(100vh - 220px))'
+  const list = e('div', { style: { ...stack(8), minHeight: 0, overflow: docked ? 'visible' : 'auto', paddingRight: docked ? 0 : 4 } },
+    e(ListSearch, { value: search, onChange: setSearch, shown: found.length, total: data.routes.length, noun: 'route', placeholder: 'Search routes: who, day or stats' }),
+    focus ? e('div', null, e(Button, { size: 'xs', variant: 'text', onClick: () => show(focus) }, 'Show every route')) : null,
+    e('div', { role: 'list', 'aria-label': 'Routes', style: stack(2) },
+      found.map(({ item: r, hits }) => e('button', {
+        key: r.id, type: 'button', role: 'listitem', 'aria-pressed': focus === r.id, onClick: () => show(r.id),
+        style: { display: 'grid', gridTemplateColumns: '12px 1fr', gap: '2px 8px', alignItems: 'baseline', textAlign: 'left', cursor: 'pointer',
+          padding: '6px 8px', borderRadius: 6, font: 'inherit', color: 'inherit',
+          border: `1px solid ${focus === r.id ? 'var(--ui-accent)' : 'transparent'}`,
+          background: focus === r.id ? 'var(--ui-bg-tertiary)' : 'none', opacity: focus && focus !== r.id ? 0.55 : 1 }
+      },
+      e('span', { 'aria-hidden': true, style: { width: 12, height: 12, borderRadius: 3, background: r.color, alignSelf: 'center' } }),
+      e('span', { style: { fontWeight: 600, fontSize: '0.8rem' } }, e(Highlight, { text: r.label, hits })),
+      e('span', null),
+      e('span', { style: faint }, r.stats.join(' · ')),
+      brokenWords(r) ? e('span', null) : null,
+      brokenWords(r) ? e('span', { style: { ...faint, color: 'var(--ui-danger, #e5534b)' } }, brokenWords(r)) : null))),
+    data.unassigned.length
+      ? e('div', { style: stack(4) },
+          e(Label, null, `${fmt(data.unassigned.length)} unplanned`),
+          data.unassigned.map(u => e('div', { key: u.id, style: { ...row(6), justifyContent: 'space-between' } },
+            e('span', { style: muted }, u.label),
+            onItem ? e(Button, { size: 'xs', variant: 'outline', onClick: () => onItem({ id: String(u.id), label: u.label }) }, 'Find a place') : null)))
+      : null)
+  return e('div', { style: stack(12) },
+    data.subtitle ? e('div', { style: muted }, data.subtitle) : null,
+    e('div', { style: { display: 'grid', gridTemplateColumns: docked ? '1fr' : 'minmax(0, 1fr) 320px', gap: 12, height: docked ? 'auto' : height } },
+      e(SandboxedFrame, {
+        ref: frame,
+        src: 'data:text/html;charset=utf-8,' + encodeURIComponent(data.map),
+        sandbox: 'allow-scripts',
+        title: 'Routes',
+        style: { width: '100%', height, border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, display: 'block', background: '#fff' }
+      }),
+      list),
+    data.timeline
+      ? e('div', { style: stack(6) },
+          e(Label, null, 'Day by day'),
+          e(SandboxedFrame, {
+            src: 'data:text/html;charset=utf-8,' + encodeURIComponent(data.timeline),
+            sandbox: 'allow-scripts',
+            title: 'Routes day by day',
+            style: { width: '100%', height: 120 + 34 * Math.max(1, data.lanes), border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, display: 'block', background: '#fff' }
+          }))
+      : null)
 }
 
 function Matches({ item }) {

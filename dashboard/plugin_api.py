@@ -128,7 +128,7 @@ def view(run: str = "", dataset: str = "") -> JSONResponse:
     except service.WorkbenchError as exc:
         return JSONResponse({"ok": False, "code": exc.code, "error": exc.message},
                             status_code=STATUS.get(exc.code, 400))
-    return JSONResponse({"ok": True, "kind": drawn.get("kind"), "document": views.document(drawn)})
+    return JSONResponse({"ok": True, **views.drawn(drawn)})
 
 
 @router.get("/confirm")
