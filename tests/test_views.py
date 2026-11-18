@@ -73,6 +73,10 @@ def test_a_routes_plan_comes_as_a_map_that_fills_its_frame_a_timeline_and_the_ro
     assert "data.source !== 'solverforge-workbench'" in page and "event.source !== parent" in page
     timeline = parts["timeline"]
     assert "drawTimeline(" in timeline and "img-src" not in timeline
+    # The timeline and a board report their own height so the frame around them fits.
+    fit = "parent.postMessage({source: 'solverforge-workbench', height: height}"
+    assert fit in timeline and fit not in page
+    assert fit in views.drawn({"kind": "assignments", "boards": []})["document"]
     assert parts["lanes"] == len(ROUTES["view"]["timeline"]["model"]["lanes"])
     vehicles = ROUTES["view"]["vehicles"]
     assert [r["id"] for r in parts["routes"]] == [v["id"] for v in vehicles]

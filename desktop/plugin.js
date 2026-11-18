@@ -631,11 +631,29 @@ export function viewName(kind) {
   return kind === 'routes' ? 'Routes' : kind === 'assignments' ? 'Assignments' : 'Schedule'
 }
 
+/** The height a drawn page reports for itself (it posts {source, height}), or null until it
+ *  does: its frame then fits the plan instead of guessing from the number of lanes. */
+export function useFittedHeight(frame) {
+  const [height, setHeight] = useState(null)
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    const listen = event => {
+      const data = event.data
+      if (frame.current && event.source === frame.current.contentWindow && data && data.source === ID
+          && typeof data.height === 'number' && data.height > 0) setHeight(Math.ceil(data.height))
+    }
+    window.addEventListener('message', listen)
+    return () => window.removeEventListener('message', listen)
+  }, [frame])
+  return height
+}
+
 /** The plan as its model draws it (solverforge-ui's timeline, routes on a map, or boards)
  *  in a sandboxed frame. */
 export function PlanView({ run, dataset, version, kind = 'timeline', onItem }) {
   const query = useRead('view', { run, dataset, v: version })
   const frame = useRef(null)
+  const fitted = useFittedHeight(frame)
   // A click on an open item inside the frame (it posts {source, item}) asks for its places.
   useEffect(() => {
     if (!onItem || typeof window === 'undefined') return undefined
@@ -659,7 +677,8 @@ export function PlanView({ run, dataset, version, kind = 'timeline', onItem }) {
     src: 'data:text/html;charset=utf-8,' + encodeURIComponent(data.document),
     sandbox: 'allow-scripts',
     title: viewName(kind),
-    style: { width: '100%', height: kind === 'routes' ? 'min(78vh, 1040px)' : 560, border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, display: 'block', background: '#fff' }
+    // A schedule or a board fits its plan, up to most of the page (the plan scrolls inside beyond that).
+    style: { width: '100%', height: kind === 'routes' ? 'min(78vh, 1040px)' : fitted ? `min(${fitted}px, 80vh)` : 560, border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, display: 'block', background: '#fff' }
   })
 }
 
@@ -678,6 +697,8 @@ function RoutesPlan({ data, frame, onItem }) {
     return () => watch.disconnect()
   }, [])
   const docked = dockedPane || (width > 0 && width < 860)
+  const days = useRef(null)
+  const fitted = useFittedHeight(days)
   const [focus, setFocus] = useState(null)
   const [search, setSearch] = useState('')
   const show = id => {
@@ -731,10 +752,12 @@ function RoutesPlan({ data, frame, onItem }) {
       ? e('div', { style: stack(6) },
           e(Label, null, 'Day by day'),
           e(SandboxedFrame, {
+            ref: days,
             src: 'data:text/html;charset=utf-8,' + encodeURIComponent(data.timeline),
             sandbox: 'allow-scripts',
             title: 'Routes day by day',
-            style: { width: '100%', height: 120 + 34 * Math.max(1, data.lanes), border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, display: 'block', background: '#fff' }
+            // The lanes are a first guess; the page reports its real height once drawn.
+            style: { width: '100%', height: fitted || 120 + 34 * Math.max(1, data.lanes), border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, display: 'block', background: '#fff' }
           }))
       : null)
 }

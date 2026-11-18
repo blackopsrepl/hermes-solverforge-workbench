@@ -57,9 +57,26 @@ function drawTimeline(view, mount) {
 }
 """
 
+# A page that draws at its own height tells the page around the frame how tall it is, so the
+# frame fits it: no empty band below a short plan, no inner scrollbar on a long one.
+FIT = """
+(function () {
+  var last = 0;
+  function report() {
+    var height = Math.ceil(document.body.getBoundingClientRect().height);
+    if (height && height !== last) {
+      last = height;
+      try { parent.postMessage({source: 'solverforge-workbench', height: height}, '*'); } catch (e) {}
+    }
+  }
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(report).observe(document.body);
+  report();
+})();
+"""
+
 TIMELINE_GUEST = TIMELINE + """
 drawTimeline(JSON.parse(document.getElementById('view-data').textContent), document.getElementById('view'));
-"""
+""" + FIT
 
 # Routes: the map alone, filling its frame. One coloured line per vehicle along the roads
 # through its numbered stops, broken stops red, unplanned stops grey (a click asks for a
@@ -252,7 +269,7 @@ ASSIGNMENTS_GUEST = PICK + """
   filter.addEventListener('keydown', function (event) { if (event.key === 'Escape') { filter.value = ''; draw(); } });
   draw();
 })();
-"""
+""" + FIT
 
 ASSIGNMENTS_CSS = """
 body{font:13px system-ui,sans-serif;color:#1f2937}
