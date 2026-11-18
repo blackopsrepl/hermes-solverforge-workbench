@@ -211,6 +211,24 @@ def test_replanning_starts_from_a_solved_run(wb):
     assert all(shift["nurse_idx"] is not None for shift in plan["shifts"])
 
 
+def test_a_run_knows_the_solve_before_it_and_a_dataset_its_lineage(wb):
+    dataset = demo(wb)
+    first = wait_for(wb, wb.solve(dataset["id"], overrides={"solve": {"seconds": 1}})["id"])
+    assert wb.run(first["id"])["previous"] is None
+    wb.evaluate(dataset["id"])  # a check is not a solve to measure against
+    second = wait_for(wb, wb.solve(dataset["id"], overrides={"solve": {"seconds": 1}})["id"])
+    previous = wb.run(second["id"])["previous"]
+    assert previous["id"] == first["id"] and previous["score"] == first["score"]
+    assert previous["kpis"] == first["kpis"] and previous["kpis"]
+    child = wb.patch_dataset(dataset["id"], [], from_run=second["id"], name="Tuesday replan")
+    grandchild = wb.patch_dataset(child["id"], [], name="Tuesday copy")
+    lineage = wb.dataset(child["id"])["lineage"]
+    assert [a["name"] for a in lineage["ancestors"]] == [dataset["name"]]
+    assert [(c["name"], c["origin"]) for c in lineage["children"]] == [("Tuesday copy", "copy")]
+    assert [a["id"] for a in wb.dataset(grandchild["id"])["lineage"]["ancestors"]] == [dataset["id"], child["id"]]
+    assert wb.run(second["id"])["lineage"]["children"][0]["origin"] == "run"
+
+
 def test_explain_and_compare_read_the_engines_analysis(wb):
     dataset = demo(wb)
     before = wb.evaluate(dataset["id"])

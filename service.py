@@ -452,6 +452,7 @@ class Workbench:
         view["runs"] = [self.run_brief(run) for run in self.store.runs(dataset_id=dataset_id)]
         view["children"] = [d["id"] for d in self.store.all("SELECT id FROM datasets WHERE parent_id = ?",
                                                             dataset_id)]
+        view["lineage"] = self.lineage(dataset_id)
         return view
 
     def patch_dataset(self, dataset_id: str, operations: list[dict], name: str = "",
@@ -729,9 +730,37 @@ class Workbench:
         view["config"] = {k: v for k, v in (run.get("config") or {}).items() if k != "engine"}
         view["points"] = self.store.points(run_id)
         view["analysis"] = [_trim(c, max_matches) for c in (run.get("analysis") or [])]
+        view["previous"] = self._previous_run(run)
+        view["lineage"] = self.lineage(run["dataset_id"])
         if with_plan:
             view["plan"] = run.get("plan")
         return view
+
+    def _previous_run(self, run: dict[str, Any]) -> dict[str, Any] | None:
+        """The latest finished solve of the same dataset made before ``run``, to measure it against."""
+        earlier = [r for r in self.store.runs(dataset_id=run["dataset_id"], limit=None)
+                   if r["id"] != run["id"] and r["kind"] == "solve" and r["status"] in ("completed", "incomplete")
+                   and r.get("score") and r["created_at"] < run["created_at"]]
+        if not earlier:
+            return None
+        found = max(earlier, key=lambda r: r["created_at"])
+        return {**self.run_brief(found), "kpis": found.get("kpis") or []}
+
+    def lineage(self, dataset_id: str) -> dict[str, Any]:
+        """Where a dataset comes from, root first, and what was made from it: names and origins."""
+        def entry(d: dict[str, Any]) -> dict[str, Any]:
+            return {"id": d["id"], "name": d["name"], "origin": d["origin"], "created_at": d["created_at"]}
+
+        chain: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        current = self.store.dataset(dataset_id)
+        while current and current["id"] not in seen:
+            seen.add(current["id"])
+            chain.append(entry(current))
+            current = self.store.dataset(current["parent_id"]) if current.get("parent_id") else None
+        children = self.store.all("SELECT id, name, origin, created_at FROM datasets WHERE parent_id = ?"
+                                  " ORDER BY created_at", dataset_id)
+        return {"ancestors": chain[:0:-1], "children": [entry(c) for c in children]}
 
     def _source(self, run_id: str | None, dataset_id: str | None) -> tuple[dict[str, Any], dict[str, Any], str]:
         """(dataset, plan, what) of a run's plan or a dataset's input; exactly one is given."""
