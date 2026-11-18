@@ -578,8 +578,8 @@ test('rows without ids are addressed by position, and a path holding one object 
   assert.match(text(rules), /2 rules Rule Of At least Rest between shifts full 600 Days off full — Click/)
   assert.match(rules, /flex-wrap:wrap/)
   const one = text(editor(tables[2]))
-  assert.match(one, /Planning window 2027-02-01 00:00 2027-02-03 00:00 — Planning window From Until Totals — Changes stay here/)
-  assert.doesNotMatch(one, /Close|Click a row/)
+  assert.match(one, /Planning window 1 Contracts 1 Contract rules 2 Planning window From Until Totals — Changes stay here/)
+  assert.doesNotMatch(one, /Close|Click a row|Search/)
   setFixture(real)
 })
 
@@ -592,6 +592,15 @@ test('a list column edits item by item, an optional choice can be unset, and sol
   const kind = { name: 'policy', label: 'Jobs on board', kind: 'text', optional: true, options: [{ value: 'PERMIT_JOBS', label: 'May stay on board' }, { value: 'REJECT_JOBS', label: 'None on board' }] }
   assert.match(render(h(ParamCell, { param: kind, value: undefined, onChange: () => {} })), /<option value="" selected="">not set<\/option>/)
   assert.doesNotMatch(render(h(ParamCell, { param: { ...kind, optional: false }, value: 'PERMIT_JOBS', onChange: () => {} })), /not set/)
+  // A break shows the fields its kind reads: a set time, or a window and a length.
+  const breakItem = { name: 'break', label: 'Break', kind: 'object', fields: [
+    { name: 'type', label: 'Kind', kind: 'text', options: [{ value: 'FIXED', label: 'At a set time' }, { value: 'FLOATING', label: 'Within a window' }] },
+    { name: 'startTime', label: 'Starts', kind: 'date_time', optional: true, when: { field: 'type', values: ['FIXED'] } },
+    { name: 'maxEndTime', label: 'Done by', kind: 'date_time', optional: true, when: { field: 'type', values: ['FLOATING'] } }] }
+  const floating = text(render(h(ParamCell, { param: breakItem, value: { type: 'FLOATING', maxEndTime: '2027-02-01T14:30' }, onChange: () => {} })))
+  assert.match(floating, /Done by/)
+  assert.doesNotMatch(floating, /Starts/)
+  assert.match(text(render(h(ParamCell, { param: breakItem, value: { type: 'FIXED' }, onChange: () => {} }))), /Starts/)
 })
 
 test('staged edits become id-addressed patch operations: replace, add, remove', () => {

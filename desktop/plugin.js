@@ -1654,6 +1654,7 @@ export function DataEditor({ model, dataset }) {
       setStaged(next)
     }
     const all = rowsOf(current)
+    const single = all.length === 1 && Boolean(all[0].single)
     const found = searchItems(all, search, [[({ row, n }) => String(titleOf(current, row, n)), 1], [({ row }) => String(row.id ?? ''), 0.9],
       ...current.columns.map(c => [({ row, at }) => cellText(c, valueOf(at, row, c)), 0.5])])
     // The title column already names each row; the grid shows the next five.
@@ -1663,8 +1664,26 @@ export function DataEditor({ model, dataset }) {
     const hasRuns = (dataset.runs || []).length > 0
     return e('div', { style: stack(10) },
       e(TabBar, { wrap: true, tabs: tables.map(t => ({ id: t.id, label: t.label, count: rowsOf(t).length })), value: current.id, onChange: id => { setTab(id); setSearch(''); setOpen(null) } }),
-      e(ListSearch, { value: search, onChange: setSearch, shown: found.length, total: all.length, noun: current.one, placeholder: `Search ${current.label.toLowerCase()}` }),
-      e(Table, {
+      // A one-row table (the planning window) is its editor alone: no search, no grid.
+      single ? null : e(ListSearch, { value: search, onChange: setSearch, shown: found.length, total: all.length, noun: current.one, placeholder: `Search ${current.label.toLowerCase()}` }),
+      (() => {
+        const hit = single ? all[0] : all.find(x => x.at === open)
+        if (!hit) return null
+        // The open row's editor sits above the grid and scrolls into view, so a long table
+        // never leaves it out of sight below.
+        return e('div', { key: hit.at, ref: el => { if (el && !hit.single) el.scrollIntoView({ block: 'nearest' }) } }, e(Card, null,
+          e('div', { style: row(8) }, e(Label, null, hit.single ? current.label : `${current.one[0].toUpperCase()}${current.one.slice(1)} ${titleOf(current, hit.row, hit.n)}`), spacer(),
+            hit.single ? null : e(Button, { size: 'xs', variant: 'text', onClick: () => setOpen(null) }, 'Close')),
+          e('div', { style: { display: 'grid', gridTemplateColumns: 'minmax(120px, max-content) 1fr', gap: '8px 14px', alignItems: 'start', justifyItems: 'start' } },
+            current.columns.filter(c => applies(c, Object.fromEntries(current.columns.map(x => [x.name, valueOf(hit.at, hit.row, x)])))).flatMap(c => [
+              e('span', { key: `${c.name}-l`, style: muted }, c.label),
+              // What the solver writes is shown as it stands, never edited.
+              c.read_only
+                ? e('span', { key: `${c.name}-v`, style: { ...muted, overflowWrap: 'anywhere' } }, cellText(c, hit.row[c.name]))
+                : e(ParamCell, { key: `${c.name}-v`, param: asParam(c, choices), value: valueOf(hit.at, hit.row, c), changed: Boolean(staged[`${hit.at}/${c.name}`]),
+                  onChange: v => stage(current, hit, c, c.reference && v === '' ? undefined : v) })]))))
+      })(),
+      single ? null : e(Table, {
         empty: e('div', { style: faint }, `No ${current.label.toLowerCase()}.`),
         columns: [{ id: '_title', label: current.title ? (current.columns.find(c => c.name === current.title) || {}).label || 'Name' : 'Id' }, ...(current.parent ? [{ id: '_parent', label: 'Of' }] : []), ...shown.map(c => ({ id: c.name, label: c.label }))],
         rows: found.slice(0, 200).map(({ item: { row, at, parent, n }, hits }) => ({
@@ -1677,21 +1696,6 @@ export function DataEditor({ model, dataset }) {
         onRow: r => setOpen(open === r.at ? null : r.at)
       }),
       found.length > 200 ? e('div', { style: faint }, `Showing the first 200 of ${fmt(found.length)}; search to narrow them.`) : null,
-      (() => {
-        const hit = all.find(x => x.at === open) || (all.length === 1 && all[0].single ? all[0] : null)
-        if (!hit) return null
-        return e(Card, null,
-          e('div', { style: row(8) }, e(Label, null, hit.single ? current.label : `${current.one[0].toUpperCase()}${current.one.slice(1)} ${titleOf(current, hit.row, hit.n)}`), spacer(),
-            hit.single ? null : e(Button, { size: 'xs', variant: 'text', onClick: () => setOpen(null) }, 'Close')),
-          e('div', { style: { display: 'grid', gridTemplateColumns: 'minmax(120px, max-content) 1fr', gap: '8px 14px', alignItems: 'start' } },
-            current.columns.flatMap(c => [
-              e('span', { key: `${c.name}-l`, style: muted }, c.label),
-              // What the solver writes is shown as it stands, never edited.
-              c.read_only
-                ? e('span', { key: `${c.name}-v`, style: { ...muted, overflowWrap: 'anywhere' } }, cellText(c, hit.row[c.name]))
-                : e(ParamCell, { key: `${c.name}-v`, param: asParam(c, choices), value: valueOf(hit.at, hit.row, c), changed: Boolean(staged[`${hit.at}/${c.name}`]),
-                  onChange: v => stage(current, hit, c, c.reference && v === '' ? undefined : v) })])))
-      })(),
       changes.length
         ? e(Card, null,
             e(Label, null, `${count(changes.length, 'change')} not saved`),
@@ -1703,7 +1707,7 @@ export function DataEditor({ model, dataset }) {
                 onClick: () => save.mutate({ dataset: dataset.id, operations, in_place: true }) }, 'Save here'),
               e(Button, { size: 'xs', variant: 'text', onClick: () => setStaged({}) }, 'Discard')),
             e('div', { style: faint }, 'The model reads the changed data before it is saved; nothing is saved if it cannot.'))
-        : e('div', { style: faint }, all.length === 1 && all[0].single ? 'Changes stay here until you save them.' : 'Click a row to change it. Changes stay here until you save them.'))
+        : e('div', { style: faint }, single ? 'Changes stay here until you save them.' : 'Click a row to change it. Changes stay here until you save them.'))
   })
 }
 
@@ -1943,7 +1947,7 @@ export function ParamCell({ param, value, onChange, changed }) {
   if (param.options && param.options.length) {
     // An optional choice can go back to unset: the model's default.
     const unset = param.optional && !param.options.some(o => o.value === '')
-    return e('select', { value: value ?? '', 'aria-label': label, style: { ...input, ...ring },
+    return e('select', { value: value ?? '', 'aria-label': label, style: { ...input, width: 'auto', maxWidth: 320, ...ring },
       onChange: event => onChange(event.target.value === '' && unset ? undefined : event.target.value) },
       unset ? e('option', { value: '' }, 'not set') : null,
       param.options.map(o => e('option', { key: o.value, value: o.value }, o.label)))
@@ -1969,11 +1973,15 @@ export function ParamCell({ param, value, onChange, changed }) {
     e('span', { style: faint }, param.unit || (param.kind === 'duration' || param.kind === 'minutes' ? 'minutes' : '')))
 }
 
-/** An object setting: each of its fields with its own editor. */
+/** Whether a field applies to a record: always, or while a sibling holds one of its values
+ *  (a break's window fields only for a floating break). */
+export const applies = (field, record) => !field.when || field.when.values.includes((record || {})[field.when.field])
+
+/** An object setting: each of its fields that applies with its own editor. */
 function ObjectCell({ param, value, onChange, ring }) {
   const current = value && typeof value === 'object' && !Array.isArray(value) ? value : (param.default || {})
   return e('span', { style: { ...stack(4), ...ring } },
-    param.fields.map(field => e('label', { key: field.name, style: { ...row(6), ...faint } },
+    param.fields.filter(field => applies(field, current)).map(field => e('label', { key: field.name, style: { ...row(6), ...faint } },
       e('span', { style: { minWidth: 90 }, title: field.description }, field.label || field.name),
       e(ParamCell, { param: field, value: current[field.name] ?? field.default, onChange: inner => onChange({ ...current, [field.name]: inner }) }))))
 }
@@ -1987,7 +1995,8 @@ function ListCell({ param, value, onChange, ring }) {
       : item.options && item.options.length ? item.options[0].value : ''
   return e('span', { style: { ...stack(4), ...ring } },
     items.length ? null : e('span', { style: faint }, 'None'),
-    items.map((v, n) => e('span', { key: n, style: row(4) },
+    // Items with several fields each get a rule above, so one item never reads into the next.
+    items.map((v, n) => e('span', { key: n, style: { ...row(4), ...(item.kind === 'object' && n ? { borderTop: '1px solid var(--ui-stroke-tertiary)', paddingTop: 6 } : {}) } },
       e(ParamCell, { param: { ...item, label: `${item.label || item.name} ${n + 1}` }, value: v, onChange: inner => onChange(items.map((x, i) => i === n ? inner : x)) }),
       e(Button, { size: 'xs', variant: 'text', onClick: () => onChange(items.filter((_, i) => i !== n)) }, 'Remove'))),
     e('span', null, e(Button, { size: 'xs', variant: 'outline', onClick: () => onChange([...items, blank]) }, `Add ${(item.label || item.name).toLowerCase()}`)))
