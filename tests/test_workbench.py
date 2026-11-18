@@ -484,6 +484,35 @@ def test_a_database_with_fill_but_no_copy_migrates(tmp_path):
     assert store.add_dataset(model_id="toy", name="Copy", plan={}, origin="copy")["origin"] == "copy"
 
 
+def test_a_database_an_earlier_rebuild_renamed_migrates(tmp_path):
+    import sqlite3
+
+    from solverforge_workbench_plugin.store import SCHEMA
+
+    # The fill migration rebuilt the table and renamed it into place, which SQLite
+    # stores as CREATE TABLE "datasets"; the copy migration must still find it.
+    path = tmp_path / "renamed.db"
+    db = sqlite3.connect(path)
+    db.executescript(SCHEMA.replace("'fill', 'copy'", "'fill'"))
+    old = db.execute("SELECT sql FROM sqlite_master WHERE name = 'datasets'").fetchone()[0]
+    db.executescript("PRAGMA foreign_keys=OFF;BEGIN;" + old.replace("CREATE TABLE datasets", "CREATE TABLE datasets_next", 1)
+                     + ";INSERT INTO datasets_next SELECT * FROM datasets;DROP TABLE datasets;"
+                     "ALTER TABLE datasets_next RENAME TO datasets;COMMIT;")
+    assert db.execute("SELECT sql FROM sqlite_master WHERE name = 'datasets'").fetchone()[0].startswith(
+        'CREATE TABLE "datasets"')
+    db.execute("INSERT INTO datasets (id, model_id, name, origin, plan, created_at)"
+               " VALUES ('d1', 'toy', 'Old', 'fill', '{}', '2026-11-01')")
+    db.execute("INSERT INTO runs (id, dataset_id, model_id, kind, status, created_at)"
+               " VALUES ('r1', 'd1', 'toy', 'solve', 'completed', '2026-11-01')")
+    db.commit()
+    db.close()
+    store = Store(path)
+    assert store.dataset("d1")["origin"] == "fill"
+    assert store.add_dataset(model_id="toy", name="Copy", plan={}, origin="copy")["origin"] == "copy"
+    store.delete_dataset("d1")
+    assert store.run("r1") is None
+
+
 def test_size_words_have_a_singular_for_one():
     from solverforge_workbench_plugin.service import _singular
 

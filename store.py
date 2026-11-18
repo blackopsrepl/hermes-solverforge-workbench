@@ -217,7 +217,8 @@ class Store:
         if "datasets" in sql and "'copy'" not in sql["datasets"]:
             # SQLite cannot change a CHECK constraint in place: rebuild the table with every origin.
             new = re.sub(r"CHECK \(origin IN \([^)]*\)\)", ORIGIN_CHECK, sql["datasets"], count=1)
-            new = new.replace("CREATE TABLE datasets", "CREATE TABLE datasets_next", 1)
+            # A table an earlier rebuild renamed is stored as CREATE TABLE "datasets".
+            new = re.sub(r'CREATE TABLE\s+("?)datasets\1', "CREATE TABLE datasets_next", new, count=1)
             db.execute("PRAGMA foreign_keys=OFF")
             db.executescript(
                 "BEGIN;" + new + ";INSERT INTO datasets_next SELECT * FROM datasets;DROP TABLE datasets;"
