@@ -651,7 +651,14 @@ export function useFittedHeight(frame) {
 /** The plan as its model draws it (solverforge-ui's timeline, routes on a map, or boards)
  *  in a sandboxed frame. */
 export function PlanView({ run, dataset, version, kind = 'timeline', onItem }) {
-  const query = useRead('view', { run, dataset, v: version })
+  // While a run solves its score changes many times a second and drawing a plan takes
+  // seconds: ask for the newest plan only once the last drawing came back, and keep that
+  // drawing on screen meanwhile, so the plan follows the solve without a pile of requests.
+  const [asked, setAsked] = useState(version)
+  const query = useRead('view', { run, dataset, v: asked }, { placeholderData: previous => previous })
+  useEffect(() => {
+    if (version !== asked && !query.isFetching) setAsked(version)
+  }, [version, asked, query.isFetching])
   const frame = useRef(null)
   const fitted = useFittedHeight(frame)
   // A click on an open item inside the frame (it posts {source, item}) asks for its places.
