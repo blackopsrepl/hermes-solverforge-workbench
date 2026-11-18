@@ -39,9 +39,16 @@ CREATE TABLE IF NOT EXISTS datasets (
     config      TEXT NOT NULL DEFAULT '{}', -- settings carried by the dataset itself
     patch       TEXT,                    -- the JSON Patch that produced it, if any
     size        TEXT,                    -- [{label, count}], counted once when it is stored
-    created_at  TEXT NOT NULL
+    created_at  TEXT NOT NULL,
+    demo        TEXT                     -- the model demo it was made from, if one
 );
 CREATE INDEX IF NOT EXISTS datasets_model ON datasets(model_id, created_at);
+-- Each model demo becomes a dataset once; one the user deletes stays deleted.
+CREATE TABLE IF NOT EXISTS demo_datasets (
+    model_id    TEXT NOT NULL,
+    demo        TEXT NOT NULL,
+    PRIMARY KEY (model_id, demo)
+);
 CREATE TABLE IF NOT EXISTS profiles (
     id          TEXT PRIMARY KEY,
     model_id    TEXT NOT NULL,
@@ -232,6 +239,8 @@ class Store:
             db.execute("ALTER TABLE datasets ADD COLUMN size TEXT")
         if "runs" in sql and "label" not in _columns(db, "runs"):
             db.execute("ALTER TABLE runs ADD COLUMN label TEXT")
+        if "datasets" in sql and "demo" not in _columns(db, "datasets"):
+            db.execute("ALTER TABLE datasets ADD COLUMN demo TEXT")
 
     def one(self, sql: str, *args: Any) -> dict[str, Any] | None:
         return _row(self._db().execute(sql, args).fetchone())
@@ -266,6 +275,7 @@ class Store:
             db.execute("DELETE FROM datasets WHERE model_id = ?", (model_id,))
             db.execute("DELETE FROM profiles WHERE model_id = ?", (model_id,))
             db.execute("DELETE FROM builds WHERE model_id = ?", (model_id,))
+            db.execute("DELETE FROM demo_datasets WHERE model_id = ?", (model_id,))
             db.execute("DELETE FROM models WHERE id = ?", (model_id,))
 
     # ---- datasets -----------------------------------------------------------
@@ -273,16 +283,18 @@ class Store:
     def add_dataset(self, *, model_id: str, name: str, plan: Any, origin: str,
                     tags: list[str] | None = None, parent_id: str | None = None,
                     config: dict | None = None, patch: Any = None,
-                    size: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+                    size: list[dict[str, Any]] | None = None, demo: str | None = None) -> dict[str, Any]:
         dataset_id = new_id()
         with self.tx() as db:
             db.execute(
                 "INSERT INTO datasets (id, model_id, name, tags, origin, parent_id, plan, config, patch, size,"
-                " created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " created_at, demo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (dataset_id, model_id, name, _dump(tags or []), origin, parent_id, _dump(plan),
                  _dump(config or {}), None if patch is None else _dump(patch),
-                 None if size is None else _dump(size), now()),
+                 None if size is None else _dump(size), now(), demo),
             )
+            if origin == "demo" and demo:
+                db.execute("INSERT OR IGNORE INTO demo_datasets (model_id, demo) VALUES (?, ?)", (model_id, demo))
         return self.dataset(dataset_id)  # type: ignore[return-value]
 
     def dataset(self, dataset_id: str) -> dict[str, Any] | None:
@@ -298,6 +310,10 @@ class Store:
         like = f"%{query}%"
         model = model_id or ""
         return self.all(sql, model, model, query, like, f"{query}%", tag, tag, limit)
+
+    def demos_made(self, model_id: str) -> set[str]:
+        """The model demos that have been made into a dataset, kept or since deleted."""
+        return {row["demo"] for row in self.all("SELECT demo FROM demo_datasets WHERE model_id = ?", model_id)}
 
     def set_dataset_size(self, dataset_id: str, size: list[dict[str, Any]]) -> None:
         with self.tx() as db:
@@ -315,6 +331,12 @@ class Store:
                 db.execute("UPDATE datasets SET plan = ?, patch = ?, size = ? WHERE id = ?",
                            (_dump(plan), None if patch is None else _dump(patch),
                             None if size is None else _dump(size), dataset_id))
+        return self.dataset(dataset_id)
+
+    def set_dataset_plan(self, dataset_id: str, plan: dict) -> dict[str, Any] | None:
+        """The same dataset with its plan completed (travel measured), its edit history kept."""
+        with self.tx() as db:
+            db.execute("UPDATE datasets SET plan = ? WHERE id = ?", (_dump(plan), dataset_id))
         return self.dataset(dataset_id)
 
     def delete_dataset(self, dataset_id: str) -> None:

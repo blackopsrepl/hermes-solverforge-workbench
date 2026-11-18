@@ -1274,9 +1274,7 @@ function LevelCounts({ constraints }) {
 
 function Overview({ model }) {
   const { go } = useNav()
-  const datasets = useRead('datasets', { model: model.id })
   const runs = useRead('runs', { model: model.id })
-  const create = useAction('dataset_create', r => r.dataset && go(placeOf(model.id, 'datasets', r.dataset.id)))
   const latest = (answer(runs, 'runs') || []).find(r => r.kind === 'solve' && FINISHED.includes(r.status))
   const groups = []
   for (const c of model.constraints) {
@@ -1288,12 +1286,7 @@ function Overview({ model }) {
   return e('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))', gap: 16, alignItems: 'start' } },
     e('div', { style: { ...stack(16), gridColumn: 'span 2', minWidth: 0 } },
       model.summary ? e('div', { style: { ...muted, fontSize: '0.85rem', lineHeight: 1.5 } }, model.summary) : null,
-      e(NewDataset, { model, create }),
-      e(Card, null,
-        e('div', { style: row(8) }, e(Label, null, 'Your datasets'), spacer(),
-          e(Link, { to: placeOf(model.id, 'datasets'), style: muted }, 'All datasets →')),
-        e(Loading, { query: datasets }, data => e(DatasetTable, { model, datasets: data.datasets.slice(0, 5).map(item => ({ item, hits: [] })),
-          empty: e('div', { style: faint }, 'None yet. Start from a demo above.') })))),
+      e(Card, null, e(Label, null, 'Datasets'), e(DatasetsTab, { model, compact: true }))),
     e('div', { style: stack(16) },
       e(Card, null, e(Label, null, 'Latest result'),
         latest
@@ -1385,41 +1378,6 @@ export function ImportDataset({ model }) {
       : null)
 }
 
-export function CopyDataset({ model }) {
-  const { go } = useNav()
-  const datasets = useRead('datasets', { model: model.id })
-  const [source, setSource] = useState('')
-  const [name, setName] = useState('')
-  const copy = useAction('dataset_patch', r => r.dataset && go(placeOf(model.id, 'datasets', r.dataset.id)))
-  const all = answer(datasets, 'datasets') || []
-  if (!all.length) return e('div', { style: faint }, 'There is no dataset to copy yet.')
-  return e('div', { style: row(8) },
-    e('select', { value: source, style: input, 'aria-label': 'Dataset to copy', onChange: event => setSource(event.target.value) },
-      e('option', { value: '' }, 'Pick a dataset'),
-      all.map(d => e('option', { key: d.id, value: d.id }, `${d.name} · ${sizeText(d.size)}`))),
-    e('input', { value: name, 'aria-label': 'Name of the copy', placeholder: 'Name of the copy', style: { ...input, width: 220 }, onChange: event => setName(event.target.value) }),
-    e(Button, { size: 'xs', disabled: !source || copy.isPending, onClick: () => copy.mutate({ dataset: source, operations: [], ...(name.trim() ? { name: name.trim() } : {}) }) }, 'Copy'))
-}
-
-/** One place, three sources: a demo, a file checked before it is saved, or a copy. */
-function NewDataset({ model, create }) {
-  const [source, setSource] = useStored(`${model.id}.new.source`, 'demo')
-  const demos = model.demo_info || []
-  return e(Card, null,
-    e('div', { style: row(8) }, e(Label, null, 'New dataset')),
-    e(TabBar, { value: source, onChange: setSource, tabs: [{ id: 'demo', label: 'From a demo', count: demos.length }, { id: 'import', label: 'Import a file' }, { id: 'copy', label: 'Copy a dataset' }] }),
-    source === 'import' ? e(ImportDataset, { model })
-      : source === 'copy' ? e(CopyDataset, { model })
-      : demos.length
-        ? e('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 } },
-            demos.map(d => e('div', { key: d.id, style: { ...card, ...stack(8) } },
-              e('strong', null, d.name),
-              e('div', { style: { ...faint, lineHeight: 1.5 } }, d.summary || 'A sample dataset that comes with the model.'),
-              e('div', null, e(Button, { size: 'xs', disabled: create.isPending, onClick: () => create.mutate({ model: model.id, demo: d.id, name: d.name }) },
-                create.isPending ? 'Creating…' : 'Use this demo')))))
-        : e('div', { style: faint }, 'This model has no demo data. Import a file instead.'))
-}
-
 // ---- datasets ----------------------------------------------------------------------
 
 function DatasetTable({ model, datasets, empty }) {
@@ -1442,27 +1400,34 @@ function DatasetTable({ model, datasets, empty }) {
 
 const ORIGINS = [['', 'any'], ['demo', 'Demo'], ['upload', 'Imported'], ['run', 'Replan'], ['fill', 'Fill'], ['patch', 'Edited']]
 
-function DatasetsTab({ model }) {
+/** Every dataset of the model to pick from (its demos are datasets like any other), searchable,
+ *  with a file to import beside them. The overview shows it compact; the tab adds filters. */
+function DatasetsTab({ model, compact = false }) {
   const { go } = useNav()
   const query = useRead('datasets', { model: model.id })
   const [search, setSearch] = useStored(`${model.id}.datasets.search`, '')
   const [origin, setOrigin] = useStored(`${model.id}.datasets.origin`, '')
   const [sort, setSort] = useStored(`${model.id}.datasets.sort`, 'new')
-  useKeys({ n: () => go(placeOf(model.id)) })
+  const [importing, setImporting] = useState(false)
+  useKeys(compact ? {} : { n: () => setImporting(true) })
   return e(Loading, { query }, data => {
-    const pool = data.datasets.filter(d => !origin || d.origin === origin)
+    const pool = data.datasets.filter(d => compact || !origin || d.origin === origin)
     let found = searchItems(pool, search, [['name', 1], [d => (d.tags || []).join(' '), 0.7], [d => madeFrom(d), 0.5]])
-    if (!search.trim() && sort === 'name') found = [...found].sort((a, b) => a.item.name.localeCompare(b.item.name))
+    if (!compact && !search.trim() && sort === 'name') found = [...found].sort((a, b) => a.item.name.localeCompare(b.item.name))
+    const importButton = e(Button, { size: 'xs', variant: importing ? 'text' : 'outline', onClick: () => setImporting(!importing) }, importing ? 'Close' : 'Import a file')
     return e('div', { style: stack(10) },
-      e(ListSearch, { value: search, onChange: setSearch, shown: found.length, total: data.datasets.length, noun: 'dataset', placeholder: 'Search datasets: name, tag or where it came from' },
-        e(Pick, { label: 'Made from', value: origin, onChange: setOrigin, options: ORIGINS }),
-        e(Pick, { label: 'Sort', value: sort, onChange: setSort, options: [['new', 'newest first'], ['name', 'by name']] }),
-        e(Button, { size: 'xs', onClick: () => go(placeOf(model.id)) }, 'New dataset')),
+      importing ? e(Card, null, e(Label, null, 'Import a file'), e(ImportDataset, { model })) : null,
+      data.datasets.length
+        ? e(ListSearch, { value: search, onChange: setSearch, shown: found.length, total: data.datasets.length, noun: 'dataset', placeholder: 'Search datasets: name, tag or where it came from' },
+            compact ? null : e(Pick, { label: 'Made from', value: origin, onChange: setOrigin, options: ORIGINS }),
+            compact ? null : e(Pick, { label: 'Sort', value: sort, onChange: setSort, options: [['new', 'newest first'], ['name', 'by name']] }),
+            importButton)
+        : null,
       e(DatasetTable, { model, datasets: found,
         empty: data.datasets.length
           ? e('div', { style: muted }, 'No dataset matches.')
-          : e(Empty, { title: 'No datasets yet', description: 'A dataset is one planning problem. Start from a demo on the overview.',
-              action: e(Button, { size: 'xs', onClick: () => go(placeOf(model.id)) }, 'Start') }) }))
+          : e(Empty, { title: 'No datasets yet', description: 'A dataset is one planning problem. Import one in this model\u2019s format.',
+              action: importing ? null : importButton }) }))
   })
 }
 

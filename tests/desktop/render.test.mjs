@@ -16,7 +16,7 @@ mkdirSync(join(here, '.build'), { recursive: true })
 cpSync(join(here, '../../desktop/plugin.js'), join(here, '.build/plugin.mjs'))
 const {
   default: plugin, Workbench, ScoreChart, StatusChip, FillPanel, TrendLine, parseScore, openBeside, openPage,
-  parseAt, placeOf, hrefOf, runName, ago, duration, count, errorText, refusal, madeFrom, CheckResult, BuildProgress, parseTags, profileLabel, ImportDataset, CopyDataset,
+  parseAt, placeOf, hrefOf, runName, ago, duration, count, errorText, refusal, madeFrom, CheckResult, BuildProgress, parseTags, profileLabel, ImportDataset,
   ReplanForm, scoreDelta, verdictText, editArgs, ParamCell, paramText, profileChanges,
   DataEditor, tableRows, inferTables, cellText, stagedOperations
 } = await import('./.build/plugin.mjs')
@@ -96,26 +96,21 @@ test('a solve in progress shows its time used against its limit', () => {
   assert.match(html, /role="progressbar"/)
 })
 
-test('a model opens on its overview: demos by name, datasets, latest result and how it plans', () => {
+test('a model opens on its overview: every dataset to pick from, latest result and how it plans', () => {
   const page = text(at(placeOf('toy')))
   assert.match(page, /SolverForge Workbench › Toy roster Toy roster Stock model · 3 rules/)
   assert.match(page, /Overview Datasets 2 Runs 6 Profiles 3 Experiments 1 Trends/)
-  assert.match(page, /New dataset From a demo 1 Import a file Copy a dataset Week A sample dataset that comes with the model\. Use this demo/)
-  assert.match(page, /Your datasets All datasets → Dataset Made from Size Latest Made Demo Week B Demo 3 nurses · 6 shifts/)
+  // The demos are datasets in the same list as any other: no separate way in.
+  assert.doesNotMatch(page, /From a demo|Use this demo|Copy a dataset/)
+  assert.match(page, /Datasets 2 datasets Import a file Dataset Made from Size Latest Made Demo Week B Demo 3 nurses · 6 shifts/)
   assert.match(page, /Latest result Feasible 0 hard 0 soft Demo Week B · Blind/)
   assert.match(page, /How it plans 2 hard 1 soft Coverage 1 · Rules 2 Rules and weights/)
-})
-
-test('a demo with a summary says what it holds', () => {
-  const model = structuredClone(real.model)
-  model.model.demo_info = [{ id: 'WEEK', name: 'A week', summary: '3 nurses and 6 shifts over one week.' }]
-  assert.match(text(at(placeOf('toy'), { ...real, model })), /Copy a dataset A week 3 nurses and 6 shifts over one week\. Use this demo/)
 })
 
 test('the datasets tab searches, filters by origin and sorts', () => {
   const html = at(placeOf('toy', 'datasets'))
   assert.match(html, /placeholder="Search datasets: name, tag or where it came from"/)
-  assert.match(text(html), /2 datasets Made from any Demo Imported Replan Fill Edited Sort newest first by name New dataset/)
+  assert.match(text(html), /2 datasets Made from any Demo Imported Replan Fill Edited Sort newest first by name Import a file/)
   assert.match(text(html), /Demo Week demo Demo 3 nurses · 6 shifts 0 hard 0 soft/)
 })
 
@@ -353,14 +348,11 @@ test('a custom model shows its project, and says when the project changed since 
   assert.match(text(at(placeOf('toy'), { ...real, models, model })), /Your project \/home\/user\/crew-tasks Project changed since this build/)
 })
 
-test('a new dataset comes from a demo, a checked file or a copy', () => {
-  const page = text(at(placeOf('toy')))
-  assert.match(page, /New dataset From a demo 1 Import a file Copy a dataset Week A sample dataset/)
+test('a new dataset comes from a file, checked before it is saved', () => {
   setFixture(real)
   const importing = render(h(ImportDataset, { model: real.model.model }))
   assert.match(importing, /type="file" accept=".json,application\/json"/)
   assert.match(text(importing), /^Choose a JSON file A problem in Toy roster’s format\. A demo, exported, shows the format\.$/)
-  assert.match(text(render(h(CopyDataset, { model: real.model.model }))), /^Pick a dataset Demo Week B · 3 nurses · 6 shifts Demo Week · 3 nurses · 6 shifts Copy$/)
 })
 
 test('a check says the model reads the file, its size, score and what costs, before anything is saved', () => {

@@ -57,7 +57,7 @@ The two routing models travel on real roads: each dataset's travel times and
 distances are measured along the OpenStreetMap road network with
 [solverforge-maps](https://crates.io/crates/solverforge-maps), at each road's
 own speed, and the map draws every route along the roads. A demo's network is
-downloaded from the engine release the first time that demo is opened; any
+downloaded from the engine release the first time that demo is used; any
 other dataset fetches its area's roads once and keeps them. A dataset may bring
 its own travel matrix instead. Road data © OpenStreetMap contributors, ODbL.
 
@@ -73,7 +73,8 @@ constraint weights from a `#[constraint_weights]` field on the plan.
 
 ## What you can do
 
-- **Datasets.** Start from a demo, a JSON file or JSON in the chat. Change a
+- **Datasets.** Each model's demos are ready as datasets; add yours from a JSON
+  file or JSON in the chat. Change a
   dataset with a patch that addresses records by id
   (`/shifts/[id=S12]/employee`); the original stays and the new one records it
   as its parent. Replan from a solved run's plan.

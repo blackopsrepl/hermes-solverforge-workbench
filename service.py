@@ -144,6 +144,19 @@ class Workbench:
                                   "manifest": description, "version": found.get("version", ENGINE_VERSION)})
             self.ensure_standard_profile(listed["id"])
         self._synced = stamp
+        for listed in found.get("models", []):
+            self._demo_datasets(listed["id"])
+
+    def _demo_datasets(self, model_id: str) -> None:
+        """Each demo of the model as a dataset, made once: the user picks among datasets, a demo
+        being one of them. A demo dataset the user deleted is not made again."""
+        model = self.store.model(model_id)
+        if model is None:
+            return
+        made = self.store.demos_made(model_id)
+        for demo in model["manifest"].get("demos", []):
+            if demo not in made:
+                self.create_dataset(model_id=model_id, demo=demo)
 
     def ensure_standard_profile(self, model_id: str) -> None:
         profile_id = f"{model_id}-standard"
@@ -251,6 +264,7 @@ class Workbench:
             self.store.put_model({"id": model_id, "kind": "custom", "name": name, "manifest": description,
                                   "engine": str(engine), "source": str(project.root), "version": version})
             self.ensure_standard_profile(model_id)
+            self._demo_datasets(model_id)
             self.changed("models", model=model_id)
         return {"model": self.model(model_id), "built": not current, "warnings": project.warnings}
 
@@ -328,19 +342,22 @@ class Workbench:
         sources = [demo is not None, plan is not None, path is not None]
         if sum(sources) != 1:
             raise WorkbenchError("one_source", "give exactly one of demo, plan or path")
-        origin = "upload"
+        origin, demo_id = "upload", None
         if demo is not None:
             answer = self._call(model_id, {"command": "demo", "model": model_id, "demo": demo or None})
-            plan, origin, name = answer["plan"], "demo", name or f"Demo {answer['id'].title()}"
-            self._demo_roads(model_id, answer["id"])
+            # Named as the page names it: the demo's own name ("Turin, two days").
+            demo_name = next((d["name"] for d in _demo_info(self.model_record(model_id)["manifest"])
+                              if d.get("id") == answer["id"]), None)
+            plan, origin, demo_id = answer["plan"], "demo", answer["id"]
+            name = name or demo_name or demo_id.replace("_", " ").capitalize()
         elif path is not None:
             plan = self._read_json(path)
         if not isinstance(plan, dict):
             raise WorkbenchError("invalid_plan", "a dataset is a JSON object")
-        plan = self._on_roads(model_id, plan)
+        # Travel along the roads is measured the first time the dataset is used (see _measured).
         dataset = self.store.add_dataset(model_id=model_id, name=name or "Dataset", plan=plan, origin=origin,
                                          tags=_tags(tags), config=check_settings(config),
-                                         size=self.size_of(model_id, plan))
+                                         size=self.size_of(model_id, plan), demo=demo_id)
         self.changed("dataset", id=dataset["id"])
         return self.dataset_view(dataset)
 
@@ -404,10 +421,22 @@ class Workbench:
             if exc.code != "download_failed":
                 raise WorkbenchError(exc.code, exc.message) from exc
 
+    def _measured(self, dataset: dict[str, Any]) -> dict[str, Any]:
+        """The dataset with its travel measured along the roads, for a model that travels: done
+        the first time it is solved, checked, drawn or changed, and kept. A stock demo's pinned
+        road network is downloaded then, so a demo nobody opens downloads nothing."""
+        plan = dataset.get("plan")
+        if not (isinstance(plan, dict) and "travelMatrix" not in plan
+                and self.model_record(dataset["model_id"])["manifest"].get("roads")):
+            return dataset
+        if dataset.get("demo"):
+            self._demo_roads(dataset["model_id"], dataset["demo"])
+        return self.store.set_dataset_plan(dataset["id"], self._on_roads(dataset["model_id"], plan)) or dataset
+
     def _on_roads(self, model_id: str, plan: Any) -> Any:
         """The plan with its travel measured along the roads, for a model that travels.
 
-        Measured once when the dataset is made and kept with it, so a solve reads
+        Measured once, the first time the dataset is used, and kept with it, so a solve reads
         travel instead of the road network. The first plan in an area fetches that
         area's roads from OpenStreetMap; every later one reads them from disk.
         """
@@ -501,7 +530,7 @@ class Workbench:
         ``operations`` applied. Hand-written ``operations`` are checked by the engine before
         anything is saved. ``in_place`` changes the dataset itself instead, which only a dataset
         no run has used may do."""
-        parent = self.dataset_record(dataset_id)
+        parent = self._measured(self.dataset_record(dataset_id))
         if in_place:
             if from_run:
                 raise WorkbenchError("in_place", "a replan from a run is always a new dataset")
@@ -676,7 +705,7 @@ class Workbench:
             raise WorkbenchError(exc.code, exc.message, **exc.detail) from exc
 
     def _prepare_run(self, dataset_id: str, profile_ref: str | None, overrides: dict | None):
-        dataset = self.dataset_record(dataset_id)
+        dataset = self._measured(self.dataset_record(dataset_id))
         model_id = dataset["model_id"]
         profile = self.profile_record(model_id, profile_ref)
         settings = self.effective_settings(dataset, profile, check_settings(overrides))
@@ -830,7 +859,7 @@ class Workbench:
             if not isinstance(run.get("plan"), dict):
                 raise WorkbenchError("no_plan", f"run {run_id} has no plan yet")
             return self.dataset_record(run["dataset_id"]), run["plan"], f"run {run_id}"
-        dataset = self.dataset_record(dataset_id or "")
+        dataset = self._measured(self.dataset_record(dataset_id or ""))
         return dataset, dataset["plan"], f"dataset {dataset_id}"
 
     def view(self, run_id: str | None = None, dataset_id: str | None = None) -> dict[str, Any]:

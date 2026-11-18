@@ -50,21 +50,18 @@ def demo(wb: Workbench, **kwargs) -> dict:
     return wb.create_dataset(model_id="toy", demo="", **kwargs)
 
 
-def test_opening_a_stock_demo_downloads_that_demos_pinned_roads_only(wb, monkeypatch):
-    asked: list[tuple[str, str]] = []
-
-    def install_demo_roads(self, model_id, demo, log=print):
-        asked.append((model_id, demo))
-        return []
-
-    monkeypatch.setattr(StockEngine, "install_demo_roads", install_demo_roads)
-    made = demo(wb)
-    # Asked by the demo's own id, as the engine names it.
-    [(model, opened)] = asked
-    assert model == "toy" and opened and made["name"] == f"Demo {opened.title()}"
-    # A dataset from JSON never touches the demos' networks.
-    wb.create_dataset(model_id="toy", plan=wb.dataset_record(made["id"])["plan"])
-    assert len(asked) == 1
+def test_each_demo_is_a_dataset_from_the_start_and_a_deleted_one_stays_deleted(wb):
+    demos = wb.model("toy")["demo_info"]
+    made = [d for d in wb.datasets(model_id="toy") if d["origin"] == "demo"]
+    assert sorted(d["name"] for d in made) == sorted(d["name"] for d in demos)
+    for dataset in made:
+        wb.delete_dataset(dataset["id"])
+    wb._synced = None  # the next engine sync, as after a restart
+    wb.models()
+    assert wb.datasets(model_id="toy") == []
+    # A demo asked for by name is a new dataset of its own.
+    again = demo(wb)
+    assert again["origin"] == "demo" and again["name"] == next(d["name"] for d in demos if d["id"] == demos[0]["id"])
 
 
 def test_the_engines_models_join_the_catalog_with_a_read_only_standard_profile(wb):
@@ -146,10 +143,11 @@ def test_cancelling_a_solve_keeps_the_best_plan(wb):
     assert wb.run(run["id"], with_plan=True)["plan"]["shifts"]
 
 
-def test_a_model_that_travels_keeps_each_dataset_measured_on_the_roads(wb, monkeypatch):
+def test_a_dataset_that_travels_is_measured_on_the_roads_the_first_time_it_is_used(wb, monkeypatch):
     toy = wb.model_record("toy")
     wb.store.put_model({**toy, "manifest": {**toy["manifest"], "roads": True}})
     asked: list[dict] = []
+    pinned: list[tuple[str, str]] = []
     real_call = wb._call
 
     def call(model_id, request, timeout_s=600):
@@ -161,17 +159,28 @@ def test_a_model_that_travels_keeps_each_dataset_measured_on_the_roads(wb, monke
             return {"plan": {**request["plan"], "travelMatrix": matrix}, "issues": []}
         return real_call(model_id, request, timeout_s)
 
+    def install_demo_roads(self, model_id, demo_id, log=print):
+        pinned.append((model_id, demo_id))
+        return []
+
     monkeypatch.setattr(wb, "_call", call)
-    made = wb.create_dataset(model_id="toy", demo="")
-    roads = [r for r in asked if r["command"] == "roads"]
-    assert len(roads) == 1 and wb._roads("toy") == {"roads": {"cache_dir": str(wb.data_dir / "roads")}}
+    monkeypatch.setattr(StockEngine, "install_demo_roads", install_demo_roads)
+    roads = lambda: [r for r in asked if r["command"] == "roads"]  # noqa: E731
+    made = demo(wb)
+    # Made, nothing measured or downloaded: a demo nobody opens costs nothing.
+    assert roads() == [] and pinned == [] and "travel" not in wb.dataset(made["id"])
+    wb.evaluate(made["id"])
+    assert len(roads()) == 1 and wb._roads("toy") == {"roads": {"cache_dir": str(wb.data_dir / "roads")}}
+    # The demo's own pinned network, asked for by the demo's id, and only for it.
+    assert pinned == [("toy", wb.dataset_record(made["id"])["demo"])]
     stored = wb.dataset(made["id"], with_plan=True)
     assert stored["travel"] == "roads" and stored["plan"]["travelMatrix"]["source"] == "roads"
+    wb.evaluate(made["id"])
+    assert len(roads()) == 1  # measured once, kept
     copied = wb.patch_dataset(made["id"], [])
-    assert len([r for r in asked if r["command"] == "roads"]) == 2
-    assert wb.dataset(copied["id"])["travel"] == "roads"
+    assert len(roads()) == 2 and wb.dataset(copied["id"])["travel"] == "roads"
     given = wb.create_dataset(model_id="toy", plan={**stored["plan"], "travelMatrix": {"locations": []}})
-    assert wb.dataset(given["id"])["travel"] == "dataset"
+    assert wb.dataset(given["id"])["travel"] == "dataset" and len(pinned) == 1
 
 
 def test_a_check_reads_scores_and_lists_issues_without_storing_anything(wb):
@@ -220,10 +229,11 @@ def test_a_patch_makes_a_child_dataset_and_leaves_the_parent_alone(wb):
 
 def test_an_edit_is_checked_before_it_is_saved_and_changes_in_place_only_before_any_run(wb):
     dataset = demo(wb)
+    before = len(wb.datasets(model_id="toy"))
     with pytest.raises(WorkbenchError) as error:
         wb.patch_dataset(dataset["id"], [{"op": "replace", "path": "/shifts/[id=0]/nurse_idx", "value": "nobody"}])
     assert error.value.code == "invalid_plan" and error.value.detail["issues"]
-    assert len(wb.datasets(model_id="toy")) == 1
+    assert len(wb.datasets(model_id="toy")) == before
     same = wb.patch_dataset(dataset["id"], [{"op": "replace", "path": "/shifts/[id=0]/pinned", "value": True}],
                             in_place=True)
     assert same["id"] == dataset["id"] and same["parent_id"] is None
