@@ -103,8 +103,15 @@ model and its data (it asks the user) and leaves the project's files.
   constraint off, 10 makes it ten times as important. Hard constraints define
   feasibility; raise soft weights to trade one business goal against another.
 - Model parameters (`params`) are settings of the model itself, such as a
-  travel speed or a road-network switch; `solverforge_workbench_model` lists
+  default priority or a pooling rule; `solverforge_workbench_model` lists
   each with its kind and default. Unknown names are refused.
+- Routing models travel on real roads (OpenStreetMap, through solverforge-maps):
+  a dataset's travel is measured along the roads when it is made, at each
+  road's own speed, and the map draws routes along the roads. The first dataset
+  in a new area fetches that area once (minutes for a whole province); say so
+  before creating one. Places far from a road come back as dataset issues. A
+  dataset that brings its own `travelMatrix` keeps it. There is no speed or
+  detour setting.
 - Solve settings: `seconds` (time limit), `unimproved_seconds` (stop when no
   better plan was found for this long), step limits, `best_score`,
   `freeze_before`.

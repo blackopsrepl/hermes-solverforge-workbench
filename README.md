@@ -49,6 +49,13 @@ sites), a factory week (24 machines and people, 409 operations), two days of
 Milan patient transport and medical courier work (15 drivers, 155 jobs), and
 two days of Turin building services (30 technicians, 238 visits).
 
+The two routing models travel on real roads: each dataset's travel times and
+distances are measured along the OpenStreetMap road network with
+[solverforge-maps](https://crates.io/crates/solverforge-maps), at each road's
+own speed, and the map draws every route along the roads. The demos' networks
+come with the engine; a dataset in a new area fetches its roads once and keeps
+them. A dataset may bring its own travel matrix instead.
+
 ### Your own models
 
 A project made with [solverforge-cli](https://github.com/SolverForge/solverforge-cli)
