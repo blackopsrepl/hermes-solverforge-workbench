@@ -482,8 +482,13 @@ function TabBar({ tabs, value, onChange }) {
 
 /** A search field over a list with "N of M", cleared by Escape; `/` focuses it. */
 function ListSearch({ value, onChange, shown, total, noun, placeholder, children }) {
+  // The search field draws no focus ring of its own; mark the focused field here.
+  const [focused, setFocused] = useState(false)
   return e('div', { style: { ...row(8), padding: '2px 0' } },
-    e('div', { 'data-wb-search': true, style: { flex: '1 1 260px', minWidth: 200 } },
+    e('div', {
+      'data-wb-search': true, onFocus: () => setFocused(true), onBlur: () => setFocused(false),
+      style: { flex: '1 1 260px', minWidth: 200, borderRadius: 8, outline: focused ? '2px solid var(--ui-accent)' : 'none', outlineOffset: 1 }
+    },
       e(SearchField, {
         placeholder: placeholder || `Search ${plural(noun)}`, value, onChange, onClear: () => onChange(''), variant: 'box',
         onKeyDown: event => { if (event.key === 'Escape') onChange('') }
@@ -505,7 +510,12 @@ function Table({ columns, rows, onRow, empty }) {
   return e('table', { style: fixed ? { ...table, tableLayout: 'fixed' } : table },
     e('thead', null, e('tr', null, columns.map(c => e('th', { key: c.id, style: { ...(c.num ? { ...head, textAlign: 'right' } : head), ...(c.width ? { width: c.width } : {}) } }, c.label)))),
     e('tbody', null, rows.map(r =>
-      e('tr', { key: r.key, style: onRow ? { cursor: 'pointer' } : undefined, onClick: onRow ? () => onRow(r) : undefined },
+      e('tr', onRow
+        ? { key: r.key, style: { cursor: 'pointer' }, tabIndex: 0, onClick: () => onRow(r),
+            // Enter or Space on a focused row opens it, as a click does; keys pressed in a
+            // control inside the row (a checkbox) stay with that control.
+            onKeyDown: event => { if ((event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) { event.preventDefault(); onRow(r) } } }
+        : { key: r.key },
         columns.map(c => e('td', { key: c.id, style: c.num ? num : cell }, r[c.id]))))))
 }
 
@@ -2168,9 +2178,11 @@ export function TrendLine({ kpi, solves = [], model, width = 520, height = 72 })
       kpi.points.map(([when, v, runId], i) => {
         const solve = byRun.get(runId)
         const words = `${fmt(v)} ${kpi.unit || ''} · ${solve ? `${solve.dataset} · ${solve.profile || 'Standard'} · ` : ''}${ago(when)}`
+        const open = runId && model ? () => go(placeOf(model, 'runs', runId)) : undefined
         return e('circle', { key: `${runId}-${i}`, cx: x(i), cy: y(v), r: 3.5, fill: solve && !solve.feasible ? 'var(--ui-danger, #e5534b)' : 'var(--ui-accent)',
-          style: { cursor: runId && model ? 'pointer' : 'default' }, vectorEffect: 'non-scaling-stroke',
-          onClick: runId && model ? () => go(placeOf(model, 'runs', runId)) : undefined }, e('title', null, words))
+          style: { cursor: open ? 'pointer' : 'default' }, vectorEffect: 'non-scaling-stroke', onClick: open,
+          ...(open ? { tabIndex: 0, role: 'link', 'aria-label': `Open the run: ${words}`,
+            onKeyDown: event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open() } } } : {}) }, e('title', null, words))
       })),
     e('figcaption', { style: { ...faint, ...row(12), justifyContent: 'space-between' } },
       e('span', null, `${ago(kpi.points[0][0])} · ${fmt(values[0])}`),

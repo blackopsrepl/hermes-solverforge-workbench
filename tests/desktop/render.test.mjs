@@ -561,3 +561,10 @@ test('the data tab shows a searchable grid per table', () => {
   assert.match(grid, /Technicians 1 Shifts 1 Visits 1/)
   assert.match(grid, /Giorgio/)
 })
+
+test('rows and trend points that open something are reachable from the keyboard', () => {
+  const runs = at(placeOf('toy', 'runs'))
+  assert.match(runs, /<tr style="cursor:pointer" tabindex="0">/)
+  const trends = at(placeOf('toy', 'trends'))
+  assert.equal((trends.match(/<circle [^>]*tabindex="0" role="link" aria-label="Open the run: /g) || []).length, 5)
+})
