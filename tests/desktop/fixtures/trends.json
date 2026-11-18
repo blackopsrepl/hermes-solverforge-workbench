@@ -3,12 +3,12 @@
  "model_id": "toy",
  "solves": [
   {
-   "run_id": "0385ceae60ce",
-   "dataset_id": "0b602cd74c49",
+   "run_id": "da4abfe4510b",
+   "dataset_id": "f6d65b9db2ca",
    "dataset": "Demo Week",
    "profile_id": "toy-standard",
    "experiment_id": null,
-   "finished_at": "2026-11-18T11:42:08.193+00:00",
+   "finished_at": "2026-11-18T13:26:01.143+00:00",
    "score": "0hard/0soft",
    "feasible": true,
    "kpis": {
@@ -16,12 +16,12 @@
    }
   },
   {
-   "run_id": "4eba688c3cff",
-   "dataset_id": "0b602cd74c49",
+   "run_id": "6658a5ee5427",
+   "dataset_id": "f6d65b9db2ca",
    "dataset": "Demo Week",
-   "profile_id": "toy-standard",
-   "experiment_id": "4fc186954313",
-   "finished_at": "2026-11-18T11:42:08.467+00:00",
+   "profile_id": "262cecde4a86",
+   "experiment_id": "6baeb972c78e",
+   "finished_at": "2026-11-18T13:26:01.473+00:00",
    "score": "0hard/0soft",
    "feasible": true,
    "kpis": {
@@ -29,38 +29,38 @@
    }
   },
   {
-   "run_id": "1fbc2d40b667",
-   "dataset_id": "0b602cd74c49",
-   "dataset": "Demo Week",
-   "profile_id": "dbd1e8c72d11",
-   "experiment_id": "4fc186954313",
-   "finished_at": "2026-11-18T11:42:08.516+00:00",
-   "score": "0hard/0soft",
-   "feasible": true,
-   "kpis": {
-    "assigned": 6.0
-   }
-  },
-  {
-   "run_id": "7024e9b8f352",
-   "dataset_id": "93b44cd73265",
-   "dataset": "Demo Week B",
-   "profile_id": "dbd1e8c72d11",
-   "experiment_id": "4fc186954313",
-   "finished_at": "2026-11-18T11:42:08.571+00:00",
-   "score": "0hard/0soft",
-   "feasible": true,
-   "kpis": {
-    "assigned": 6.0
-   }
-  },
-  {
-   "run_id": "35c5f06e7551",
-   "dataset_id": "93b44cd73265",
+   "run_id": "e9d2aaa236d0",
+   "dataset_id": "f7a375ef4744",
    "dataset": "Demo Week B",
    "profile_id": "toy-standard",
-   "experiment_id": "4fc186954313",
-   "finished_at": "2026-11-18T11:42:08.619+00:00",
+   "experiment_id": "6baeb972c78e",
+   "finished_at": "2026-11-18T13:26:01.520+00:00",
+   "score": "0hard/0soft",
+   "feasible": true,
+   "kpis": {
+    "assigned": 6.0
+   }
+  },
+  {
+   "run_id": "fb83a640a622",
+   "dataset_id": "f7a375ef4744",
+   "dataset": "Demo Week B",
+   "profile_id": "262cecde4a86",
+   "experiment_id": "6baeb972c78e",
+   "finished_at": "2026-11-18T13:26:01.567+00:00",
+   "score": "0hard/0soft",
+   "feasible": true,
+   "kpis": {
+    "assigned": 6.0
+   }
+  },
+  {
+   "run_id": "c94b888a2f21",
+   "dataset_id": "f6d65b9db2ca",
+   "dataset": "Demo Week",
+   "profile_id": "toy-standard",
+   "experiment_id": "6baeb972c78e",
+   "finished_at": "2026-11-18T13:26:01.940+00:00",
    "score": "0hard/0soft",
    "feasible": true,
    "kpis": {
@@ -75,29 +75,29 @@
    "unit": "shifts",
    "points": [
     [
-     "2026-11-18T11:42:08.193+00:00",
+     "2026-11-18T13:26:01.143+00:00",
      6.0,
-     "0385ceae60ce"
+     "da4abfe4510b"
     ],
     [
-     "2026-11-18T11:42:08.467+00:00",
+     "2026-11-18T13:26:01.473+00:00",
      6.0,
-     "4eba688c3cff"
+     "6658a5ee5427"
     ],
     [
-     "2026-11-18T11:42:08.516+00:00",
+     "2026-11-18T13:26:01.520+00:00",
      6.0,
-     "1fbc2d40b667"
+     "e9d2aaa236d0"
     ],
     [
-     "2026-11-18T11:42:08.571+00:00",
+     "2026-11-18T13:26:01.567+00:00",
      6.0,
-     "7024e9b8f352"
+     "fb83a640a622"
     ],
     [
-     "2026-11-18T11:42:08.619+00:00",
+     "2026-11-18T13:26:01.940+00:00",
      6.0,
-     "35c5f06e7551"
+     "c94b888a2f21"
     ]
    ]
   }

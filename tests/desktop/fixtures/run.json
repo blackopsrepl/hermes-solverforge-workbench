@@ -1,8 +1,8 @@
 {
  "ok": true,
  "run": {
-  "id": "0385ceae60ce",
-  "dataset_id": "0b602cd74c49",
+  "id": "da4abfe4510b",
+  "dataset_id": "f6d65b9db2ca",
   "model_id": "toy",
   "kind": "solve",
   "status": "completed",
@@ -15,9 +15,9 @@
   "label": null,
   "profile_name": "Standard",
   "dataset_name": "Demo Week",
-  "created_at": "2026-11-18T11:42:06.105+00:00",
-  "started_at": "2026-11-18T11:42:06.165+00:00",
-  "finished_at": "2026-11-18T11:42:08.193+00:00",
+  "created_at": "2026-11-18T13:25:59.056+00:00",
+  "started_at": "2026-11-18T13:25:59.123+00:00",
+  "finished_at": "2026-11-18T13:26:01.143+00:00",
   "error": null,
   "elapsed_ms": 2000,
   "seconds": 2,
@@ -45,9 +45,9 @@
   "issues": [],
   "telemetry": {
    "elapsed_ms": 2000,
-   "moves_accepted": 219173,
-   "moves_evaluated": 407398,
-   "steps": 219374
+   "moves_accepted": 233221,
+   "moves_evaluated": 481784,
+   "steps": 233689
   },
   "points": [
    {
@@ -88,6 +88,11 @@
     "score": "0hard/0soft",
     "weight": 1
    }
-  ]
+  ],
+  "previous": null,
+  "lineage": {
+   "ancestors": [],
+   "children": []
+  }
  }
 }

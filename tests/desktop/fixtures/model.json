@@ -21,7 +21,7 @@
   "weights": true,
   "parameters": [],
   "kpis": [],
-  "view": null,
+  "view": "assignments",
   "constraints": [
    {
     "description": "Every shift needs a nurse.",
@@ -57,10 +57,10 @@
     "is_default": 0,
     "read_only": 1,
     "revision": 1,
-    "updated_at": "2026-11-18T11:42:06.073+00:00"
+    "updated_at": "2026-11-18T13:25:59.022+00:00"
    },
    {
-    "id": "dbd1e8c72d11",
+    "id": "262cecde4a86",
     "model_id": "toy",
     "name": "Blind",
     "description": "",
@@ -72,10 +72,10 @@
     "is_default": 0,
     "read_only": 0,
     "revision": 1,
-    "updated_at": "2026-11-18T11:42:08.332+00:00"
+    "updated_at": "2026-11-18T13:26:01.287+00:00"
    },
    {
-    "id": "9b39fcd6c61e",
+    "id": "971333ff5921",
     "model_id": "toy",
     "name": "Lenient",
     "description": "",
@@ -87,7 +87,7 @@
     "is_default": 0,
     "read_only": 0,
     "revision": 1,
-    "updated_at": "2026-11-18T11:42:06.087+00:00"
+    "updated_at": "2026-11-18T13:25:59.037+00:00"
    }
   ],
   "default_profile": "toy-standard"

@@ -1,0 +1,43 @@
+{
+ "ok": true,
+ "edits": [
+  {
+   "description": "Removes the shift.",
+   "fields": [
+    {
+     "kind": "choice",
+     "label": "Shift",
+     "name": "shift",
+     "options": [
+      {
+       "label": "Shift 0 on day 0",
+       "value": "0"
+      },
+      {
+       "label": "Shift 1 on day 0",
+       "value": "1"
+      },
+      {
+       "label": "Shift 2 on day 1",
+       "value": "2"
+      },
+      {
+       "label": "Shift 3 on day 1",
+       "value": "3"
+      },
+      {
+       "label": "Shift 4 on day 2",
+       "value": "4"
+      },
+      {
+       "label": "Shift 5 on day 2",
+       "value": "5"
+      }
+     ]
+    }
+   ],
+   "id": "shift_cancelled",
+   "label": "A shift is cancelled"
+  }
+ ]
+}

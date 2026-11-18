@@ -22,6 +22,11 @@ export const ErrorState = box('ErrorState')
 export const Skeleton = () => h('div', { 'data-c': 'Skeleton' })
 export const CopyButton = ({ text, label }) => h('button', { 'data-c': 'CopyButton', 'data-text': text, 'aria-label': label })
 export const SearchField = ({ placeholder, value }) => h('input', { placeholder, value, readOnly: true })
+export const Dialog = ({ open, children }) => (open ? h('div', { 'data-c': 'Dialog' }, children) : null)
+export const DialogContent = box('DialogContent')
+export const DialogHeader = box('DialogHeader')
+export const DialogTitle = box('DialogTitle')
+export const DialogDescription = box('DialogDescription')
 export const ConfirmDialog = ({ open, title, description, confirmLabel }) =>
   open ? h('div', { 'data-c': 'ConfirmDialog' }, title, description, confirmLabel) : null
 

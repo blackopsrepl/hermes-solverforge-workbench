@@ -16,7 +16,8 @@ mkdirSync(join(here, '.build'), { recursive: true })
 cpSync(join(here, '../../desktop/plugin.js'), join(here, '.build/plugin.mjs'))
 const {
   default: plugin, Workbench, ScoreChart, StatusChip, FillPanel, TrendLine, parseScore, openBeside, openPage,
-  parseAt, placeOf, hrefOf, runName, ago, duration, count, errorText, madeFrom, CheckResult, BuildProgress, parseTags, profileLabel, ImportDataset, CopyDataset
+  parseAt, placeOf, hrefOf, runName, ago, duration, count, errorText, madeFrom, CheckResult, BuildProgress, parseTags, profileLabel, ImportDataset, CopyDataset,
+  ReplanForm, scoreDelta, verdictText, editArgs
 } = await import('./.build/plugin.mjs')
 
 // React reports misuse (lost keys, bad props) through console.error; any of it fails the run.
@@ -122,7 +123,7 @@ test('a dataset says what it holds and where it came from, solves, checks, keeps
   const page = text(html)
   assert.match(page, /› Toy roster › Datasets › Demo Week /)
   assert.match(page, /Demo Week demo Rename Duplicate Export Delete 3 nurses · 6 shifts · Demo · just now/)
-  assert.match(page, /Standard \(default\) Blind Lenient Keep everything before Check as is Solve/)
+  assert.match(page, /Standard \(default\) Blind Lenient Keep everything before Change and solve… Check as is Solve/)
   assert.match(html, /type="datetime-local"/)
   assert.match(page, /Find places for open items/)
   assert.match(page, /Runs Run Profile Status Score Time Run \d\d:\d\d just now Blind Finished 0 hard 0 soft/)
@@ -147,8 +148,8 @@ test('a replanned dataset links to the one it came from', () => {
 test('a solved run shows its verdict, score, KPIs and what costs score', () => {
   const page = text(at(placeOf('toy', 'runs', runId)))
   assert.match(page, /› Toy roster › Runs › Demo Week › Run \d\d:\d\d /)
-  assert.match(page, /Run \d\d:\d\d Rename Export plan Demo Week · Standard · just now · 2 s/)
-  assert.match(page, /Finished Feasible 0 hard 0 soft from -6 hard 0 soft/)
+  assert.match(page, /Run \d\d:\d\d Rename Replan… Export plan Demo Week · Standard · just now · 2 s/)
+  assert.match(page, /Keeps every hard rule Finished 0 hard 0 soft the plan as given scored -6 hard 0 soft/)
   assert.match(page, /Score over time · top to bottom: hard, each on its own scale 2 s/)
   assert.match(page, /Assigned shifts 6 shifts/)
   assert.match(page, /What costs score .*Only what costs score \(0\) Nothing costs score\./)
@@ -175,7 +176,9 @@ test('a model draws the run in its own view: schedule, routes or boards', () => 
     assert.match(html, new RegExp(`<h2[^>]*>${title}</h2>`))
     assert.match(html, new RegExp(`<iframe title="${title}" data-length="\\d{4,}"`))
   }
-  assert.doesNotMatch(at(placeOf('toy', 'runs', runId)), /<iframe/)
+  const model = structuredClone(real.model)
+  model.model.view = null
+  assert.doesNotMatch(at(placeOf('toy', 'runs', runId), { ...real, model }), /<iframe/)
 })
 
 test('compare lines runs up by score, time, KPI and the rules that differ', () => {
@@ -407,10 +410,48 @@ test('a custom model shows its project with rebuild and remove', () => {
 
 test('every surface registers, with the page actions rebindable', () => {
   assert.deepEqual(items.map(i => i.id), ['run-card', 'page', 'nav', 'chip', 'open', 'runs', 'experiments', 'beside',
-    'key-search', 'key-new-dataset', 'key-solve', 'key-new-experiment'])
+    'key-search', 'key-new-dataset', 'key-solve', 'key-new-experiment', 'key-replan'])
   assert.ok(items.filter(i => i.area === 'keybinds').every(i => i.data.label.startsWith('SolverForge Workbench: ') && Array.isArray(i.data.defaults)))
 })
 
 test('rendering every surface raised no React errors', () => {
   assert.deepEqual(reactErrors, [])
+})
+
+test('a replanned run says where its data comes from, what it scored against the run before and what moved', () => {
+  const run = real.replanned
+  const page = text(at(placeOf('toy', 'runs', run.run.id), { ...real, run }))
+  assert.match(page, /From Demo Week › Week without shift 0 /)
+  assert.match(page, /Keeps every hard rule Finished 0 hard 0 soft What changed/)
+  assert.match(page, /What changed against Run \d\d:\d\d (no change|[+−][0-9,]+ (hard|soft)) 5 stayed · 1 removed Show what moved \(1\)/)
+  assert.match(page, /Replan… Export plan/)
+})
+
+test('a dataset made by a replan lists its changes in words and where it came from', () => {
+  const page = text(at(placeOf('toy', 'datasets', real.child.dataset.id), { ...real, dataset: real.child }))
+  assert.match(page, /From Demo Week › Week without shift 0 Shift 0 on day 0 is cancelled\./)
+})
+
+test('the replan form offers the model\'s changes, what to keep, the profile and the time', () => {
+  setFixture(real)
+  const html = render(h(ReplanForm, { model: real.model.model, run: real.run.run }))
+  const page = text(html)
+  assert.match(page, /Changes Nothing changes yet: add what happened, or replan as it is\. Add a change… A shift is cancelled Add/)
+  assert.match(page, /Solve Keep everything before .*Standard \(default\) Blind Lenient .*Replan and solve/)
+  assert.match(html, /placeholder="Demo Week \(replan\)"/)
+})
+
+test('scores compare level by level, and verdicts and change fields read as words', () => {
+  assert.deepEqual(scoreDelta('-2hard/-10soft', '0hard/-15soft'), [{ level: 'hard', value: 2 }, { level: 'soft', value: -5 }])
+  assert.equal(verdictText({ status: 'completed', score: '0hard/-3medium/0soft' }), 'Keeps every hard rule; leaves 3 medium unmet')
+  assert.equal(verdictText({ status: 'incomplete', score: '-2hard/0soft' }), 'Breaks hard rules (-2 hard)')
+  assert.equal(verdictText({ status: 'solving' }), 'Solving')
+  const edit = { fields: [{ name: 'where', kind: 'location' }, { name: 'name', kind: 'text' }, { name: 'skill', kind: 'choice', optional: true }] }
+  assert.deepEqual(editArgs(edit, { where: '45.07, 7.68', name: 'Leak', skill: '' }), { where: [45.07, 7.68], name: 'Leak' })
+  assert.deepEqual(editArgs(edit, { where: 'Turin' }), { where: 'Turin' })
+})
+
+test('a click on an open item opens its places only', () => {
+  const html = render(h(FillPanel, { run: runId, model: 'toy', items: ['3'], onClear() {} }))
+  assert.match(text(html), /Places for .* Every open item/)
 })

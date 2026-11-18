@@ -1,0 +1,80 @@
+{
+ "ok": true,
+ "dataset": {
+  "id": "880866a1b59a",
+  "model_id": "toy",
+  "name": "Week without shift 0",
+  "tags": [],
+  "origin": "run",
+  "parent_id": "7caa58a01ed3",
+  "config": {
+   "weights": {},
+   "params": {},
+   "solve": {}
+  },
+  "created_at": "2026-11-18T13:26:03.382+00:00",
+  "size": [
+   {
+    "label": "nurses",
+    "one": "nurse",
+    "count": 3
+   },
+   {
+    "label": "shifts",
+    "one": "shift",
+    "count": 5
+   }
+  ],
+  "patch": [
+   {
+    "op": "replan",
+    "from_run": "08f58f4bf936"
+   },
+   {
+    "op": "edit",
+    "edit": "shift_cancelled",
+    "args": {
+     "shift": "0"
+    },
+    "summary": "Shift 0 on day 0 is cancelled."
+   }
+  ],
+  "parent_name": "Demo Week",
+  "runs": [
+   {
+    "id": "f7c3b8b022a3",
+    "dataset_id": "880866a1b59a",
+    "model_id": "toy",
+    "kind": "solve",
+    "status": "completed",
+    "priority": 5,
+    "profile_id": "toy-standard",
+    "experiment_id": null,
+    "initial_score": "0hard/0soft",
+    "score": "0hard/0soft",
+    "feasible": 1,
+    "label": null,
+    "profile_name": "Standard",
+    "dataset_name": "Week without shift 0",
+    "created_at": "2026-11-18T13:26:03.389+00:00",
+    "started_at": "2026-11-18T13:26:03.449+00:00",
+    "finished_at": "2026-11-18T13:26:04.477+00:00",
+    "error": null,
+    "elapsed_ms": 1000,
+    "seconds": 1
+   }
+  ],
+  "children": [],
+  "lineage": {
+   "ancestors": [
+    {
+     "id": "7caa58a01ed3",
+     "name": "Demo Week",
+     "origin": "demo",
+     "created_at": "2026-11-18T13:26:02.160+00:00"
+    }
+   ],
+   "children": []
+  }
+ }
+}

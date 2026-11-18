@@ -2,7 +2,7 @@
  "ok": true,
  "datasets": [
   {
-   "id": "93b44cd73265",
+   "id": "f7a375ef4744",
    "model_id": "toy",
    "name": "Demo Week B",
    "tags": [],
@@ -14,7 +14,7 @@
     "params": {},
     "solve": {}
    },
-   "created_at": "2026-11-18T11:42:08.318+00:00",
+   "created_at": "2026-11-18T13:26:01.273+00:00",
    "size": [
     {
      "label": "nurses",
@@ -28,30 +28,30 @@
     }
    ],
    "latest_run": {
-    "id": "7024e9b8f352",
-    "dataset_id": "93b44cd73265",
+    "id": "fb83a640a622",
+    "dataset_id": "f7a375ef4744",
     "model_id": "toy",
     "kind": "solve",
     "status": "completed",
     "priority": 3,
-    "profile_id": "dbd1e8c72d11",
-    "experiment_id": "4fc186954313",
+    "profile_id": "262cecde4a86",
+    "experiment_id": "6baeb972c78e",
     "initial_score": "-6hard/0soft",
     "score": "0hard/0soft",
     "feasible": 1,
     "label": null,
     "profile_name": "Blind",
     "dataset_name": "Demo Week B",
-    "created_at": "2026-11-18T11:42:08.364+00:00",
-    "started_at": "2026-11-18T11:42:08.528+00:00",
-    "finished_at": "2026-11-18T11:42:08.571+00:00",
+    "created_at": "2026-11-18T13:26:01.317+00:00",
+    "started_at": "2026-11-18T13:26:01.525+00:00",
+    "finished_at": "2026-11-18T13:26:01.567+00:00",
     "error": null,
     "elapsed_ms": 0,
     "seconds": 30
    }
   },
   {
-   "id": "0b602cd74c49",
+   "id": "f6d65b9db2ca",
    "model_id": "toy",
    "name": "Demo Week",
    "tags": [
@@ -65,7 +65,7 @@
     "params": {},
     "solve": {}
    },
-   "created_at": "2026-11-18T11:42:06.081+00:00",
+   "created_at": "2026-11-18T13:25:59.030+00:00",
    "size": [
     {
      "label": "nurses",
@@ -79,23 +79,23 @@
     }
    ],
    "latest_run": {
-    "id": "1fbc2d40b667",
-    "dataset_id": "0b602cd74c49",
+    "id": "6658a5ee5427",
+    "dataset_id": "f6d65b9db2ca",
     "model_id": "toy",
     "kind": "solve",
     "status": "completed",
     "priority": 3,
-    "profile_id": "dbd1e8c72d11",
-    "experiment_id": "4fc186954313",
+    "profile_id": "262cecde4a86",
+    "experiment_id": "6baeb972c78e",
     "initial_score": "-6hard/0soft",
     "score": "0hard/0soft",
     "feasible": 1,
     "label": null,
     "profile_name": "Blind",
     "dataset_name": "Demo Week",
-    "created_at": "2026-11-18T11:42:08.351+00:00",
-    "started_at": "2026-11-18T11:42:08.473+00:00",
-    "finished_at": "2026-11-18T11:42:08.516+00:00",
+    "created_at": "2026-11-18T13:26:01.305+00:00",
+    "started_at": "2026-11-18T13:26:01.430+00:00",
+    "finished_at": "2026-11-18T13:26:01.473+00:00",
     "error": null,
     "elapsed_ms": 0,
     "seconds": 30

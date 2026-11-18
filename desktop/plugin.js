@@ -17,6 +17,11 @@ import {
   Badge,
   Button,
   ConfirmDialog,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
   CopyButton,
   EmptyState,
   ErrorState,
@@ -599,13 +604,27 @@ export function viewName(kind) {
 
 /** The plan as its model draws it (solverforge-ui's timeline, routes on a map, or boards)
  *  in a sandboxed frame. */
-export function PlanView({ run, dataset, version, kind = 'timeline' }) {
+export function PlanView({ run, dataset, version, kind = 'timeline', onItem }) {
   const query = useRead('view', { run, dataset, v: version })
+  const frame = useRef(null)
+  // A click on an open item inside the frame (it posts {source, item}) asks for its places.
+  useEffect(() => {
+    if (!onItem || typeof window === 'undefined') return undefined
+    const listen = event => {
+      const data = event.data
+      if (frame.current && event.source === frame.current.contentWindow && data && data.source === ID && data.item && data.item.id) {
+        onItem({ id: String(data.item.id), label: String(data.item.label || data.item.id) })
+      }
+    }
+    window.addEventListener('message', listen)
+    return () => window.removeEventListener('message', listen)
+  }, [onItem])
   const data = query.data
   const what = viewName(kind).toLowerCase()
   if (query.isLoading) return e(Skeleton, { style: { height: kind === 'routes' ? 520 : 320, width: '100%' } })
   if (!data || data.ok === false) return e('div', { style: faint }, errorText(data, `The ${what} could not be drawn.`))
   return e(SandboxedFrame, {
+    ref: frame,
     src: 'data:text/html;charset=utf-8,' + encodeURIComponent(data.document),
     sandbox: 'allow-scripts',
     title: viewName(kind),
@@ -626,18 +645,19 @@ function Matches({ item }) {
 }
 
 /** Fill: the best places for a plan's open items, ranked by the score each reaches; one click applies one. */
-export function FillPanel({ run, dataset, profile, model, open = false }) {
+export function FillPanel({ run, dataset, profile, model, open = false, items, onClear }) {
   const { go } = useNav()
   const [asked, setAsked] = useState(open)
-  const query = useRead('fill', { run, dataset, profile, top: 3 }, { enabled: asked })
+  const query = useRead('fill', { run, dataset, profile, top: 3, items: items && items.length ? items.join(',') : undefined }, { enabled: asked || Boolean(items && items.length) })
   const apply = useAction('fill_apply', r => r.dataset && go(placeOf(model || r.dataset.model_id, 'datasets', r.dataset.id)))
-  if (!asked) {
+  if (!asked && !(items && items.length)) {
     return e('div', null, e(Button, { size: 'xs', variant: 'outline', onClick: () => setAsked(true) }, 'Find places for open items'))
   }
   return e(Loading, { query }, data => {
     if (!data.items.length) return e('div', { style: muted }, 'Nothing is open in this plan.')
     return e('div', { style: stack(10) },
-      e(H2, null, `Fill · ${fmt(data.items.length)} open`),
+      e('div', { style: row(8) }, e(H2, null, items && items.length ? `Places for ${data.items.map(i => i.label).join(', ')}` : `Fill · ${fmt(data.items.length)} open`),
+        items && items.length && onClear ? e(Button, { size: 'xs', variant: 'text', onClick: () => { setAsked(true); onClear() } }, 'Every open item') : null),
       e('div', { style: faint }, 'Each option is scored with the item placed; applying one makes a new dataset.'),
       data.items.map(item => e('div', { key: `${item.type}:${item.id}`, style: stack(6) },
         e('div', null, e('strong', null, item.label)),
@@ -664,6 +684,188 @@ function Verdict({ run }) {
   return hard < 0
     ? e(Badge, { variant: 'destructive' }, `Breaks hard rules · ${fmt(hard)} hard`)
     : e(Badge, { variant: 'success' }, 'Feasible')
+}
+
+/** b − a per score level: [{level, value}], positive where b is better. */
+export function scoreDelta(a, b) {
+  const before = new Map(parseScore(a).map(p => [p.level, p.value]))
+  return parseScore(b).map(p => ({ level: p.level, value: p.value - (before.get(p.level) || 0) }))
+}
+
+/** A score change in words: "+4 hard · −1,200 soft", or "no change". */
+export function DeltaText({ from, to }) {
+  const parts = scoreDelta(from, to).filter(p => p.value !== 0)
+  if (!parts.length) return e('span', { style: faint }, 'no change')
+  return e('span', { style: { ...row(8), display: 'inline-flex', fontVariantNumeric: 'tabular-nums', fontWeight: 600 } },
+    parts.map(p => e('span', { key: p.level, style: { color: p.value > 0 ? 'var(--ui-success, #3fb950)' : levelColor(p.level) } },
+      `${p.value > 0 ? '+' : '−'}${fmt(Math.abs(p.value))} ${p.level}`)))
+}
+
+/** The first line of a run: whether it keeps every hard rule, in a sentence. */
+export function verdictText(run) {
+  if (LIVE.includes(run.status)) return run.status === 'queued' ? 'Waiting to solve' : 'Solving'
+  if (run.status === 'failed' || run.status === 'invalid') return run.status === 'invalid' ? 'The data has a problem' : 'The solve failed'
+  if (!run.score) return 'No plan'
+  const hard = brokenHard(run.score)
+  const medium = parseScore(run.score).filter(p => p.level === 'medium' && p.value < 0).reduce((n, p) => n + p.value, 0)
+  if (hard < 0) return `Breaks hard rules (${fmt(hard)} hard)`
+  if (medium < 0) return `Keeps every hard rule; leaves ${fmt(-medium)} medium unmet`
+  return 'Keeps every hard rule'
+}
+
+const ORIGIN_WORD = { demo: 'demo', upload: 'imported', run: 'replan', fill: 'fill', patch: 'edited', copy: 'copy' }
+
+/** Where a dataset comes from, root first, and what was made from it, as links. */
+export function LineageStrip({ model, lineage, here }) {
+  if (!lineage || (!lineage.ancestors.length && !lineage.children.length)) return null
+  const link = d => e(Link, { key: d.id, to: placeOf(model, 'datasets', d.id), style: { textDecoration: 'underline' } }, d.name)
+  return e('nav', { 'aria-label': 'Where this dataset comes from', style: { ...row(6), ...faint } },
+    lineage.ancestors.length ? e('span', null, 'From') : null,
+    lineage.ancestors.flatMap((d, i) => [i ? e('span', { key: `s${i}` }, '›') : null, link(d)]),
+    lineage.ancestors.length ? e('span', null, '›') : null,
+    e('strong', null, here),
+    lineage.children.length
+      ? e('span', { style: row(6) }, `· ${count(lineage.children.length, 'dataset')} made from it:`,
+          lineage.children.flatMap((d, i) => [i ? e('span', { key: `c${i}` }, '·') : null, link(d), e('span', { key: `o${i}` }, `(${ORIGIN_WORD[d.origin] || d.origin})`)]))
+      : null)
+}
+
+/** What a solve kept and moved against the run it replans, or the solve before it. */
+export function ChangesCard({ run }) {
+  const [shown, setShown] = useState(false)
+  const query = useRead('changes', { run: run.id })
+  const changes = answer(query, 'changes')
+  if (!changes || !changes.against) return null
+  const parts = [[changes.stayed, 'stayed'], [changes.moved.length, 'moved'], [changes.added.length, 'new'],
+    [changes.opened.length, 'left open'], [changes.removed.length, 'removed']].filter(([n]) => n)
+  const listed = [...changes.moved.map(c => [c, `${c.from} → ${c.to}`]), ...changes.added.map(c => [c, `new · ${c.to || 'open'}`]),
+    ...changes.opened.map(c => [c, `${c.from} → open`]), ...changes.removed.map(c => [c, `removed · was ${c.from || 'open'}`])]
+  return e(Card, null,
+    e('div', { style: row(8) }, e(Label, null, 'What changed'), spacer(),
+      e('span', { style: faint }, 'against ', e(Link, { to: placeOf(run.model_id, 'runs', changes.against.id), style: { textDecoration: 'underline' } }, runName(changes.against)))),
+    e('div', { style: row(10) },
+      e(DeltaText, { from: changes.against.score, to: run.score }),
+      e('span', { style: muted }, parts.map(([n, word]) => `${fmt(n)} ${word}`).join(' · ') || 'nothing to compare')),
+    listed.length
+      ? e('div', null,
+          e(Button, { size: 'xs', variant: 'text', onClick: () => setShown(!shown) }, shown ? 'Hide what moved' : `Show what moved (${fmt(listed.length)})`),
+          shown ? e('ul', { style: { margin: '4px 0', paddingLeft: 18, ...muted } },
+            listed.slice(0, 200).map(([c, words]) => e('li', { key: c.id }, e('strong', null, c.label), ` · ${words}`))) : null)
+      : null)
+}
+
+/** One field of a replanning change, edited as its kind says. */
+function EditField({ field, value, onChange }) {
+  const id = `edit-${field.name}`
+  const control = field.kind === 'choice'
+    ? e('select', { id, value: value || '', style: input, onChange: event => onChange(event.target.value) },
+        e('option', { value: '' }, field.optional ? '(none)' : 'Choose…'),
+        field.options.map(o => e('option', { key: o.value, value: o.value }, o.label)))
+    : field.kind === 'minutes'
+      ? e('input', { id, type: 'number', min: 1, value: value || '', style: { ...input, width: 90 }, onChange: event => onChange(event.target.value ? Math.trunc(Number(event.target.value)) : '') })
+      : field.kind === 'date_time'
+        ? e('input', { id, type: 'datetime-local', value: value || '', style: input, onChange: event => onChange(event.target.value.slice(0, 16)) })
+        : field.kind === 'location'
+          ? e('input', { id, placeholder: 'latitude, longitude', value: value || '', style: { ...input, width: 180 },
+              onChange: event => onChange(event.target.value) })
+          : e('input', { id, value: value || '', style: { ...input, width: 220 }, onChange: event => onChange(event.target.value) })
+  return e('label', { htmlFor: id, style: { ...row(6), ...muted } }, e('span', { style: { minWidth: 110 } }, field.label), control)
+}
+
+/** "45.07, 7.68" -> [45.07, 7.68]; anything else stays text for the engine to refuse in words. */
+export function editArgs(edit, values) {
+  const args = {}
+  for (const field of edit.fields) {
+    const value = values[field.name]
+    if (value === undefined || value === '') continue
+    if (field.kind === 'location') {
+      const parts = String(value).split(',').map(x => Number(x.trim()))
+      args[field.name] = parts.length === 2 && parts.every(Number.isFinite) ? parts : value
+    } else args[field.name] = value
+  }
+  return args
+}
+
+/** Replanning in one form: the model's changes, what to keep, the profile and the time;
+ *  it makes the new dataset from the run (or the dataset) and solves it. */
+export function ReplanForm({ model, run, dataset, onDone }) {
+  const { go } = useNav()
+  const source = run ? { run: run.id } : { dataset: dataset.id }
+  const datasetId = run ? run.dataset_id : dataset.id
+  const query = useRead('edits', source)
+  const offered = answer(query, 'edits') || []
+  const [changes, setChanges] = useState([])
+  const [adding, setAdding] = useState('')
+  const [freeze, setFreeze] = useState('')
+  const [profile, setProfile] = useState('')
+  const [seconds, setSeconds] = useState('')
+  const [name, setName] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [failure, setFailure] = useState(null)
+  const byId = new Map(offered.map(x => [x.id, x]))
+  const submit = async () => {
+    setBusy(true)
+    setFailure(null)
+    try {
+      const made = await rest('/actions/dataset_patch', { method: 'POST', timeoutMs: 600_000, body: {
+        dataset: datasetId, ...(run ? { from_run: run.id } : {}), ...(name.trim() ? { name: name.trim() } : {}),
+        edits: changes.map(c => ({ edit: c.edit, args: editArgs(byId.get(c.edit), c.values) })) } })
+      if (!made || made.ok === false) { setFailure(errorText(made)); return }
+      const solve = { ...(seconds ? { seconds: Number(seconds) } : {}), ...(freeze ? { freeze_before: freeze.slice(0, 16) } : {}) }
+      const started = await rest('/actions/solve', { method: 'POST', timeoutMs: 120_000, body: {
+        dataset: made.dataset.id, ...(profile ? { profile } : {}), ...(Object.keys(solve).length ? { overrides: { solve } } : {}) } })
+      queryClient.invalidateQueries({ queryKey: [ID] })
+      if (!started || started.ok === false) { setFailure(errorText(started)); go(placeOf(model.id, 'datasets', made.dataset.id)); return }
+      if (onDone) onDone()
+      go(placeOf(model.id, 'runs', started.run.id))
+    } catch (error) {
+      setFailure(errorText({ error: error && error.message }))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return e('div', { style: stack(12) },
+    e('div', { style: stack(8) },
+      e(Label, null, 'Changes'),
+      changes.length ? null : e('div', { style: faint }, offered.length ? 'Nothing changes yet: add what happened, or replan as it is.' : 'This model offers no changes; replan keeps the plan as it is.'),
+      changes.map((change, n) => {
+        const edit = byId.get(change.edit)
+        return e(Card, { key: n, style: { padding: 10 } },
+          e('div', { style: row(8) }, e('strong', null, edit ? edit.label : change.edit), spacer(),
+            e(Button, { size: 'xs', variant: 'text', onClick: () => setChanges(changes.filter((_, i) => i !== n)) }, 'Remove')),
+          edit ? e('div', { style: faint }, edit.description) : null,
+          edit ? edit.fields.map(field => e(EditField, { key: field.name, field, value: change.values[field.name],
+            onChange: value => setChanges(changes.map((c, i) => i === n ? { ...c, values: { ...c.values, [field.name]: value } } : c)) })) : null)
+      }),
+      offered.length
+        ? e('div', { style: row(6) },
+            e('select', { value: adding, 'aria-label': 'Change to add', style: input, onChange: event => setAdding(event.target.value) },
+              e('option', { value: '' }, 'Add a change…'), offered.map(x => e('option', { key: x.id, value: x.id }, x.label))),
+            e(Button, { size: 'xs', variant: 'outline', disabled: !adding, onClick: () => { setChanges([...changes, { edit: adding, values: {} }]); setAdding('') } }, 'Add'))
+        : null),
+    e('div', { style: stack(8) },
+      e(Label, null, 'Solve'),
+      run ? e('label', { style: { ...row(6), ...muted } }, e('span', { style: { minWidth: 110 } }, 'Keep everything before'),
+        e('input', { type: 'datetime-local', value: freeze, style: input, 'aria-label': 'Keep everything that starts before', onChange: event => setFreeze(event.target.value) })) : null,
+      freeze ? e('div', { style: faint }, `Everything that starts before ${freeze.replace('T', ' ')} keeps its place.`) : null,
+      e('div', { style: row(8) },
+        e(ProfilePicker, { model, value: profile, onChange: setProfile }),
+        e('input', { type: 'number', min: 1, placeholder: 'seconds', value: seconds, style: { ...input, width: 84 }, 'aria-label': 'Time limit in seconds',
+          onChange: event => setSeconds(event.target.value ? String(Math.max(1, Math.trunc(Number(event.target.value) || 1))) : '') }),
+        e('input', { placeholder: `${(run ? run.dataset_name : dataset.name) || 'Dataset'} (replan)`, value: name, style: { ...input, width: 220 }, 'aria-label': 'Name of the new dataset',
+          onChange: event => setName(event.target.value) }))),
+    failure ? e('div', { role: 'alert', style: { color: 'var(--ui-danger, #e5534b)', fontSize: '0.75rem' } }, failure) : null,
+    e('div', { style: row(8) }, spacer(),
+      e(Button, { size: 'xs', disabled: busy || changes.some(c => !byId.has(c.edit)), onClick: submit }, busy ? 'Replanning…' : 'Replan and solve')))
+}
+
+function ReplanDialog({ model, run, dataset, open, onClose }) {
+  return e(Dialog, { open, onOpenChange: next => { if (!next) onClose() } },
+    e(DialogContent, { style: { maxWidth: 640 } },
+      e(DialogHeader, null,
+        e(DialogTitle, null, run ? `Replan from ${runName(run)}` : `Replan ${dataset.name}`),
+        e(DialogDescription, null, 'Say what happened; the new plan starts from this one and the original stays as it is.')),
+      open ? e(ReplanForm, { model, run, dataset, onDone: onClose }) : null))
 }
 
 // ---- home --------------------------------------------------------------------------
@@ -1163,9 +1365,10 @@ function DatasetPage({ model, id }) {
   const [shown, setShown] = useState(false)
   const solve = useAction('solve', r => r.run && go(placeOf(model.id, 'runs', r.run.id)))
   const evaluate = useAction('evaluate', r => r.run && go(placeOf(model.id, 'runs', r.run.id)))
+  const [replanning, setReplanning] = useState(false)
   const solveSettings = { ...(seconds ? { seconds: Number(seconds) } : {}), ...(freeze ? { freeze_before: freeze.slice(0, 16) } : {}) }
   const body = { dataset: id, ...(profile ? { profile } : {}), ...(Object.keys(solveSettings).length ? { overrides: { solve: solveSettings } } : {}) }
-  useKeys({ s: () => solve.mutate(body), e: () => go(placeOf(model.id, 'experiments', 'new', id)) })
+  useKeys({ s: () => solve.mutate(body), e: () => go(placeOf(model.id, 'experiments', 'new', id)), r: () => setReplanning(true) })
   return e(Loading, { query }, ({ dataset }) => e('div', { style: stack(14) },
     e(DatasetHeader, { model, dataset }),
     e('div', { style: { ...row(8), ...muted } },
@@ -1177,7 +1380,12 @@ function DatasetPage({ model, id }) {
         : e('span', null, madeFrom(dataset)),
       e('span', { style: faint }, `· ${ago(dataset.created_at)}`),
       dataset.travel ? e('span', { style: faint }, `· ${TRAVEL[dataset.travel]}`) : null),
-    dataset.origin === 'fill' && dataset.patch ? e('div', { style: faint }, dataset.patch.map(p => `placed ${p.item} at ${p.value}`).join(' · ')) : null,
+    e(LineageStrip, { model: model.id, lineage: dataset.lineage, here: dataset.name }),
+    dataset.patch && dataset.patch.some(p => p.op === 'edit' || p.op === 'fill')
+      ? e('ul', { 'aria-label': 'What was changed', style: { margin: 0, paddingLeft: 18, ...muted } },
+          dataset.patch.filter(p => p.op === 'edit' || p.op === 'fill').map((p, n) =>
+            e('li', { key: n }, p.op === 'edit' ? p.summary : `Placed ${p.item} at ${p.value}.`)))
+      : null,
     e(Card, null,
       e('div', { style: row(8) },
         e(ProfilePicker, { model, value: profile, onChange: setProfile }),
@@ -1186,6 +1394,7 @@ function DatasetPage({ model, id }) {
         e('label', { style: { ...row(4), ...faint } }, 'Keep everything before',
           e('input', { type: 'datetime-local', value: freeze, style: input, 'aria-label': 'Keep everything that starts before', onChange: event => setFreeze(event.target.value) })),
         spacer(),
+        e(Button, { size: 'xs', variant: 'outline', onClick: () => setReplanning(true) }, 'Change and solve…'),
         e(Button, { size: 'xs', variant: 'outline', disabled: evaluate.isPending, onClick: () => evaluate.mutate(body) }, 'Check as is'),
         e(Button, { size: 'xs', disabled: solve.isPending, onClick: () => solve.mutate(body) }, solve.isPending ? 'Starting…' : 'Solve')),
       freeze ? e('div', { style: faint }, `Everything that starts before ${freeze.replace('T', ' ')} keeps its place.`) : null),
@@ -1200,7 +1409,8 @@ function DatasetPage({ model, id }) {
         selected.length >= 2 ? e(Button, { size: 'xs', variant: 'secondary', onClick: () => go(placeOf(model.id, 'runs', 'compare', selected.join(','))) }, `Compare ${selected.length}`) : null),
       e(RunTable, { model, runs: dataset.runs.map(item => ({ item, hits: [] })), selected, showDataset: false,
         onSelect: r => setSelected(selected.includes(r) ? selected.filter(x => x !== r) : [...selected, r].slice(-4)),
-        empty: e('div', { style: faint }, 'Not solved yet. Solve it above.') }))))
+        empty: e('div', { style: faint }, 'Not solved yet. Solve it above.') })),
+    e(ReplanDialog, { model, dataset, open: replanning, onClose: () => setReplanning(false) })))
 }
 
 // ---- runs --------------------------------------------------------------------------
@@ -1259,21 +1469,69 @@ function RunsTab({ model }) {
   })
 }
 
+const LEVELS = [['', 'any level'], ['hard', 'hard'], ['medium', 'medium'], ['soft', 'soft']]
+
+/** A KPI with its change since the run measured against. */
+function KpiTile({ kpi, before }) {
+  const change = before && before.value !== kpi.value ? kpi.value - before.value : null
+  return e('div', { style: { ...card, padding: 10 } },
+    e('div', { style: faint }, kpi.label),
+    e('div', { style: { fontWeight: 600, fontSize: '1rem', fontVariantNumeric: 'tabular-nums' } }, `${fmt(kpi.value)} ${kpi.unit || ''}`),
+    change !== null ? e('div', { style: faint }, `${change > 0 ? '+' : '−'}${fmt(Math.abs(change))} since the run before`) : null)
+}
+
 function RunPage({ model, id }) {
+  const { docked } = useNav()
   const [open, setOpen] = useState(null)
   const [search, setSearch] = useStored(`${model.id}.run.search`, '')
   const [costlyOnly, setCostlyOnly] = useStored(`${model.id}.run.costly`, true)
+  const [level, setLevel] = useStored(`${model.id}.run.level`, '')
   const [naming, setNaming] = useState(null)
+  const [replanning, setReplanning] = useState(false)
+  const [picked, setPicked] = useState(null)
   const query = useRead('run', { run: id, max_matches: 10 })
   const cancel = useAction('cancel')
   const rename = useAction('run_update', () => setNaming(null))
+  const run0 = answer(query, 'run')
+  useKeys({ r: () => run0 && FINISHED.includes(run0.status) && setReplanning(true) })
   return e(Loading, { query }, ({ run }) => {
     const live = LIVE.includes(run.status)
+    const finished = FINISHED.includes(run.status)
     const all = run.analysis || []
     const costing = all.filter(c => parseScore(c.score).some(p => p.value !== 0))
     const catalog = new Map(model.constraints.map(c => [c.name, c]))
-    const rows = searchConstraints((costlyOnly ? costing : all).map(c => ({ ...catalog.get(c.name), ...c })), search)
+    const pool = (costlyOnly ? costing : all).map(c => ({ ...catalog.get(c.name), ...c })).filter(c => !level || c.level === level)
+    const rows = searchConstraints(pool, search)
     const hard = brokenHard(run.score)
+    const previous = run.previous
+    const before = new Map(((previous && previous.kpis) || []).map(k => [k.id, k]))
+    const analysis = all.length
+      ? e(Card, null,
+          e(Label, null, 'What costs score'),
+          e(ListSearch, { value: search, onChange: setSearch, shown: rows.length, total: costlyOnly ? costing.length : all.length, noun: 'rule', placeholder: 'Search rules: name, group, level or what they mean' },
+            e(Pick, { label: 'Level', value: level, onChange: setLevel, options: LEVELS }),
+            e('label', { style: { ...row(4), ...faint } },
+              e('input', { type: 'checkbox', checked: costlyOnly, onChange: event => setCostlyOnly(event.target.checked) }),
+              `Only what costs score (${costing.length})`)),
+          rows.length
+            ? e(Table, {
+                columns: [{ id: 'name', label: 'Rule' }, { id: 'level', label: 'Level', width: 80 },
+                  { id: 'count', label: 'Matches', num: true, width: 80 }, { id: 'score', label: 'Score', num: true, width: 260 }],
+                rows: rows.map(({ item: c, hits }) => ({
+                  key: c.name, name: e('div', null, e(Highlight, { text: c.name, hits }), open === c.name ? e(Matches, { item: c }) : null),
+                  level: e('span', { style: { color: levelColor(c.level) } }, c.level),
+                  count: fmt(c.match_count), score: e(ScoreText, { score: c.score })
+                })),
+                onRow: r => setOpen(open === r.key ? null : r.key)
+              })
+            : e('div', { style: muted }, costlyOnly && !search.trim() && !level ? 'Nothing costs score.' : 'No rule matches.'))
+      : live ? e('div', { style: muted }, 'Solving…') : null
+    const plan = model.view && run.status !== 'queued'
+      ? e('div', { style: stack(8) },
+          e('div', { style: row(8) }, e(H2, null, viewName(model.view)), spacer(),
+            finished ? e('span', { style: faint }, 'Click an open item to find it a place') : null),
+          e(PlanView, { run: run.id, kind: model.view, version: `${run.status}:${run.score}`, onItem: finished ? setPicked : undefined }))
+      : null
     return e('div', { style: stack(14) },
       e('div', { style: row(10) },
         naming !== null
@@ -1286,52 +1544,36 @@ function RunPage({ model, id }) {
               e(Button, { size: 'xs', variant: 'text', onClick: () => setNaming(run.label || '') }, 'Rename'),
               e(CopyId, { id: run.id, what: 'run' })),
         spacer(),
+        finished ? e(Button, { size: 'xs', onClick: () => setReplanning(true) }, 'Replan…') : null,
         run.status !== 'queued' && !(run.status === 'invalid' || run.status === 'failed') && run.score
           ? e(ExportButton, { action: 'export', args: { run: run.id }, name: `${run.dataset_name || 'plan'} ${runName(run)}`, label: 'Export plan' }) : null,
         live ? e(Button, { size: 'xs', variant: 'outline', disabled: cancel.isPending, onClick: () => cancel.mutate({ run: run.id }) }, 'Stop') : null),
       e('div', { style: { ...row(8), ...muted } },
         e(Link, { to: placeOf(model.id, 'datasets', run.dataset_id), style: { textDecoration: 'underline' } }, run.dataset_name || 'its dataset'),
-        e('span', null, `· ${profileLabel(run)} · ${ago(run.created_at)}${run.elapsed_ms != null && !LIVE.includes(run.status) ? ` · ${duration(run.elapsed_ms)}` : ''}`)),
+        e('span', null, `· ${profileLabel(run)} · ${ago(run.created_at)}${run.elapsed_ms != null && !live ? ` · ${duration(run.elapsed_ms)}` : ''}`)),
+      e(LineageStrip, { model: model.id, lineage: run.lineage, here: run.dataset_name || 'this dataset' }),
       e(Card, null,
         e('div', { style: row(10) },
-          e(Status, { status: run.status }),
-          run.feasible === 1 ? e(Badge, { variant: 'success' }, 'Feasible') : run.feasible === 0 || hard < 0 ? e(Badge, { variant: 'destructive' }, 'Breaks hard rules') : null,
+          e('strong', { style: { fontSize: '0.95rem', color: hard < 0 || run.status === 'failed' || run.status === 'invalid' ? 'var(--ui-danger, #e5534b)' : undefined } }, verdictText(run)),
+          spacer(), e(Status, { status: run.status })),
+        e('div', { style: row(10) },
           e(ScoreText, { score: run.score }),
-          run.initial_score && run.initial_score !== run.score ? e('span', { style: { ...row(6), ...faint } }, 'from', e(ScoreText, { score: run.initial_score })) : null),
+          run.initial_score && run.initial_score !== run.score ? e('span', { style: { ...row(6), ...faint } }, 'the plan as given scored', e(ScoreText, { score: run.initial_score })) : null,
+          previous ? e('span', { style: { ...row(6), ...faint } }, 'since', e(Link, { to: placeOf(model.id, 'runs', previous.id), style: { textDecoration: 'underline' } }, runName(previous)),
+            e(DeltaText, { from: previous.score, to: run.score })) : null),
         run.error ? e('div', { role: 'alert', style: muted }, errorText(run.error),
           run.error.issues ? e('ul', { style: { margin: '4px 0', paddingLeft: 18 } }, run.error.issues.map((i, n) => e('li', { key: n }, i.message))) : null) : null,
         e(ScoreChart, { points: run.points })),
+      finished ? e(ChangesCard, { run }) : null,
       run.kpis && run.kpis.length
         ? e('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 } },
-            run.kpis.map(k => e('div', { key: k.id, style: { ...card, padding: 10 } },
-              e('div', { style: faint }, k.label),
-              e('div', { style: { fontWeight: 600, fontSize: '1rem', fontVariantNumeric: 'tabular-nums' } }, `${fmt(k.value)} ${k.unit || ''}`))))
+            run.kpis.map(k => e(KpiTile, { key: k.id, kpi: k, before: before.get(k.id) })))
         : null,
-      model.view && run.status !== 'queued'
-        ? e('div', { style: stack(8) }, e(H2, null, viewName(model.view)),
-            e(PlanView, { run: run.id, kind: model.view, version: `${run.status}:${run.score}` }))
-        : null,
-      FINISHED.includes(run.status) ? e(FillPanel, { run: run.id, model: model.id }) : null,
-      all.length
-        ? e(Card, null,
-            e(Label, null, 'What costs score'),
-            e(ListSearch, { value: search, onChange: setSearch, shown: rows.length, total: costlyOnly ? costing.length : all.length, noun: 'rule', placeholder: 'Search rules: name, group, level or what they mean' },
-              e('label', { style: { ...row(4), ...faint } },
-                e('input', { type: 'checkbox', checked: costlyOnly, onChange: event => setCostlyOnly(event.target.checked) }),
-                `Only what costs score (${costing.length})`)),
-            rows.length
-              ? e(Table, {
-                  columns: [{ id: 'name', label: 'Rule' }, { id: 'level', label: 'Level', width: 80 },
-                    { id: 'count', label: 'Matches', num: true, width: 80 }, { id: 'score', label: 'Score', num: true, width: 260 }],
-                  rows: rows.map(({ item: c, hits }) => ({
-                    key: c.name, name: e('div', null, e(Highlight, { text: c.name, hits }), open === c.name ? e(Matches, { item: c }) : null),
-                    level: e('span', { style: { color: levelColor(c.level) } }, c.level),
-                    count: fmt(c.match_count), score: e(ScoreText, { score: c.score })
-                  })),
-                  onRow: r => setOpen(open === r.key ? null : r.key)
-                })
-              : e('div', { style: muted }, costlyOnly && !search.trim() ? 'Nothing costs score.' : 'No rule matches.'))
-        : live ? e('div', { style: muted }, 'Solving…') : null)
+      plan && analysis && !docked
+        ? e('div', { style: { display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 2fr)', gap: 14, alignItems: 'start' } }, plan, analysis)
+        : [plan, analysis],
+      finished ? e(FillPanel, { key: picked ? picked.id : 'all', run: run.id, model: model.id, items: picked ? [picked.id] : undefined, onClear: () => setPicked(null) }) : null,
+      finished ? e(ReplanDialog, { model, run, open: replanning, onClose: () => setReplanning(false) }) : null)
   })
 }
 
@@ -1883,7 +2125,8 @@ const PAGE_KEYS = [
   ['search', 'search this list', () => focusSearch()],
   ['new-dataset', 'new dataset', () => runKey('n')],
   ['solve', 'solve this dataset', () => runKey('s')],
-  ['new-experiment', 'new experiment', () => runKey('e')]
+  ['new-experiment', 'new experiment', () => runKey('e')],
+  ['replan', 'replan this run or dataset', () => runKey('r')]
 ]
 
 export default {
