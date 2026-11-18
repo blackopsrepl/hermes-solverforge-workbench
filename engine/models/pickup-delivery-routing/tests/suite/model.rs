@@ -582,3 +582,54 @@ fn each_demo_summary_states_the_size_the_demo_has() {
         }
     }
 }
+
+#[test]
+fn replanning_changes_compile_to_patches_the_engine_accepts() {
+    let demo =
+        PickupDeliveryRouting::present(&PickupDeliveryRouting::demo("MILAN_TWO_DAYS").unwrap());
+    let (code, out) = engine(json!({"command": "edits", "plan": demo}));
+    assert_eq!(code, 0, "{out}");
+    let ids: Vec<&str> = out["edits"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| e["id"].as_str().unwrap())
+        .collect();
+    assert_eq!(ids, ["driver_off", "add_job", "stop_window"]);
+    let compile = |id: &str, args: Value| {
+        let (code, out) =
+            engine(json!({"command": "edit", "plan": demo, "edit": {"id": id, "args": args}}));
+        assert_eq!(code, 0, "{out}");
+        out
+    };
+    let off = compile(
+        "driver_off",
+        json!({"driver": "amina", "day": "2027-02-01"}),
+    );
+    assert_eq!(
+        off["operations"],
+        json!([{"op": "remove", "path": "/drivers/[id=amina]/shifts/[id=amina-mon]"}])
+    );
+    let added = compile(
+        "add_job",
+        json!({"name": "Parcel", "pickup": [45.48, 9.19], "dropoff": [45.45, 9.22], "stop_minutes": 5,
+               "from": "2027-02-01T10:00", "until": "2027-02-01T12:00"}),
+    );
+    let window = compile(
+        "stop_window",
+        json!({"stop": "P1-01-b", "from": "2027-02-01T08:40", "until": "2027-02-01T10:00"}),
+    );
+    assert_eq!(
+        window["operations"][0]["path"],
+        "/jobs/[id=P1-01]/stops/[id=P1-01-b]/timeWindows"
+    );
+    let mut changed = demo.clone();
+    for compiled in [&off, &added, &window] {
+        apply(&mut changed, compiled["operations"].as_array().unwrap());
+    }
+    assert_eq!(
+        changed["jobs"].as_array().unwrap().last().unwrap()["stops"][1]["id"],
+        "NEW-1-b"
+    );
+    evaluate(changed);
+}

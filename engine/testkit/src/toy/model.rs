@@ -1,7 +1,9 @@
 //! The toy roster as a workbench model.
 
+use serde_json::{json, Value};
 use solverforge::{ConstraintSet, ConstraintWeights, HardSoftScore, SolverManager};
-use solverforge_workbench_host::{ConstraintInfo, Issue, Kpi, Level, Model};
+use solverforge_workbench_host::edit::{self, Args, Choice, Compiled, Edit, Field};
+use solverforge_workbench_host::{ConstraintInfo, EngineError, Issue, Kpi, Level, Model};
 
 use super::domain::{self, Nurse, Roster, Shift};
 
@@ -52,6 +54,32 @@ impl Model for Toy {
         }
         issues
     }
+    fn edits(plan: &Roster) -> Vec<Edit> {
+        vec![Edit {
+            id: "shift_cancelled",
+            label: "A shift is cancelled".into(),
+            description: "Removes the shift.".into(),
+            fields: vec![Field::choice("shift", "Shift", shifts(plan))],
+        }]
+    }
+    fn edit(plan: &Roster, id: &str, args: &Value) -> Result<Compiled, EngineError> {
+        if id != "shift_cancelled" {
+            return Err(edit::unknown(Self::id(), id, &Self::edits(plan)));
+        }
+        let options = shifts(plan);
+        let shift = Args::new(id, args).choice("shift", &options)?;
+        let label = options
+            .into_iter()
+            .find(|c| c.value == shift)
+            .expect("offered")
+            .label;
+        Ok(Compiled {
+            operations: vec![
+                json!({"op": "remove", "path": format!("/shifts/{}", edit::by_id(shift))}),
+            ],
+            summary: format!("{label} is cancelled."),
+        })
+    }
     fn weights_mut(plan: &mut Roster) -> Option<&mut ConstraintWeights> {
         Some(&mut plan.weights)
     }
@@ -71,6 +99,13 @@ impl Model for Toy {
             unit: "shifts",
         }]
     }
+}
+
+fn shifts(plan: &Roster) -> Vec<Choice> {
+    plan.shifts
+        .iter()
+        .map(|s| Choice::new(s.id.to_string(), format!("Shift {} on day {}", s.id, s.day)))
+        .collect()
 }
 
 /// Three nurses, six shifts over three days, nothing assigned.

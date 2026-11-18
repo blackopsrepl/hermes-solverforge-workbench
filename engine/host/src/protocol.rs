@@ -25,6 +25,10 @@ pub enum Command {
     Fill,
     /// The plan with its travel measured along the roads, and what the roads say about its places.
     Roads,
+    /// The changes the plan offers for replanning, with the choices for each field.
+    Edits,
+    /// One change compiled into JSON Patch operations.
+    Edit,
 }
 
 /// One request, read as the first line of stdin.
@@ -57,6 +61,9 @@ pub struct Request {
     /// Where road networks are cached, for models that travel.
     #[serde(default)]
     pub roads: Option<crate::roads::RoadsConfig>,
+    /// The change to compile, for `edit`.
+    #[serde(default)]
+    pub edit: Option<crate::edit::EditRequest>,
 }
 
 fn default_max_matches() -> usize {

@@ -177,6 +177,35 @@ pub fn roads<M: Model, W: Write>(request: Request, out: &mut Output<W>) -> Resul
     Ok(())
 }
 
+/// The plan as given, deserialized but not prepared: what replanning changes are read from.
+fn as_given<M: Model>(plan: Option<serde_json::Value>) -> Result<M::Plan, EngineError> {
+    let plan = plan.ok_or_else(|| EngineError::new("missing_plan", "the request has no plan"))?;
+    serde_json::from_value(plan).map_err(|error| {
+        EngineError::new(
+            "invalid_plan",
+            format!("the plan does not match the model: {error}"),
+        )
+    })
+}
+
+/// The changes the plan offers for replanning.
+pub fn edits<M: Model, W: Write>(request: Request, out: &mut Output<W>) -> Result<(), EngineError> {
+    let plan = as_given::<M>(request.plan)?;
+    out.event("edits", json!({ "edits": M::edits(&plan) }));
+    Ok(())
+}
+
+/// One change compiled into JSON Patch operations.
+pub fn edit<M: Model, W: Write>(request: Request, out: &mut Output<W>) -> Result<(), EngineError> {
+    let wanted = request
+        .edit
+        .ok_or_else(|| EngineError::new("missing_edit", "the request names no change"))?;
+    let plan = as_given::<M>(request.plan)?;
+    let compiled = M::edit(&plan, &wanted.id, &wanted.args)?;
+    out.event("edit", json!(compiled));
+    Ok(())
+}
+
 pub fn fill<M: Model, W: Write>(request: Request, out: &mut Output<W>) -> Result<(), EngineError> {
     let (mut plan, issues) = parse::<M>(
         request.plan,

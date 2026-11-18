@@ -1,6 +1,7 @@
 //! The pick-up and delivery routing model as a workbench model.
 
 use solverforge::{ConstraintSet, ConstraintWeights, HardMediumSoftScore, SolverManager};
+use solverforge_workbench_host::edit::{Compiled, Edit};
 use solverforge_workbench_host::fill::{FillAnswer, FillRequest};
 use solverforge_workbench_host::roads::{Place, RoadMatrix, Travel};
 use solverforge_workbench_host::view::View;
@@ -69,6 +70,12 @@ impl Model for PickupDeliveryRouting {
     }
     fn descriptor() -> solverforge::domain::SolutionDescriptor {
         Plan::descriptor()
+    }
+    fn edits(plan: &Plan) -> Vec<Edit> {
+        crate::edits::edits(plan)
+    }
+    fn edit(plan: &Plan, id: &str, args: &serde_json::Value) -> Result<Compiled, EngineError> {
+        crate::edits::edit(plan, id, args)
     }
     fn travels() -> bool {
         true

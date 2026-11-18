@@ -5,7 +5,10 @@ use serde::Serialize;
 use solverforge::domain::SolutionDescriptor;
 use solverforge::{ConstraintSet, ConstraintWeights, PlanningSolution, Solvable, SolverManager};
 
+use serde_json::Value;
+
 use crate::analysis::Analysis;
+use crate::edit::{Compiled, Edit};
 use crate::fill::{FillAnswer, FillRequest};
 use crate::protocol::EngineError;
 use crate::roads::{Place, RoadMatrix, Travel};
@@ -78,6 +81,16 @@ pub trait Model: 'static + Sized {
     /// Gives the plan travel measured along the roads between the places
     /// [`Model::places`] listed, in that order.
     fn set_roads(_plan: &mut Self::Plan, _roads: RoadMatrix) {}
+
+    /// The changes a plan offers for replanning, with each field's choices read
+    /// from `plan` (deserialized, not prepared). None by default.
+    fn edits(_plan: &Self::Plan) -> Vec<Edit> {
+        Vec::new()
+    }
+    /// Compiles one change offered by [`Model::edits`] into JSON Patch operations.
+    fn edit(plan: &Self::Plan, id: &str, _args: &Value) -> Result<Compiled, EngineError> {
+        Err(crate::edit::unknown(Self::id(), id, &Self::edits(plan)))
+    }
 
     /// Checks a plan and fills its derived fields before it is scored or solved.
     ///

@@ -8,8 +8,8 @@ use solverforge_workbench_host::Model;
 use solverforge_workbench_task_scheduling::TaskScheduling;
 
 use crate::common::{
-    assert_construction_matches_full, assert_incremental_matches_full, at, dataset, demo_plan,
-    engine, evaluate, issue_codes, machine, scores, task,
+    apply, assert_construction_matches_full, assert_incremental_matches_full, at, dataset,
+    demo_plan, engine, evaluate, issue_codes, machine, scores, task,
 };
 
 #[test]
@@ -308,4 +308,48 @@ fn each_demo_summary_states_the_size_the_demo_has() {
             );
         }
     }
+}
+
+#[test]
+fn replanning_changes_compile_to_patches_the_engine_accepts() {
+    let plan = TaskScheduling::present(&demo_plan(TaskScheduling::demos()[0]));
+    let (code, out) = engine(json!({"command": "edits", "plan": plan}));
+    assert_eq!(code, 0, "{out}");
+    let ids: Vec<&str> = out["edits"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| e["id"].as_str().unwrap())
+        .collect();
+    assert_eq!(ids, ["resource_down", "task_due"]);
+    let compile = |id: &str, args: Value| {
+        let (code, out) =
+            engine(json!({"command": "edit", "plan": plan, "edit": {"id": id, "args": args}}));
+        assert_eq!(code, 0, "{out}");
+        out
+    };
+    let down = compile(
+        "resource_down",
+        json!({"resource": "LASER-1", "from": "2027-03-02T08:00", "until": "2027-03-02T12:00", "reason": "Repair"}),
+    );
+    assert_eq!(
+        down["operations"],
+        json!([{"op": "add", "path": "/resources/[id=LASER-1]/unavailable/-",
+                "value": {"start": "2027-03-02T08:00", "end": "2027-03-02T12:00", "label": "Repair"}}])
+    );
+    let due = compile(
+        "task_due",
+        json!({"task": "O001-cut", "due": "2027-03-02T10:00"}),
+    );
+    assert_eq!(due["operations"][0]["op"], "add");
+    let mut changed = plan.clone();
+    for compiled in [&down, &due] {
+        apply(&mut changed, compiled["operations"].as_array().unwrap());
+    }
+    assert_eq!(changed["tasks"][0]["dueDate"], "2027-03-02T10:00");
+    evaluate(changed);
+    let (code, refused) = engine(json!({"command": "edit", "plan": plan,
+        "edit": {"id": "resource_down", "args": {"resource": "LASER-1", "from": "2027-03-02T12:00", "until": "2027-03-02T08:00"}}}));
+    assert_ne!(code, 0);
+    assert_eq!(refused["error"]["code"], "invalid_edit");
 }

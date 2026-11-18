@@ -4,7 +4,7 @@ use std::io::{self, BufRead, BufReader, Read, Write};
 
 use serde_json::json;
 
-use crate::inspect::{demo, describe, evaluate, fill, roads, view};
+use crate::inspect::{demo, describe, edit, edits, evaluate, fill, roads, view};
 use crate::model::Model;
 use crate::output::Output;
 use crate::protocol::{Command, EngineError, Request};
@@ -45,6 +45,8 @@ fn dispatch<M: Model>(
         Command::View => view::<M, _>(request, out),
         Command::Fill => fill::<M, _>(request, out),
         Command::Roads => roads::<M, _>(request, out),
+        Command::Edits => edits::<M, _>(request, out),
+        Command::Edit => edit::<M, _>(request, out),
     }
 }
 

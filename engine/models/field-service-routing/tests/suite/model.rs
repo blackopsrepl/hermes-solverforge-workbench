@@ -609,3 +609,74 @@ fn each_demo_summary_states_the_size_the_demo_has() {
         }
     }
 }
+
+#[test]
+fn replanning_changes_compile_to_patches_the_engine_accepts() {
+    let demo = FieldServiceRouting::present(&FieldServiceRouting::demo("TURIN_TWO_DAYS").unwrap());
+    let (code, out) = engine(json!({"command": "edits", "plan": demo}));
+    assert_eq!(code, 0, "{out}");
+    let edits = out["edits"].as_array().unwrap();
+    let ids: Vec<&str> = edits.iter().map(|e| e["id"].as_str().unwrap()).collect();
+    assert_eq!(ids, ["technician_off", "add_visit", "visit_window"]);
+    let days: Vec<&str> = edits[0]["fields"][1]["options"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|o| o["label"].as_str().unwrap())
+        .collect();
+    assert_eq!(days, ["Mon 1 Feb", "Tue 2 Feb"]);
+    let compile = |id: &str, args: Value| {
+        let (code, out) =
+            engine(json!({"command": "edit", "plan": demo, "edit": {"id": id, "args": args}}));
+        assert_eq!(code, 0, "{out}");
+        out
+    };
+    let off = compile(
+        "technician_off",
+        json!({"technician": "giorgio", "day": "2027-02-02"}),
+    );
+    assert_eq!(
+        off["operations"],
+        json!([
+            {"op": "remove", "path": "/vehicles/[id=giorgio]/linkedShifts/[id=giorgio-aosta]"},
+            {"op": "remove", "path": "/vehicles/[id=giorgio]/shifts/[id=giorgio-tue]"},
+        ])
+    );
+    assert!(
+        off["summary"].as_str().unwrap().starts_with("Giorgio"),
+        "{off}"
+    );
+    let added = compile(
+        "add_visit",
+        json!({"name": "Leak", "location": [45.07, 7.68], "duration": 45,
+               "from": "2027-02-02T09:00", "until": "2027-02-02T13:00", "skill": "plumbing"}),
+    );
+    let first = demo["visits"][0]["id"].as_str().unwrap().to_string();
+    let window = compile(
+        "visit_window",
+        json!({"visit": first, "from": "2027-02-01T10:00", "until": "2027-02-01T12:00"}),
+    );
+    let mut changed = demo.clone();
+    for compiled in [&off, &added, &window] {
+        apply(&mut changed, compiled["operations"].as_array().unwrap());
+    }
+    assert!(changed["vehicles"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|v| v["id"] != "giorgio"
+            || v["shifts"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(|s| s["id"] != "giorgio-tue")));
+    assert_eq!(
+        changed["visits"].as_array().unwrap().last().unwrap()["id"],
+        "NEW-1"
+    );
+    evaluate(changed);
+    let (code, refused) = engine(json!({"command": "edit", "plan": demo,
+        "edit": {"id": "technician_off", "args": {"technician": "nobody", "day": "2027-02-02"}}}));
+    assert_ne!(code, 0);
+    assert_eq!(refused["error"]["code"], "invalid_edit");
+}

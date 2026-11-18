@@ -4,7 +4,7 @@ use serde_json::{json, Value};
 use solverforge_workbench_employee_scheduling::EmployeeScheduling;
 use solverforge_workbench_host::Model;
 
-use crate::common::engine;
+use crate::common::{apply, engine};
 
 fn month() -> Value {
     EmployeeScheduling::present(&EmployeeScheduling::demo("LARGE_MONTH").unwrap())
@@ -171,4 +171,58 @@ fn fill_applies_an_option_to_the_plan() {
     );
     assert_eq!(code, 0, "{answer}");
     assert_eq!(answer["plan"]["shifts"][3]["employee"], employee);
+}
+
+#[test]
+fn replanning_changes_compile_to_patches_the_engine_accepts() {
+    let plan = month();
+    let (code, out) =
+        engine(json!({"command": "edits", "model": "employee-scheduling", "plan": plan}));
+    assert_eq!(code, 0, "{out}");
+    let ids: Vec<&str> = out["edits"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| e["id"].as_str().unwrap())
+        .collect();
+    assert_eq!(ids, ["employee_off", "shift_cancelled"]);
+    let compile = |id: &str, args: Value| {
+        let (code, out) = engine(
+            json!({"command": "edit", "model": "employee-scheduling", "plan": plan, "edit": {"id": id, "args": args}}),
+        );
+        assert_eq!(code, 0, "{out}");
+        out
+    };
+    let off = compile(
+        "employee_off",
+        json!({"employee": "e01", "day": "2027-03-01"}),
+    );
+    assert_eq!(
+        off["operations"],
+        json!([
+            {"op": "add", "path": "/employees/[id=e01]/unavailable/-",
+             "value": {"from": "2027-03-01T00:00", "to": "2027-03-02T00:00"}},
+            {"op": "replace", "path": "/shifts/[id=2027-03-01-ward-a-early-0]/pinned", "value": false},
+            {"op": "remove", "path": "/shifts/[id=2027-03-01-ward-a-early-0]/employee"},
+        ])
+    );
+    assert_eq!(
+        off["summary"],
+        "Ada North is off on Mon 1 Mar: 1 shift is free to cover."
+    );
+    let cancelled = compile(
+        "shift_cancelled",
+        json!({"shift": "2027-03-28-ward-c-night-0"}),
+    );
+    assert_eq!(
+        cancelled["summary"],
+        "The shift Sun 28 Mar 23:00–07:00 night, ward-c, weekend is cancelled."
+    );
+    let mut changed = plan.clone();
+    for compiled in [&off, &cancelled] {
+        apply(&mut changed, compiled["operations"].as_array().unwrap());
+    }
+    let (code, out) =
+        engine(json!({"command": "evaluate", "model": "employee-scheduling", "plan": changed}));
+    assert_eq!(code, 0, "{out}");
 }

@@ -350,3 +350,62 @@ pub fn assert_incremental_matches_full(plan: Plan, steps: usize, seed: u64) {
         }
     }
 }
+
+/// Applies JSON Patch operations whose paths may address records by id
+/// (`[id=X]`), the way the workbench applies a model's changes.
+pub fn apply(plan: &mut Value, operations: &[Value]) {
+    for op in operations {
+        let path = op["path"].as_str().unwrap();
+        let mut parts: Vec<String> = path[1..]
+            .split('/')
+            .map(|p| p.replace("~1", "/").replace("~0", "~"))
+            .collect();
+        let last = parts.pop().unwrap();
+        let mut at = &mut *plan;
+        for part in &parts {
+            at = step(at, part);
+        }
+        match op["op"].as_str().unwrap() {
+            "remove" => match at {
+                Value::Array(items) => {
+                    let i = index(items, &last);
+                    items.remove(i);
+                }
+                Value::Object(fields) => {
+                    fields
+                        .remove(&last)
+                        .unwrap_or_else(|| panic!("no field {last}"));
+                }
+                other => panic!("cannot remove {last} from {other}"),
+            },
+            "add" if last == "-" => at.as_array_mut().unwrap().push(op["value"].clone()),
+            "add" | "replace" if at.is_object() => {
+                at.as_object_mut()
+                    .unwrap()
+                    .insert(last, op["value"].clone());
+            }
+            "add" | "replace" => *step(at, &last) = op["value"].clone(),
+            other => panic!("unsupported op {other}"),
+        }
+    }
+}
+
+fn index(items: &[Value], part: &str) -> usize {
+    match part.strip_prefix("[id=").and_then(|p| p.strip_suffix(']')) {
+        Some(id) => items
+            .iter()
+            .position(|item| item["id"] == id)
+            .unwrap_or_else(|| panic!("no {id}")),
+        None => part.parse().unwrap(),
+    }
+}
+
+fn step<'a>(at: &'a mut Value, part: &str) -> &'a mut Value {
+    if at.is_array() {
+        let i = index(at.as_array().unwrap(), part);
+        &mut at[i]
+    } else {
+        at.get_mut(part)
+            .unwrap_or_else(|| panic!("no field {part}"))
+    }
+}

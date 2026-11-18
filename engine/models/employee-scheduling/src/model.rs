@@ -1,6 +1,7 @@
 //! The employee scheduling model as a workbench model.
 
 use solverforge::{ConstraintSet, ConstraintWeights, HardMediumSoftScore, SolverManager};
+use solverforge_workbench_host::edit::{Compiled, Edit};
 use solverforge_workbench_host::view::View;
 use solverforge_workbench_host::{
     Analysis, ConstraintInfo, DemoInfo, EngineError, EntityName, Issue, Kpi, Model, SizeField,
@@ -62,6 +63,12 @@ impl Model for EmployeeScheduling {
     }
     fn descriptor() -> solverforge::domain::SolutionDescriptor {
         Plan::descriptor()
+    }
+    fn edits(plan: &Plan) -> Vec<Edit> {
+        crate::edits::edits(plan)
+    }
+    fn edit(plan: &Plan, id: &str, args: &serde_json::Value) -> Result<Compiled, EngineError> {
+        crate::edits::edit(plan, id, args)
     }
     fn prepare(plan: &mut Plan) -> Vec<Issue> {
         crate::prepare::prepare(plan)
