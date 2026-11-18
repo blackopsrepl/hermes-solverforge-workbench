@@ -461,6 +461,14 @@ test('scores compare level by level, and verdicts and change fields read as word
   assert.equal(verdictText({ status: 'completed', score: '0hard/-3medium/0soft' }), 'Keeps every hard rule; leaves 3 medium unmet')
   assert.equal(verdictText({ status: 'incomplete', score: '-2hard/0soft' }), 'Breaks hard rules (-2 hard)')
   assert.equal(verdictText({ status: 'solving' }), 'Solving')
+  // With the analysis, the verdict names what falls short in the model's own words.
+  const analysis = [
+    { name: 'Require scheduling mandatory visits', level: 'medium', score: '0hard/-200000medium/0soft', match_count: 2 },
+    { name: 'Minimize travel time', level: 'soft', score: '0hard/0medium/-9soft', match_count: 40 },
+    { name: 'Require skills', level: 'hard', score: '-1hard/0medium/0soft', match_count: 1 }]
+  assert.equal(verdictText({ status: 'completed', score: '0hard/-200000medium/-9soft', analysis: analysis.slice(0, 2) }),
+    'Keeps every hard rule; falls short on Require scheduling mandatory visits ×2')
+  assert.equal(verdictText({ status: 'completed', score: '-1hard/-200000medium/-9soft', analysis }), 'Breaks a hard rule: Require skills ×1')
   const edit = { fields: [{ name: 'where', kind: 'location' }, { name: 'name', kind: 'text' }, { name: 'skill', kind: 'choice', optional: true }] }
   assert.deepEqual(editArgs(edit, { where: '45.07, 7.68', name: 'Leak', skill: '' }), { where: [45.07, 7.68], name: 'Leak' })
   assert.deepEqual(editArgs(edit, { where: 'Turin' }), { where: 'Turin' })

@@ -633,7 +633,8 @@ export function PlanView({ run, dataset, version, kind = 'timeline', onItem }) {
   const what = viewName(kind).toLowerCase()
   if (query.isLoading) return e(Skeleton, { style: { height: kind === 'routes' ? 560 : 320, width: '100%' } })
   if (!data || data.ok === false) return e('div', { style: faint }, errorText(data, `The ${what} could not be drawn.`))
-  if (data.kind === 'routes') return e(RoutesPlan, { data, frame, onItem })
+  // A backend from before the split answers a routes view as one page: draw that.
+  if (data.kind === 'routes' && Array.isArray(data.routes)) return e(RoutesPlan, { data, frame, onItem })
   return e(SandboxedFrame, {
     ref: frame,
     src: 'data:text/html;charset=utf-8,' + encodeURIComponent(data.document),
@@ -780,10 +781,20 @@ export function verdictText(run) {
   if (LIVE.includes(run.status)) return run.status === 'queued' ? 'Waiting to solve' : 'Solving'
   if (run.status === 'failed' || run.status === 'invalid') return run.status === 'invalid' ? 'The data has a problem' : 'The solve failed'
   if (!run.score) return 'No plan'
+  // Name the rules that cost the level, with how often each is broken, when the analysis is there.
+  const broken = level => (run.analysis || [])
+    .filter(c => c.level === level && parseScore(c.score).some(p => p.level === level && p.value < 0))
+    .map(c => `${c.name}${c.match_count ? ` ×${fmt(c.match_count)}` : ''}`)
   const hard = brokenHard(run.score)
   const medium = parseScore(run.score).filter(p => p.level === 'medium' && p.value < 0).reduce((n, p) => n + p.value, 0)
-  if (hard < 0) return `Breaks hard rules (${fmt(hard)} hard)`
-  if (medium < 0) return `Keeps every hard rule; leaves ${fmt(-medium)} medium unmet`
+  if (hard < 0) {
+    const rules = broken('hard')
+    return rules.length ? `Breaks ${rules.length === 1 ? 'a hard rule' : `${rules.length} hard rules`}: ${rules.join(', ')}` : `Breaks hard rules (${fmt(hard)} hard)`
+  }
+  if (medium < 0) {
+    const rules = broken('medium')
+    return rules.length ? `Keeps every hard rule; falls short on ${rules.join(', ')}` : `Keeps every hard rule; leaves ${fmt(-medium)} medium unmet`
+  }
   return 'Keeps every hard rule'
 }
 
@@ -1756,8 +1767,9 @@ function RunPage({ model, id }) {
               `Only what costs score (${costing.length})`)),
           rows.length
             ? e(Table, {
-                columns: [{ id: 'name', label: 'Rule' }, { id: 'level', label: 'Level', width: 80 },
-                  { id: 'count', label: 'Matches', num: true, width: 80 }, { id: 'score', label: 'Score', num: true, width: 260 }],
+                // The rule's name takes what the fixed columns leave; the score wraps by level.
+                columns: [{ id: 'name', label: 'Rule' }, { id: 'level', label: 'Level', width: 64 },
+                  { id: 'count', label: 'Matches', num: true, width: 72 }, { id: 'score', label: 'Score', num: true, width: '34%' }],
                 rows: rows.map(({ item: c, hits }) => ({
                   key: c.name, name: e('div', null, e(Highlight, { text: c.name, hits }), open === c.name ? e(Matches, { item: c }) : null),
                   level: e('span', { style: { color: levelColor(c.level) } }, c.level),
@@ -1810,7 +1822,9 @@ function RunPage({ model, id }) {
         ? e('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 } },
             run.kpis.map(k => e(KpiTile, { key: k.id, kpi: k, before: before.get(k.id) })))
         : null,
-      plan && analysis && !docked
+      // A map needs the page's width: a routing plan spans it, its rules below. Other
+      // views share the page with the rules beside them.
+      plan && analysis && !docked && model.view !== 'routes'
         ? e('div', { style: { display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 2fr)', gap: 14, alignItems: 'start' } }, plan, analysis)
         : [plan, analysis],
       finished ? e(FillPanel, { key: picked ? picked.id : 'all', run: run.id, model: model.id, items: picked ? [picked.id] : undefined, onClear: () => setPicked(null) }) : null,
