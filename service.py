@@ -455,9 +455,35 @@ class Workbench:
         view["lineage"] = self.lineage(dataset_id)
         return view
 
-    def patch_dataset(self, dataset_id: str, operations: list[dict], name: str = "",
-                      from_run: str | None = None) -> dict[str, Any]:
-        """A new dataset: the parent (or a run's best plan) with ``operations`` applied."""
+    def edits(self, dataset_id: str | None = None, run_id: str | None = None) -> list[dict[str, Any]]:
+        """The changes the model offers for replanning this plan, each field with its choices."""
+        dataset, plan, _ = self._source(run_id, dataset_id)
+        model_id = dataset["model_id"]
+        return self._call(model_id, {"command": "edits", "model": model_id, "plan": plan})["edits"]
+
+    def _compile(self, model_id: str, plan: dict[str, Any], edits: list[dict]) -> tuple[list[dict], list[dict]]:
+        """(operations, records) for ``edits`` applied in turn, each compiled against the plan so far."""
+        operations: list[dict] = []
+        records: list[dict] = []
+        for change in edits:
+            if not (isinstance(change, dict) and isinstance(change.get("edit"), str)
+                    and isinstance(change.get("args", {}), dict)):
+                raise WorkbenchError("invalid_edit", "each change is {edit: <id>, args: {...}}")
+            compiled = self._call(model_id, {"command": "edit", "model": model_id, "plan": plan,
+                                             "edit": {"id": change["edit"], "args": change.get("args", {})}})
+            try:
+                plan = apply_patch(plan, compiled["operations"])
+            except PatchError as exc:
+                raise WorkbenchError("invalid_edit", f"{change['edit']}: {exc}") from exc
+            operations += compiled["operations"]
+            records.append({"op": "edit", "edit": change["edit"], "args": change.get("args", {}),
+                            "summary": compiled["summary"]})
+        return operations, records
+
+    def patch_dataset(self, dataset_id: str, operations: list[dict] | None = None, name: str = "",
+                      from_run: str | None = None, edits: list[dict] | None = None) -> dict[str, Any]:
+        """A new dataset: the parent (or a run's best plan) with the model's ``edits`` and then
+        ``operations`` applied."""
         parent = self.dataset_record(dataset_id)
         base = parent["plan"]
         if from_run:
@@ -465,18 +491,22 @@ class Workbench:
             if run["dataset_id"] != dataset_id or not run.get("plan"):
                 raise WorkbenchError("no_plan", f"run {from_run} of this dataset has no plan to start from")
             base = run["plan"]
+        operations = list(operations or [])
+        compiled, records = self._compile(parent["model_id"], base, edits or [])
         try:
-            plan = apply_patch(base, operations) if operations else base
+            plan = apply_patch(base, compiled + operations) if compiled or operations else base
         except PatchError as exc:
             raise WorkbenchError("invalid_patch", str(exc)) from exc
         plan = self._on_roads(parent["model_id"], plan)
-        origin = "patch" if operations else "run" if from_run else "copy"
+        changed = bool(compiled or operations)
+        origin = "run" if from_run else "patch" if changed else "copy"
         default_name = {"patch": f"{parent['name']} (revised)", "run": f"{parent['name']} (replan)",
                         "copy": f"{parent['name']} (copy)"}[origin]
         dataset = self.store.add_dataset(
             model_id=parent["model_id"], name=name or default_name, plan=plan,
             origin=origin, tags=parent["tags"], parent_id=dataset_id,
-            config=parent["config"], patch=operations or None, size=self.size_of(parent["model_id"], plan))
+            config=parent["config"], patch=(records + operations) or None,
+            size=self.size_of(parent["model_id"], plan))
         self.changed("dataset", id=dataset["id"])
         return self.dataset_view(dataset)
 

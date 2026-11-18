@@ -82,8 +82,13 @@ class Tools:
         return ok(dataset=self.wb.update_dataset(args["dataset"], args.get("name"), args.get("tags")))
 
     def dataset_patch(self, args: dict) -> str:
+        if not (args.get("operations") or args.get("edits") or args.get("from_run")):
+            raise WorkbenchError("no_change", "give edits, operations or from_run")
         return ok(dataset=self.wb.patch_dataset(args["dataset"], args.get("operations") or [],
-                                                args.get("name", ""), args.get("from_run")))
+                                                args.get("name", ""), args.get("from_run"), args.get("edits")))
+
+    def edits(self, args: dict) -> str:
+        return ok(edits=self.wb.edits(args.get("dataset"), args.get("run")))
 
     def dataset_delete(self, args: dict) -> str:
         self.wb.delete_dataset(args["dataset"])

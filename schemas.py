@@ -103,17 +103,26 @@ SCHEMAS: list[dict[str, Any]] = [
     _tool("solverforge_workbench_dataset_update", "Rename a dataset or replace its tags.",
           {"dataset": {"type": "string"}, "name": {"type": "string"},
            "tags": {"type": "array", "items": {"type": "string"}}}, ["dataset"]),
+    _tool("solverforge_workbench_edits",
+          "The changes a model offers for replanning a plan (a technician off for a day, a new visit, an "
+          "employee off, a machine down...), each with its fields and, for choices, the options read from "
+          "the plan. Give exactly one of run (its solved plan) or dataset (its input). Apply them with "
+          "solverforge_workbench_dataset_patch edits.",
+          {"run": {"type": "string"}, "dataset": {"type": "string"}}),
     _tool("solverforge_workbench_dataset_patch",
-          "Make a new dataset from an existing one by changing it: JSON Patch operations (add, remove, "
-          "replace) whose paths may address records by id, e.g. /shifts/[id=S12]/employee or "
-          "/employees/[id=E3]/unavailable/-. from_run starts from that run's solved plan instead of the "
-          "dataset's input (for replanning with the published assignments). The original stays unchanged and "
-          "the new dataset records it as its parent.",
+          "Make a new dataset from an existing one by changing it. edits are the model's own changes from "
+          "solverforge_workbench_edits, [{edit, args}], applied in order. operations are JSON Patch "
+          "operations (add, remove, replace) whose paths may address records by id, e.g. "
+          "/shifts/[id=S12]/employee or /employees/[id=E3]/unavailable/-, applied after the edits. from_run "
+          "starts from that run's solved plan instead of the dataset's input (replanning with the published "
+          "assignments). The original stays unchanged and the new dataset records it as its parent.",
           {"dataset": {"type": "string"},
+           "edits": {"type": "array", "items": {"type": "object", "properties": {
+               "edit": {"type": "string"}, "args": {"type": "object"}}, "required": ["edit"]}},
            "operations": {"type": "array", "items": {"type": "object"}},
            "from_run": {"type": "string"},
            "name": {"type": "string"}},
-          ["dataset", "operations"]),
+          ["dataset"]),
     _tool("solverforge_workbench_dataset_delete", "Delete a dataset and all its runs. Asks the user first.",
           {"dataset": {"type": "string"}}, ["dataset"]),
     _tool("solverforge_workbench_profile_save",

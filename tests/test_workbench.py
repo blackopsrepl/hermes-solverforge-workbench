@@ -229,6 +229,27 @@ def test_a_run_knows_the_solve_before_it_and_a_dataset_its_lineage(wb):
     assert wb.run(second["id"])["lineage"]["children"][0]["origin"] == "run"
 
 
+def test_a_replan_applies_the_models_own_changes_and_records_each_in_words(wb):
+    dataset = demo(wb)
+    run = wait_for(wb, wb.solve(dataset["id"], overrides={"solve": {"seconds": 1}})["id"])
+    [offered] = wb.edits(run_id=run["id"])
+    assert offered["id"] == "shift_cancelled" and len(offered["fields"][0]["options"]) == 6
+    child = wb.patch_dataset(dataset["id"], from_run=run["id"],
+                             edits=[{"edit": "shift_cancelled", "args": {"shift": "0"}},
+                                    {"edit": "shift_cancelled", "args": {"shift": "1"}}])
+    assert child["origin"] == "run" and child["name"] == f"{dataset['name']} (replan)"
+    stored = wb.dataset(child["id"], with_plan=True)
+    assert [s["id"] for s in stored["plan"]["shifts"]] == [2, 3, 4, 5]
+    assert [p.get("summary") for p in stored["patch"] if p["op"] == "edit"] == [
+        "Shift 0 on day 0 is cancelled.", "Shift 1 on day 0 is cancelled."]
+    with pytest.raises(WorkbenchError) as error:
+        wb.patch_dataset(dataset["id"], edits=[{"edit": "shift_cancelled", "args": {"shift": "9"}}])
+    assert error.value.code == "invalid_edit"
+    with pytest.raises(WorkbenchError) as error:
+        wb.patch_dataset(dataset["id"], edits=[{"edit": "nothing"}])
+    assert error.value.code == "unknown_edit"
+
+
 def test_explain_and_compare_read_the_engines_analysis(wb):
     dataset = demo(wb)
     before = wb.evaluate(dataset["id"])

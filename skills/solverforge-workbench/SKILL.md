@@ -44,7 +44,11 @@ invent one; read it from a tool result.
    by entity (an id or name as it appears in the plan) for "why is this
    employee on that shift". Quote the matches; do not paraphrase them into
    claims they do not make.
-6. Change the problem with `solverforge_workbench_dataset_patch` (JSON Patch; address
+6. Change the problem with `solverforge_workbench_dataset_patch`. Prefer the
+   model's own changes: `solverforge_workbench_edits` lists them ("a technician
+   is off for a day", "add a visit", "an employee is off"...) with each field's
+   options, and `edits: [{edit, args}]` applies them, recording a sentence for
+   each. For anything they do not cover, use `operations` (JSON Patch; address
    records by id with `[id=X]` path segments). To replan a published plan,
    patch with `from_run` set to the solved run, pin what must stay, then solve
    the new dataset. To keep what has already started, solve with

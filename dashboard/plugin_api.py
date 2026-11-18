@@ -40,6 +40,7 @@ READS = {
     "experiment": "solverforge_workbench_experiment",
     "trends": "solverforge_workbench_trends",
     "model_build": "solverforge_workbench_model_build",
+    "edits": "solverforge_workbench_edits",
 }
 WRITES = {
     "solve": "solverforge_workbench_solve",
