@@ -57,6 +57,8 @@ def test_the_engine_draws_routes_with_every_stop_on_a_vehicle_or_left_unplanned(
     stops = [s["id"] for v in view["vehicles"] for s in v["stops"]] + [s["id"] for s in view["unassigned"]]
     assert len(stops) == len(set(stops))
     assert view["timeline"]["model"]["lanes"]
+    # Every route is drawn along the roads: an encoded polyline from start to end.
+    assert all(isinstance(v.get("path"), str) and len(v["path"]) > 20 for v in view["vehicles"] if v["stops"])
 
 
 def test_a_routes_page_loads_only_street_tiles_and_draws_the_map_and_the_timeline():
