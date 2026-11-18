@@ -506,6 +506,10 @@ test('trends mark each solve with its dataset, profile and time', () => {
   const html = at(placeOf('toy', 'trends'))
   assert.equal((html.match(/<circle /g) || []).length, 5)
   assert.match(html, /<title>6 shifts · Demo Week · Blind · just now<\/title>/)
+  // One line and one legend entry per dataset and profile: solves that are not comparable are not joined.
+  const keys = (html.match(/role="listitem"/g) || []).length
+  assert.ok(keys >= 2, 'a legend entry per dataset and profile')
+  assert.match(text(html), /Dataset any .* Profile any/)
 })
 
 test('compare shows the plans side by side', () => {

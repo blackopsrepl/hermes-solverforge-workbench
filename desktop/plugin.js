@@ -2305,43 +2305,84 @@ function ExperimentPage({ model, id }) {
 
 /** One KPI over time: a line through every finished solve, oldest on the left, each solve a
  *  point that names its dataset, profile and time and opens its run. */
+// The colours of the series on a trend: one per dataset and profile, readable on every theme.
+const SERIES = ['--ui-accent, #3b82f6', '--ui-success, #3fb950', '--ui-warning, #d29922', '--ui-danger, #e5534b', '--ui-info, #a371f7']
+const seriesColor = i => ink(SERIES[i % SERIES.length])
+
+/** Which line a solve belongs to: the same dataset under the same profile, so a trend never
+ *  zigzags between plans that are not comparable. */
+export function trendSeries(solves) {
+  const keys = []
+  for (const s of solves) {
+    const key = `${s.dataset} · ${s.profile || 'Standard'}`
+    if (!keys.includes(key)) keys.push(key)
+  }
+  return keys
+}
+
+/** One KPI over time: a line per dataset and profile, each solve a point that opens its run. */
 export function TrendLine({ kpi, solves = [], model, width = 520, height = 72 }) {
   const { go } = useNav()
-  const values = kpi.points.map(p => p[1])
+  const byRun = new Map(solves.map(s => [s.run_id, s]))
+  const points = kpi.points.filter(([, , runId]) => !solves.length || byRun.has(runId))
+  const values = points.map(p => p[1])
   if (values.length < 2) return e('div', { style: faint }, `${kpi.label}: ${values.length ? `${fmt(values[0])} ${kpi.unit || ''}` : 'no data'}`)
+  const keys = trendSeries(solves)
+  const keyOf = runId => { const s = byRun.get(runId); return s ? `${s.dataset} · ${s.profile || 'Standard'}` : '' }
   const low = Math.min(...values)
   const high = Math.max(...values)
   const span = high - low || 1
   const padding = 6
   const x = i => padding + (i / (values.length - 1)) * (width - 2 * padding)
   const y = v => padding + ((high - v) / span) * (height - 2 * padding)
-  const d = values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('')
-  const byRun = new Map(solves.map(s => [s.run_id, s]))
+  const lines = keys.map((key, n) => {
+    const own = points.map((p, i) => [i, p]).filter(([, p]) => keyOf(p[2]) === key)
+    const d = own.map(([i, p], k) => `${k ? 'L' : 'M'}${x(i).toFixed(1)},${y(p[1]).toFixed(1)}`).join('')
+    return own.length > 1 ? e('path', { key, d, fill: 'none', stroke: seriesColor(n), strokeWidth: 1.5, vectorEffect: 'non-scaling-stroke' }) : null
+  })
   return e('figure', { style: { margin: 0 } },
     e('svg', { role: 'img', 'aria-label': `${kpi.label} over time`, viewBox: `0 0 ${width} ${height}`, width: '100%', height, preserveAspectRatio: 'none', style: { display: 'block', overflow: 'visible' } },
-      e('path', { d, fill: 'none', stroke: 'var(--ui-accent)', strokeWidth: 1.5, vectorEffect: 'non-scaling-stroke' }),
-      kpi.points.map(([when, v, runId], i) => {
+      lines,
+      points.map(([when, v, runId], i) => {
         const solve = byRun.get(runId)
         const words = `${fmt(v)} ${kpi.unit || ''} · ${solve ? `${solve.dataset} · ${solve.profile || 'Standard'} · ` : ''}${ago(when)}`
         const open = runId && model ? () => go(placeOf(model, 'runs', runId)) : undefined
-        return e('circle', { key: `${runId}-${i}`, cx: x(i), cy: y(v), r: 3.5, fill: solve && !solve.feasible ? 'var(--ui-danger, #e5534b)' : 'var(--ui-accent)',
+        const n = Math.max(0, keys.indexOf(keyOf(runId)))
+        return e('circle', { key: `${runId}-${i}`, cx: x(i), cy: y(v), r: 3.5, fill: solve && !solve.feasible ? DANGER : seriesColor(n),
           style: { cursor: open ? 'pointer' : 'default' }, vectorEffect: 'non-scaling-stroke', onClick: open,
           ...(open ? { tabIndex: 0, role: 'link', 'aria-label': `Open the run: ${words}`,
             onKeyDown: event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open() } } } : {}) }, e('title', null, words))
       })),
     e('figcaption', { style: CAPTION },
-      e('span', null, `${ago(kpi.points[0][0])} · ${fmt(values[0])}`),
+      e('span', null, `${ago(points[0][0])} · ${fmt(values[0])}`),
       e('span', null, `${kpi.label} · ${count(values.length, 'solve')} · range ${fmt(low)}–${fmt(high)} ${kpi.unit || ''}`),
-      e('span', null, `${fmt(values[values.length - 1])} · ${ago(kpi.points[kpi.points.length - 1][0])}`)))
+      e('span', null, `${fmt(values[values.length - 1])} · ${ago(points[points.length - 1][0])}`)))
 }
 
 function TrendsTab({ model }) {
   const query = useRead('trends', { model: model.id })
-  return e(Loading, { query }, data => e('div', { style: stack(14) },
-    data.solves.length
-      ? e('div', { style: muted }, `${count(data.solves.length, 'finished solve')} · ${Math.round(data.feasible_share * 100)}% feasible · ${ago(data.solves[0].finished_at)} to ${ago(data.solves[data.solves.length - 1].finished_at)}`)
-      : e(Empty, { title: 'No finished solves yet', description: 'Trends appear once this model has solved plans.' }),
-    data.kpis.map(k => e(Card, { key: k.id }, e(TrendLine, { kpi: k, solves: data.solves, model: model.id })))))
+  const [dataset, setDataset] = useStored(`${model.id}.trends.dataset`, '')
+  const [profile, setProfile] = useStored(`${model.id}.trends.profile`, '')
+  return e(Loading, { query }, data => {
+    const datasets = [...new Set(data.solves.map(s => s.dataset))]
+    const profiles = [...new Set(data.solves.map(s => s.profile || 'Standard'))]
+    const solves = data.solves.filter(s => (!dataset || s.dataset === dataset) && (!profile || (s.profile || 'Standard') === profile))
+    const keys = trendSeries(solves)
+    return e('div', { style: stack(14) },
+      data.solves.length
+        ? e('div', { style: { ...row(12), flexWrap: 'wrap' } },
+            e('span', { style: muted }, `${count(solves.length, 'finished solve')} · ${Math.round(solves.filter(s => s.feasible).length / Math.max(1, solves.length) * 100)}% feasible`),
+            spacer(),
+            e(Pick, { label: 'Dataset', value: dataset, onChange: setDataset, options: [['', 'any'], ...datasets.map(d => [d, d])] }),
+            e(Pick, { label: 'Profile', value: profile, onChange: setProfile, options: [['', 'any'], ...profiles.map(p => [p, p])] }))
+        : e(Empty, { title: 'No finished solves yet', description: 'Trends appear once this model has solved plans.' }),
+      keys.length
+        ? e('div', { role: 'list', 'aria-label': 'Lines', style: { ...row(14), flexWrap: 'wrap', ...muted } },
+            keys.map((k, n) => e('span', { key: k, role: 'listitem', style: row(6) },
+              e('span', { 'aria-hidden': true, style: { width: 14, height: 3, borderRadius: 2, background: seriesColor(n) } }), k)))
+        : null,
+      solves.length ? data.kpis.map(k => e(Card, { key: k.id }, e(TrendLine, { kpi: k, solves, model: model.id }))) : null)
+  })
 }
 
 // ---- across models -------------------------------------------------------------------
