@@ -541,6 +541,10 @@ test('the data editor finds every table, nested rows included, and reads each va
   assert.equal(cellText(visits.columns[0], [45.03, 7.66]), '45.0300, 7.6600')
   assert.equal(cellText(visits.columns[2], ['giorgio']), 'giorgio')
   assert.equal(cellText(visits.columns[1], undefined), '—')
+  // An area is counted, not spelled out in coordinates.
+  const corner = { name: 'corner', label: 'Corner', kind: 'location' }
+  const area = { name: 'requiredArea', label: 'Works only in', kind: 'list', fields: [{ name: 'polygon', label: 'Polygon', kind: 'list', fields: [corner] }] }
+  assert.equal(cellText(area, [[[45.06, 7.59], [45.12, 7.59], [45.12, 7.75], [45.06, 7.75]]]), '1 polygon (4 corners)')
 })
 
 test('rows without ids are addressed by position, and a path holding one object is a one-row table', () => {

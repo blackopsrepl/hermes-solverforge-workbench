@@ -1600,6 +1600,9 @@ export function cellText(column, value) {
       return value.map(v => (item.fields || []).filter(f => v && v[f.name] !== undefined && v[f.name] !== null)
         .map(f => cellText(f, v[f.name])).join(' · ')).join('; ')
     }
+    // Places and shapes are counted, not spelled out in coordinates: "1 polygon (4 corners)".
+    if (item.kind === 'location') return count(value.length, item.label.toLowerCase())
+    if (item.kind === 'list') return `${count(value.length, item.label.toLowerCase())} (${value.map(v => cellText(item, v)).join(', ')})`
     return value.map(v => cellText(item, v)).join(', ')
   }
   if (column.kind === 'object' && value && typeof value === 'object') {
