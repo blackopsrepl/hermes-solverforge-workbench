@@ -44,7 +44,9 @@ jobs:
 
   build:
     needs: gate
-    runs-on: ubuntu-latest
+    # macOS builds link against the system frameworks the road fetcher uses
+    # (Security, SystemConfiguration), which only a macOS SDK provides.
+    runs-on: ${{ contains(matrix.target, 'apple') && 'macos-latest' || 'ubuntu-latest' }}
     permissions:
       contents: read
       id-token: write
@@ -64,6 +66,7 @@ jobs:
         with:
           targets: ${{ matrix.target }}
       - name: Install zig and cargo-zigbuild
+        if: ${{ !contains(matrix.target, 'apple') }}
         run: |
           pip install ziglang==0.17.0
           cargo install --locked cargo-zigbuild@0.24.1

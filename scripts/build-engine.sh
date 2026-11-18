@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Build one release binary of the engine for a Rust target triple, cross-compiling
-# from Linux with cargo-zigbuild, and write it to dist/ under its release asset name.
+# Build one release binary of the engine for a Rust target triple and write it to
+# dist/ under its release asset name: cross-compiled from Linux with cargo-zigbuild,
+# or with plain cargo on macOS, whose SDK the Apple targets link against.
 # CI runs exactly this script; run it locally to check a target before tagging.
 #
 #   scripts/build-engine.sh x86_64-unknown-linux-musl
@@ -14,7 +15,11 @@ exe=""
 
 rustup target add "$target" >/dev/null
 cd "$root/engine"
-cargo zigbuild --release --locked --target "$target" -p solverforge-workbench
+if [[ $(uname -s) == Darwin ]]; then
+  cargo build --release --locked --target "$target" -p solverforge-workbench
+else
+  cargo zigbuild --release --locked --target "$target" -p solverforge-workbench
+fi
 
 mkdir -p "$dist"
 asset="solverforge-workbench-$target$exe"
