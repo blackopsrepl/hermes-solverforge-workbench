@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 
 use serde_json::{json, Value};
 use solverforge::{ConstraintSet, HardMediumSoftScore, PlanningSolution, ScoreDirector};
+use solverforge_workbench_host::roads::{provide_complete, same, Place, Roads};
 use solverforge_workbench_host::{entry, run_io, Model, Severity};
 use solverforge_workbench_pickup_delivery_routing::constraints::define_constraints;
 use solverforge_workbench_pickup_delivery_routing::{PickupDeliveryRouting, Plan};
@@ -113,8 +114,46 @@ pub fn solve(plan: Value, seconds: u64) -> (i32, Value) {
     )
 }
 
+/// Great-circle meters between two `[lat, lon]` points.
+pub fn haversine(a: [f64; 2], b: [f64; 2]) -> f64 {
+    let (la1, lo1, la2, lo2) = (
+        a[0].to_radians(),
+        a[1].to_radians(),
+        b[0].to_radians(),
+        b[1].to_radians(),
+    );
+    let h = ((la2 - la1) / 2.0).sin().powi(2)
+        + la1.cos() * la2.cos() * ((lo2 - lo1) / 2.0).sin().powi(2);
+    2.0 * 6_371_000.0 * h.sqrt().asin()
+}
+
+/// The roads the tests drive on: a road between every two places, 1.35 times
+/// the straight line, driven at 32 km/h.
+pub fn test_leg(a: [f64; 2], b: [f64; 2]) -> Option<(f64, f64)> {
+    let length = haversine(a, b) * 1.35;
+    Some((length / (32.0 / 3.6), length))
+}
+
+/// Provides the test roads for every place of a wire plan, so the engine reads
+/// them instead of fetching a city.
+pub fn give_roads(wire: &Value) {
+    let Ok(plan) = serde_json::from_value::<Plan>(wire.clone()) else {
+        return;
+    };
+    let points: Vec<[f64; 2]> = PickupDeliveryRouting::places(&plan)
+        .iter()
+        .map(|p| p.point)
+        .collect();
+    if !points.is_empty() {
+        provide_complete(&points, test_leg);
+    }
+}
+
 fn request(mut body: Value, hold: bool) -> (i32, Value) {
     body["model"] = json!("pickup-delivery-routing");
+    if body.get("roads").is_none() {
+        give_roads(&body["plan"]);
+    }
     let sink = Sink::default();
     let line = io::Cursor::new(format!("{body}\n").into_bytes());
     let input: Box<dyn io::Read + Send> = if hold {
@@ -184,7 +223,22 @@ pub fn issue_codes(plan: Value) -> Vec<String> {
 
 /// A wire dataset as a prepared plan.
 pub fn prepared(wire: Value) -> Plan {
+    give_roads(&wire);
     let mut plan: Plan = serde_json::from_value(wire).unwrap();
+    if plan.travel_matrix.is_none() {
+        let mut distinct: Vec<Place> = Vec::new();
+        for place in PickupDeliveryRouting::places(&plan) {
+            if !distinct.iter().any(|p| same(&p.point, &place.point)) {
+                distinct.push(place);
+            }
+        }
+        let points: Vec<[f64; 2]> = distinct.iter().map(|p| p.point).collect();
+        let (matrix, _) = Roads::load(None, &points)
+            .unwrap()
+            .matrix(&distinct)
+            .unwrap();
+        PickupDeliveryRouting::set_roads(&mut plan, matrix);
+    }
     let issues = PickupDeliveryRouting::prepare(&mut plan);
     assert!(
         issues.iter().all(|i| i.severity != Severity::Error),

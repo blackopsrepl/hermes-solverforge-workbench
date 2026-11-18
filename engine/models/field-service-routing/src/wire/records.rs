@@ -516,12 +516,19 @@ pub struct PlanningWindow {
     pub end_date: String,
 }
 
-/// Travel between places as a map service measured it, replacing straight
-/// lines. `null` marks a leg no road connects.
+/// Travel between places: measured along the roads by the engine
+/// (`source: "roads"`), or brought by the dataset from its own map service and
+/// used as given. `null` marks a leg no road connects.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TravelMatrix {
     pub locations: Vec<[f64; 2]>,
     pub seconds: Vec<Vec<Option<i64>>>,
     pub meters: Vec<Vec<Option<i64>>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    /// Road travel: how far each location is from the road it was snapped to;
+    /// `null` where no road is near.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snap_meters: Option<Vec<Option<f64>>>,
 }

@@ -23,6 +23,8 @@ pub enum Command {
     View,
     /// Ranked placements for open items, or one applied.
     Fill,
+    /// The plan with its travel measured along the roads, and what the roads say about its places.
+    Roads,
 }
 
 /// One request, read as the first line of stdin.
@@ -52,6 +54,9 @@ pub struct Request {
     /// What to fill, for `fill`.
     #[serde(default)]
     pub fill: Option<crate::fill::FillRequest>,
+    /// Where road networks are cached, for models that travel.
+    #[serde(default)]
+    pub roads: Option<crate::roads::RoadsConfig>,
 }
 
 fn default_max_matches() -> usize {

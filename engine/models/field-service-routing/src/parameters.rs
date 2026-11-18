@@ -69,18 +69,6 @@ pub fn parameters() -> Vec<ParameterInfo> {
             description: "Dates (YYYY-MM-DD) that are no working day for dependencies delayed to the next working day.",
         },
         ParameterInfo {
-            name: "averageSpeedKmh",
-            kind: "number",
-            default: json!(d.average_speed_kmh),
-            description: "Average driving speed for straight-line travel, when the dataset gives no travel matrix.",
-        },
-        ParameterInfo {
-            name: "detourFactor",
-            kind: "number",
-            default: json!(d.detour_factor),
-            description: "Road distance per straight-line distance, for straight-line travel.",
-        },
-        ParameterInfo {
             name: "pinNextVisitDuringFreeze",
             kind: "boolean",
             default: json!(d.pin_next_visit_during_freeze),

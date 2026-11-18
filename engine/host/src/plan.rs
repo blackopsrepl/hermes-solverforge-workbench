@@ -7,21 +7,19 @@ use solverforge::{ConstraintSet, ConstraintWeightError, ConstraintWeights};
 
 use crate::model::{Issue, Model, Severity};
 use crate::protocol::EngineError;
+use crate::roads::{issues, same, Roads, RoadsConfig, Travel};
 
-/// Deserializes and prepares the plan. Returns it with the model's warnings;
+/// Deserializes and prepares the plan. A model that travels gets its travel
+/// measured along the roads first, unless the plan brought its own or already
+/// carries road travel for every place. Returns the plan with the warnings;
 /// any error-level issue refuses the request with every issue attached.
 pub fn parse<M: Model>(
     plan: Option<Value>,
     freeze_before: Option<&str>,
+    roads: Option<&RoadsConfig>,
 ) -> Result<(M::Plan, Vec<Issue>), EngineError> {
-    let plan = plan.ok_or_else(|| EngineError::new("missing_plan", "the request has no plan"))?;
-    let mut plan: M::Plan = serde_json::from_value(plan).map_err(|error| {
-        EngineError::new(
-            "invalid_plan",
-            format!("the plan does not match the model: {error}"),
-        )
-    })?;
-    let issues = M::prepare(&mut plan);
+    let (mut plan, mut issues) = measured::<M>(plan, roads)?;
+    issues.extend(M::prepare(&mut plan));
     let errors = issues
         .iter()
         .filter(|issue| issue.severity == Severity::Error)
@@ -33,7 +31,6 @@ pub fn parse<M: Model>(
         )
         .with_detail(json!({ "issues": issues })));
     }
-    let mut issues = issues;
     if let Some(until) = freeze_before {
         let pinned = M::freeze(&mut plan, until)?;
         issues.push(Issue::warning(
@@ -44,6 +41,55 @@ pub fn parse<M: Model>(
         ));
     }
     Ok((plan, issues))
+}
+
+/// Deserializes the plan and, for a model that travels, measures its travel
+/// along the roads when it needs it. Returns it with what the roads say.
+pub fn measured<M: Model>(
+    plan: Option<Value>,
+    roads: Option<&RoadsConfig>,
+) -> Result<(M::Plan, Vec<Issue>), EngineError> {
+    let plan = plan.ok_or_else(|| EngineError::new("missing_plan", "the request has no plan"))?;
+    let mut plan: M::Plan = serde_json::from_value(plan).map_err(|error| {
+        EngineError::new(
+            "invalid_plan",
+            format!("the plan does not match the model: {error}"),
+        )
+    })?;
+    let issues = road_travel::<M>(&mut plan, roads)?;
+    Ok((plan, issues))
+}
+
+/// Measures the plan's travel along the roads when it needs it; the roads' issues.
+fn road_travel<M: Model>(
+    plan: &mut M::Plan,
+    roads: Option<&RoadsConfig>,
+) -> Result<Vec<Issue>, EngineError> {
+    let places = M::places(plan);
+    if places.is_empty() {
+        return Ok(Vec::new());
+    }
+    match M::travel(plan) {
+        Travel::Given => return Ok(Vec::new()),
+        Travel::Roads(matrix)
+            if places
+                .iter()
+                .all(|place| matrix.locations.iter().any(|l| same(l, &place.point))) =>
+        {
+            return Ok(issues(&places, &matrix));
+        }
+        Travel::Roads(_) | Travel::Missing => {}
+    }
+    let mut distinct: Vec<crate::roads::Place> = Vec::with_capacity(places.len());
+    for place in places {
+        if !distinct.iter().any(|p| same(&p.point, &place.point)) {
+            distinct.push(place);
+        }
+    }
+    let points: Vec<[f64; 2]> = distinct.iter().map(|p| p.point).collect();
+    let (matrix, issues) = Roads::load(roads, &points)?.matrix(&distinct)?;
+    M::set_roads(plan, matrix);
+    Ok(issues)
 }
 
 /// Validates the requested multipliers and stores them in the plan.

@@ -77,10 +77,8 @@ ROUTES_GUEST = TIMELINE + """
   var legend = document.getElementById('legend');
   var focused = null;
   view.vehicles.forEach(function (route) {
-    var points = route.path && route.path.length ? route.path
-      : [[route.start.lat, route.start.lon]].concat(route.stops.map(function (s) { return [s.lat, s.lon]; }),
-                                                    [[route.end.lat, route.end.lon]]);
-    ctrl.drawRoute({points: points, color: route.color, weight: 4, opacity: 0.85});
+    // The engine draws every route along the roads.
+    ctrl.drawEncodedRoute({encoded: route.path || '', color: route.color, weight: 4, opacity: 0.85});
     marker(route.start.lat, route.start.lon, 'S', route.color, route.label + ': ' + route.start.label);
     if (route.end.lat !== route.start.lat || route.end.lon !== route.start.lon) {
       marker(route.end.lat, route.end.lon, 'E', route.color, route.label + ': ' + route.end.label);

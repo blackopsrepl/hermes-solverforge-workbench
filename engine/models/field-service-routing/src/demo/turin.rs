@@ -754,9 +754,10 @@ pub fn turin_two_days() -> Plan {
                     .map(|day| Break {
                         id: format!("{id}-aosta-lunch-{day}"),
                         kind: BreakKind::Floating,
-                        // On the trip, lunch whenever the job allows.
+                        // On the trip, lunch whenever the job allows: after
+                        // a full day's work on the lift.
                         min_start_time: Some(at(day, 11 * 60)),
-                        max_end_time: Some(at(day, 17 * 60)),
+                        max_end_time: Some(at(day, 18 * 60)),
                         duration: Some(30),
                         ..Break::default()
                     })
@@ -984,10 +985,12 @@ pub fn turin_two_days() -> Plan {
         profit: Some(80.0),
         ..Visit::default()
     });
-    // The remote job: two days on a hydro plant's lift in the Aosta valley,
-    // beyond a day's round trip from Turin. The second day follows the
-    // first on the same trip.
-    for (part, minutes) in [(1, 200), (2, 280)] {
+    // The remote job: two full days on a hydro plant's lift in the Aosta
+    // valley. Each day's work plus the drive there and back (about 75 minutes
+    // each way on the roads) is longer than any shift, so it is done from a
+    // trip that stays there overnight; the second day follows the first on
+    // the same trip.
+    for (part, minutes) in [(1, 460), (2, 460)] {
         visits.push(Visit {
             id: format!("AOSTA-LIFT-{part}"),
             name: Some(format!(

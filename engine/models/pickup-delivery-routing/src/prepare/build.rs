@@ -32,19 +32,6 @@ fn valid_place(p: &[f64; 2]) -> bool {
     p[0].is_finite() && p[1].is_finite() && p[0].abs() <= 90.0 && p[1].abs() <= 180.0
 }
 
-/// Great-circle meters between two `[lat, lon]` points.
-pub fn haversine(a: [f64; 2], b: [f64; 2]) -> f64 {
-    let (la1, lo1, la2, lo2) = (
-        a[0].to_radians(),
-        a[1].to_radians(),
-        b[0].to_radians(),
-        b[1].to_radians(),
-    );
-    let h = ((la2 - la1) / 2.0).sin().powi(2)
-        + la1.cos() * la2.cos() * ((lo2 - lo1) / 2.0).sin().powi(2);
-    2.0 * 6_371_000.0 * h.sqrt().asin()
-}
-
 /// Every distinct place, by its coordinates.
 #[derive(Default)]
 struct Places {
@@ -114,22 +101,12 @@ fn travel(plan: &Plan, places: Vec<[f64; 2]>, issues: &mut Vec<Issue>) -> Option
             }
         }
         None => {
-            let speed = plan.parameters.average_speed_kmh / 3.6;
-            let detour = plan.parameters.detour_factor;
-            if !(speed > 0.0 && speed.is_finite() && detour >= 1.0 && detour.is_finite()) {
-                issues.push(Issue::error(
-                    "bad_parameters",
-                    "parameters: averageSpeedKmh must be positive and detourFactor at least 1",
-                ));
-                return None;
-            }
-            for a in 0..n {
-                for b in 0..n {
-                    let meters = haversine(places[a], places[b]) * detour;
-                    legs[a * n + b] =
-                        Some(((meters / speed).round() as i64, meters.round() as i64));
-                }
-            }
+            // The engine measures travel along the roads before preparing a plan.
+            issues.push(Issue::error(
+                "no_travel",
+                "the plan has no travel between its places: the engine measures it on the roads",
+            ));
+            return None;
         }
     }
     Some(Travel::new(places, legs))

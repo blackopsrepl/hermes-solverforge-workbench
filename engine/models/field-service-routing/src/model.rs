@@ -2,6 +2,7 @@
 
 use solverforge::{ConstraintSet, ConstraintWeights, HardMediumSoftScore, SolverManager};
 use solverforge_workbench_host::fill::{FillAnswer, FillRequest};
+use solverforge_workbench_host::roads::{Place, RoadMatrix, Travel};
 use solverforge_workbench_host::view::View;
 use solverforge_workbench_host::{
     Analysis, ConstraintInfo, DemoInfo, EngineError, EntityName, Issue, Kpi, Model, ParameterInfo,
@@ -69,6 +70,18 @@ impl Model for FieldServiceRouting {
     }
     fn descriptor() -> solverforge::domain::SolutionDescriptor {
         Plan::descriptor()
+    }
+    fn travels() -> bool {
+        true
+    }
+    fn places(plan: &Plan) -> Vec<Place> {
+        crate::roads::places(plan)
+    }
+    fn travel(plan: &Plan) -> Travel {
+        crate::roads::travel(plan)
+    }
+    fn set_roads(plan: &mut Plan, roads: RoadMatrix) {
+        crate::roads::set_roads(plan, roads)
     }
     fn prepare(plan: &mut Plan) -> Vec<Issue> {
         crate::prepare::prepare(plan)

@@ -124,22 +124,12 @@ fn travel(plan: &Plan, places: Vec<[f64; 2]>, issues: &mut Vec<Issue>) -> Option
             }
         }
         None => {
-            let speed = plan.parameters.average_speed_kmh / 3.6;
-            let detour = plan.parameters.detour_factor;
-            if !(speed > 0.0 && speed.is_finite() && detour >= 1.0 && detour.is_finite()) {
-                issues.push(Issue::error(
-                    "bad_parameters",
-                    "parameters: averageSpeedKmh must be positive and detourFactor at least 1",
-                ));
-                return None;
-            }
-            for a in 0..n {
-                for b in 0..n {
-                    let meters = crate::derived::meters(places[a], places[b]) * detour;
-                    legs[a * n + b] =
-                        Some(((meters / speed).round() as i64, meters.round() as i64));
-                }
-            }
+            // The engine measures travel along the roads before preparing a plan.
+            issues.push(Issue::error(
+                "no_travel",
+                "the plan has no travel between its places: the engine measures it on the roads",
+            ));
+            return None;
         }
     }
     Some(Travel::new(places, legs))

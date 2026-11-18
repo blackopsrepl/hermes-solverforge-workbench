@@ -8,6 +8,7 @@ use solverforge::{ConstraintSet, ConstraintWeights, PlanningSolution, Solvable, 
 use crate::analysis::Analysis;
 use crate::fill::{FillAnswer, FillRequest};
 use crate::protocol::EngineError;
+use crate::roads::{Place, RoadMatrix, Travel};
 use crate::view::View;
 
 /// Score type of a model's plan.
@@ -58,6 +59,25 @@ pub trait Model: 'static + Sized {
     fn size_fields() -> Vec<SizeField> {
         Vec::new()
     }
+
+    /// Whether the model's plans travel on roads: then [`Model::places`] lists
+    /// where, and every request carries the road network cache.
+    fn travels() -> bool {
+        false
+    }
+    /// The places a plan travels between, for models whose travel runs on roads.
+    /// Empty (the default) for models that do not travel.
+    fn places(_plan: &Self::Plan) -> Vec<Place> {
+        Vec::new()
+    }
+    /// What the plan's travel stands on: a matrix it brought, road travel
+    /// measured earlier, or nothing yet.
+    fn travel(_plan: &Self::Plan) -> Travel {
+        Travel::Missing
+    }
+    /// Gives the plan travel measured along the roads between the places
+    /// [`Model::places`] listed, in that order.
+    fn set_roads(_plan: &mut Self::Plan, _roads: RoadMatrix) {}
 
     /// Checks a plan and fills its derived fields before it is scored or solved.
     ///

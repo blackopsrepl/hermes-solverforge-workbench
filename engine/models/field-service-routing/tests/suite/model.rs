@@ -6,6 +6,10 @@ use solverforge_workbench_field_service_routing::constraints::{define_constraint
 use solverforge_workbench_field_service_routing::{route, FieldServiceRouting};
 use solverforge_workbench_host::Model;
 
+use std::collections::HashMap;
+
+use solverforge_workbench_host::roads::provide_complete;
+
 use crate::common::*;
 
 #[test]
@@ -513,30 +517,74 @@ fn the_engine_describes_the_model() {
     assert_eq!(model["view"], "routes");
     assert_eq!(model["demos"], json!(["TURIN_TWO_DAYS"]));
     assert_eq!(model["constraints"].as_array().unwrap().len(), 64);
-    assert_eq!(model["parameters"].as_array().unwrap().len(), 13);
+    assert_eq!(model["parameters"].as_array().unwrap().len(), 11);
+    assert_eq!(model["roads"], true);
 }
 
 #[test]
-fn parameters_change_straight_line_travel() {
-    let far = || {
+fn travel_follows_the_roads_one_way_streets_and_all() {
+    const HOME: [f64; 2] = [45.3101, 8.4101];
+    const THERE: [f64; 2] = [45.3201, 8.4101];
+    const AROUND: [f64; 2] = [45.3151, 8.4301];
+    let plan = || {
         dataset(
-            vec![vehicle("ann", shift("ann-mon", &["a"], json!({})))],
-            vec![visit("a", 10, json!({"location": [45.0793, 7.6869]}))],
+            vec![vehicle(
+                "ann",
+                shift(
+                    "ann-mon",
+                    &["a"],
+                    json!({"startLocation": HOME, "endLocation": HOME}),
+                ),
+            )],
+            vec![visit("a", 10, json!({"location": THERE}))],
             json!({}),
         )
     };
-    let secs = |s: &str| -> i64 {
-        s.trim_start_matches("0hard/0medium/-")
-            .trim_end_matches("soft")
-            .parse()
-            .unwrap()
-    };
-    let slow = secs(&score(far(), Rule::TravelTime.name()));
-    let mut fast = far();
-    fast["parameters"] = json!({"averageSpeedKmh": 64.0});
-    let quick = secs(&score(fast, Rule::TravelTime.name()));
-    assert!(slow > 0);
-    assert!((quick * 2 - slow).abs() <= 2, "{quick} vs {slow}");
+    // Out is one road of 100 s; back is one-way the long way round, 300 s and 400 s.
+    provide_complete(&[HOME, THERE, AROUND], |a, b| match (a, b) {
+        (HOME, THERE) => Some((100.0, 1200.0)),
+        (THERE, AROUND) => Some((300.0, 4000.0)),
+        (AROUND, HOME) => Some((400.0, 5000.0)),
+        _ => None,
+    });
+    let (code, out) = engine(
+        json!({"command": "evaluate", "plan": plan(), "roads": {"cache_dir": "/nonexistent"}}),
+    );
+    assert_eq!(code, 0, "{out}");
+    let travel: HashMap<String, String> = out["analysis"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| {
+            (
+                c["name"].as_str().unwrap().into(),
+                c["score"].as_str().unwrap().into(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        travel[Rule::TravelTime.name()],
+        "0hard/0medium/-800soft",
+        "{travel:?}"
+    );
+    // The roads command hands the measured plan back to keep; a plan that
+    // carries road travel for every place is not measured again.
+    let (code, out) =
+        engine(json!({"command": "roads", "plan": plan(), "roads": {"cache_dir": "/nonexistent"}}));
+    assert_eq!(code, 0, "{out}");
+    let kept = out["plan"].clone();
+    assert_eq!(kept["travelMatrix"]["source"], "roads");
+    assert_eq!(kept["travelMatrix"]["seconds"][0][1], 100, "{kept}");
+    let (code, out) = engine(json!({"command": "evaluate", "plan": kept, "roads": null}));
+    assert_eq!(code, 0, "measured travel needs no network: {out}");
+    // With no network to read and no cache to keep one in, the engine says so.
+    let mut elsewhere = plan();
+    for place in ["startLocation", "endLocation"] {
+        elsewhere["vehicles"][0]["shifts"][0][place] = json!([46.3101, 8.4101]);
+    }
+    let (code, out) = engine(json!({"command": "evaluate", "plan": elsewhere, "roads": null}));
+    assert_ne!(code, 0);
+    assert_eq!(out["error"]["code"], "roads_unavailable", "{out}");
 }
 
 #[test]

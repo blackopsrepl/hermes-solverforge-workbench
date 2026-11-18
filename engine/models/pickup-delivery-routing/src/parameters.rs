@@ -21,18 +21,6 @@ pub fn parameters() -> Vec<ParameterInfo> {
             description: "Minutes pooling may add to a job's ride beyond direct service, for jobs that set none; unset means no limit.",
         },
         ParameterInfo {
-            name: "averageSpeedKmh",
-            kind: "number",
-            default: json!(defaults.average_speed_kmh),
-            description: "Average driving speed for straight-line travel, when the dataset gives no travel matrix.",
-        },
-        ParameterInfo {
-            name: "detourFactor",
-            kind: "number",
-            default: json!(defaults.detour_factor),
-            description: "Road distance per straight-line distance, for straight-line travel.",
-        },
-        ParameterInfo {
             name: "pinNextStopDuringFreeze",
             kind: "boolean",
             default: json!(defaults.pin_next_stop_during_freeze),

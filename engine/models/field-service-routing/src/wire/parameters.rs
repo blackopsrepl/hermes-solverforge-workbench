@@ -35,10 +35,6 @@ pub struct Parameters {
     /// Dates (`YYYY-MM-DD`) that are no working day for `NEXT_WORKING_DAY`.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub holidays: Vec<String>,
-    /// Straight-line travel: average driving speed.
-    pub average_speed_kmh: f64,
-    /// Straight-line travel: road distance per straight-line distance.
-    pub detour_factor: f64,
     /// Freezing also pins the visit a technician is on the way to.
     pub pin_next_visit_during_freeze: bool,
 }
@@ -56,8 +52,6 @@ impl Default for Parameters {
             default_dependency_pooling_type: PoolingType::AllowPoolingAll,
             pinned_start_allowed_delay: 0,
             holidays: Vec::new(),
-            average_speed_kmh: 32.0,
-            detour_factor: 1.35,
             pin_next_visit_during_freeze: true,
         }
     }

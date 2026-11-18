@@ -106,10 +106,10 @@ pub struct Route {
     pub start: Point,
     pub end: Point,
     pub stops: Vec<Stop>,
-    /// Road geometry as `[lat, lon]` points, when the model has it; straight
-    /// lines between stops otherwise.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub path: Vec<[f64; 2]>,
+    /// Road geometry from start to end as an encoded polyline, drawn by the
+    /// host along the roads; empty until it is.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub path: String,
     /// Short facts shown with the route, for example `6 stops · 41 km`.
     pub stats: Vec<String>,
 }

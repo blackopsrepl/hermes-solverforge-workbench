@@ -9,8 +9,12 @@ use crate::analysis::analyze;
 use crate::fill::FillAnswer;
 use crate::model::{Kpi, Level, Model};
 use crate::output::Output;
-use crate::plan::{apply_weights, parse};
+use crate::plan::{apply_weights, measured, parse};
 use crate::protocol::{EngineError, Request};
+use solverforge_maps::{encode_polyline, Coord};
+
+use crate::roads::{unique, Roads, RoadsConfig};
+use crate::view::{Route, Routes, View};
 
 pub fn describe<M: Model, W: Write>(out: &mut Output<W>) {
     let catalog = M::catalog();
@@ -47,6 +51,7 @@ pub fn describe<M: Model, W: Write>(out: &mut Output<W>) {
             "weights": has_weights,
             "parameters": M::parameters(),
             "view": M::view_kind(),
+            "roads": M::travels(),
             "constraints": entries,
         }),
     );
@@ -76,7 +81,11 @@ pub fn evaluate<M: Model, W: Write>(
     request: Request,
     out: &mut Output<W>,
 ) -> Result<(), EngineError> {
-    let (mut plan, issues) = parse::<M>(request.plan, request.freeze_before.as_deref())?;
+    let (mut plan, issues) = parse::<M>(
+        request.plan,
+        request.freeze_before.as_deref(),
+        request.roads.as_ref(),
+    )?;
     apply_weights::<M>(&mut plan, &request.weights)?;
     let kpis: Vec<Kpi> = M::kpis(&plan);
     let analysis = analyze::<M>(plan, request.max_matches);
@@ -97,18 +106,83 @@ pub fn evaluate<M: Model, W: Write>(
 const VIEW_MATCHES: usize = 10_000;
 
 pub fn view<M: Model, W: Write>(request: Request, out: &mut Output<W>) -> Result<(), EngineError> {
-    let (mut plan, _) = parse::<M>(request.plan, request.freeze_before.as_deref())?;
+    let roads = request.roads.clone();
+    let (mut plan, _) = parse::<M>(
+        request.plan,
+        request.freeze_before.as_deref(),
+        roads.as_ref(),
+    )?;
     apply_weights::<M>(&mut plan, &request.weights)?;
     let analysis = analyze::<M>(plan.clone(), VIEW_MATCHES);
-    let view = M::view(&plan, &analysis).ok_or_else(|| {
+    let mut view = M::view(&plan, &analysis).ok_or_else(|| {
         EngineError::new("no_view", format!("model {} has no plan view", M::id()))
     })?;
+    if let View::Routes(routes) = &mut view {
+        let places: Vec<[f64; 2]> = M::places(&plan).into_iter().map(|p| p.point).collect();
+        along_roads(routes, &places, roads.as_ref())?;
+    }
     out.event("view", json!({ "view": view }));
     Ok(())
 }
 
+/// Draws every route along the roads, from its start through its stops to its
+/// end, on the network of the plan's places: the one its travel was measured on.
+fn along_roads(
+    routes: &mut Routes,
+    places: &[[f64; 2]],
+    config: Option<&RoadsConfig>,
+) -> Result<(), EngineError> {
+    let hops = |route: &Route| -> Vec<[f64; 2]> {
+        std::iter::once([route.start.lat, route.start.lon])
+            .chain(route.stops.iter().map(|s| [s.lat, s.lon]))
+            .chain(std::iter::once([route.end.lat, route.end.lon]))
+            .collect()
+    };
+    if places.is_empty() || routes.vehicles.is_empty() {
+        return Ok(());
+    }
+    let roads = Roads::load(config, &unique(places))?;
+    for route in &mut routes.vehicles {
+        let path: Vec<Coord> = roads
+            .path(&hops(route))?
+            .into_iter()
+            .map(|[lat, lng]| Coord::new(lat, lng))
+            .collect();
+        route.path = encode_polyline(&path);
+    }
+    Ok(())
+}
+
+/// The plan with its travel measured along the roads, for the caller to keep,
+/// and what the roads say about its places. Nothing else about the plan is
+/// checked: a plan with other issues is measured all the same.
+/// Without a plan, the named demo is measured: how release builds fetch the
+/// demos' road networks that ship with the engine.
+pub fn roads<M: Model, W: Write>(request: Request, out: &mut Output<W>) -> Result<(), EngineError> {
+    let plan = match (request.plan, request.demo.as_deref()) {
+        (Some(plan), _) => Some(plan),
+        (None, Some(id)) => Some(M::present(&M::demo(id).ok_or_else(|| {
+            EngineError::new(
+                "unknown_demo",
+                format!("model {} has no demo {id:?}", M::id()),
+            )
+        })?)),
+        (None, None) => None,
+    };
+    let (plan, issues) = measured::<M>(plan, request.roads.as_ref())?;
+    out.event(
+        "roads",
+        json!({ "plan": M::present(&plan), "issues": issues }),
+    );
+    Ok(())
+}
+
 pub fn fill<M: Model, W: Write>(request: Request, out: &mut Output<W>) -> Result<(), EngineError> {
-    let (mut plan, issues) = parse::<M>(request.plan, request.freeze_before.as_deref())?;
+    let (mut plan, issues) = parse::<M>(
+        request.plan,
+        request.freeze_before.as_deref(),
+        request.roads.as_ref(),
+    )?;
     apply_weights::<M>(&mut plan, &request.weights)?;
     let fill = request.fill.unwrap_or_default();
     match M::fill(plan, &fill)? {

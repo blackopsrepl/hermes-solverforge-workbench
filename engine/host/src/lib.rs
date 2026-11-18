@@ -11,6 +11,7 @@ mod model;
 mod output;
 mod plan;
 mod protocol;
+pub mod roads;
 mod run;
 mod solve;
 mod stdio;

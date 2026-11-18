@@ -260,7 +260,7 @@ pub fn view(plan: &Plan, analysis: &Analysis) -> Option<View> {
                     lon: elon,
                 },
                 stops,
-                path: Vec::new(),
+                path: String::new(),
                 stats: vec![
                     format!("{served} visits"),
                     format!("{:.1} km", route.distance as f64 / 1000.0),
