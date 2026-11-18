@@ -53,6 +53,46 @@ def test_install_refuses_a_platform_without_a_reviewed_checksum(tmp_path, monkey
     assert error.value.code in ("unpublished_engine", "unsupported_platform")
 
 
+class _Download:
+    def __init__(self, body: bytes):
+        self.body = body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def read(self, limit: int) -> bytes:
+        return self.body[:limit]
+
+
+def test_demo_road_networks_install_verified_unpacked_and_once(tmp_path, monkeypatch):
+    import gzip
+    import hashlib
+
+    network = b'{"version": 3, "nodes": [], "edges": []}'
+    body = gzip.compress(network)
+    monkeypatch.setattr(engine_bin, "DEMO_ROADS", {"45.0_7.0_45.1_7.1.json": hashlib.sha256(body).hexdigest()})
+    asked: list[str] = []
+
+    def urlopen(request, timeout):
+        asked.append(request.full_url)
+        return _Download(body)
+
+    monkeypatch.setattr(engine_bin.urllib.request, "urlopen", urlopen)
+    engine = StockEngine(tmp_path)
+    [path] = engine.install_roads(log=lambda _: None)
+    assert path == tmp_path / "roads" / "45.0_7.0_45.1_7.1.json" and path.read_bytes() == network
+    assert asked == [f"{engine_bin.RELEASE_URL}/roads-45.0_7.0_45.1_7.1.json.gz"]
+    assert engine.install_roads(log=lambda _: None) == [] and len(asked) == 1
+    path.unlink()
+    monkeypatch.setattr(engine_bin, "DEMO_ROADS", {"45.0_7.0_45.1_7.1.json": "0" * 64})
+    with pytest.raises(EngineError) as error:
+        engine.install_roads(log=lambda _: None)
+    assert error.value.code == "checksum_mismatch" and not path.exists()
+
+
 def test_engines_start_without_the_callers_secrets(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
     monkeypatch.setenv("PATH", os.environ.get("PATH", ""))

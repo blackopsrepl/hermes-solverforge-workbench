@@ -13,6 +13,7 @@ evaluate); long solves run in the detached worker (``worker.py``).
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 import json
 import os
@@ -38,6 +39,12 @@ CHECKSUMS: dict[str, str] = {
     "aarch64-apple-darwin": "87861fe6ec52ccb6f309c51c6b6585b7d921608475ed4023e7a18d179b696858",
     "x86_64-pc-windows-gnu": "3f1a5e1fa2ddbcde688cb8289efb46e4021146874121998028189fd846cc5afc",
 }
+# The road networks the demos run on, fetched from OpenStreetMap by the engine
+# release and published beside the binaries as `roads-<file>.gz`: the cache
+# file each becomes, and the SHA-256 of its download. Installed with the engine,
+# so a demo opens without fetching a city first.
+DEMO_ROADS: dict[str, str] = {}
+MAX_ROADS_BYTES = 512 * 1024 * 1024
 TARGETS = (
     "x86_64-unknown-linux-musl", "aarch64-unknown-linux-musl",
     "x86_64-apple-darwin", "aarch64-apple-darwin", "x86_64-pc-windows-gnu",
@@ -52,17 +59,17 @@ STOCK_ENGINE = "solverforge-workbench"
 ENGINE_ENV_KEYS = ("PATH", "SYSTEMROOT", "LANG", "TMPDIR", "TMP", "TEMP", "RAYON_NUM_THREADS")
 
 
+def roads_config(data_dir: Path) -> dict[str, str]:
+    """Where engines keep road networks: fetched from OpenStreetMap once per area, then read."""
+    return {"cache_dir": str(Path(data_dir) / "roads")}
+
+
 def engine_env() -> dict[str, str]:
     return {key: os.environ[key] for key in ENGINE_ENV_KEYS if key in os.environ}
 
 
 class EngineError(Exception):
     """A refusal or failure from an engine, carrying its machine-readable code."""
-
-def roads_config(data_dir: Path) -> dict[str, str]:
-    """Where engines keep road networks: fetched from OpenStreetMap once per area, then read."""
-    return {"cache_dir": str(Path(data_dir) / "roads")}
-
 
     def __init__(self, code: str, message: str, **detail: Any):
         super().__init__(f"{code}: {message}")
@@ -229,7 +236,41 @@ class StockEngine:
         finally:
             Path(tmp).unlink(missing_ok=True)
         log(f"installed {target} (sha256 {actual[:12]}…)")
+        self.install_roads(log)
         return target
+
+    def install_roads(self, log: Callable[[str], None] = print) -> list[Path]:
+        """Download, verify and unpack the demos' road networks into the road cache."""
+        folder = Path(roads_config(self.data_dir)["cache_dir"])
+        installed = []
+        for name, expected in DEMO_ROADS.items():
+            target = folder / name
+            if target.is_file():
+                continue
+            url = f"{RELEASE_URL}/roads-{name}.gz"
+            log(f"downloading {url}")
+            request = urllib.request.Request(url, headers={"User-Agent": "hermes-solverforge-workbench"})
+            try:
+                with urllib.request.urlopen(request, timeout=600) as response:
+                    body = response.read(MAX_ROADS_BYTES + 1)
+            except OSError as exc:
+                raise EngineError("download_failed", str(exc)) from exc
+            if len(body) > MAX_ROADS_BYTES:
+                raise EngineError("bad_download", f"{url} is larger than expected")
+            actual = hashlib.sha256(body).hexdigest()
+            if actual != expected:
+                raise EngineError("checksum_mismatch", f"expected sha256 {expected} for {name}, got {actual}")
+            folder.mkdir(parents=True, exist_ok=True)
+            fd, tmp = tempfile.mkstemp(dir=folder, suffix=".part")
+            try:
+                with os.fdopen(fd, "wb") as handle:
+                    handle.write(gzip.decompress(body))
+                os.replace(tmp, target)
+            finally:
+                Path(tmp).unlink(missing_ok=True)
+            log(f"installed the road network {name}")
+            installed.append(target)
+        return installed
 
 
 def probe(binary: Path) -> dict[str, Any] | None:

@@ -72,6 +72,17 @@ jobs:
       - name: Smoke-test the Linux x86_64 binary
         if: matrix.target == 'x86_64-unknown-linux-musl'
         run: dist/solverforge-workbench-x86_64-unknown-linux-musl --version
+      - name: Fetch the demos' road networks
+        # Every routing demo measured once by this engine, fetching its area from
+        # OpenStreetMap; the networks ship beside the binaries as roads-<file>.gz.
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: scripts/demo-roads.sh dist/solverforge-workbench-x86_64-unknown-linux-musl dist
+      - uses: actions/upload-artifact@v4
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        with:
+          name: roads
+          path: dist/roads-*.gz
+          if-no-files-found: error
       - uses: actions/attest-build-provenance@v2
         with:
           subject-path: dist/solverforge-workbench-*
@@ -96,7 +107,7 @@ jobs:
         run: echo "version=${GITHUB_REF_NAME#engine-v}" >> "$GITHUB_OUTPUT"
       - name: Checksums
         working-directory: dist
-        run: sha256sum solverforge-workbench-* | tee SHA256SUMS
+        run: sha256sum solverforge-workbench-* roads-*.gz | tee SHA256SUMS
       - uses: softprops/action-gh-release@v2
         with:
           files: dist/*
@@ -106,6 +117,8 @@ jobs:
           body: |
             The optimization engine used by SolverForge Workbench, with every stock model. Binaries for Linux (x86_64, arm64; static musl), macOS
             (Apple silicon, Intel) and Windows (x86_64), built from `engine/` at this tag.
+            The `roads-*.gz` files are the road networks the routing demos run on, from
+            OpenStreetMap (© OpenStreetMap contributors, ODbL).
 
             You do not need to download these by hand: `hermes solverforge-workbench install`
             fetches the one for your platform and checks it against the SHA-256 pinned in the
