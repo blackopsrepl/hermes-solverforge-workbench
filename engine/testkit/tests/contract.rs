@@ -300,11 +300,15 @@ fn fill_refuses_a_value_that_is_not_a_place_for_the_item() {
 }
 
 #[test]
-fn view_is_refused_for_a_model_without_one() {
+fn the_toy_draws_its_plan_as_boards_of_nurses_and_open_shifts() {
     let (code, events) =
         request(json!({"command": "view", "model": "toy", "plan": plan_json(toy::week())}));
-    assert_eq!(code, 1);
-    assert_eq!(last(&events)["error"]["code"], "no_view");
+    assert_eq!(code, 0);
+    let view = &last(&events)["view"];
+    assert_eq!(view["kind"], "assignments");
+    let board = &view["boards"][0];
+    assert_eq!(board["lanes"].as_array().unwrap().len(), 3);
+    assert_eq!(board["unassigned"].as_array().unwrap().len(), 6);
 }
 
 #[test]
