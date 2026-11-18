@@ -51,7 +51,9 @@ invent one; read it from a tool result.
    each. For anything they do not cover, use `operations` (JSON Patch; address
    records by id with `[id=X]` path segments). To replan a published plan,
    patch with `from_run` set to the solved run, pin what must stay, then solve
-   the new dataset. To keep what has already started, solve with
+   the new dataset. Operations are checked by the engine before anything is
+   saved; `in_place: true` changes the dataset itself, allowed only while no
+   run has used it. To keep what has already started, solve with
    `overrides: {solve: {freeze_before: "YYYY-MM-DDTHH:MM"}}`.
 7. Place one new or uncovered item without a full solve:
    `solverforge_workbench_fill` ranks its best places (each with the score it
@@ -108,7 +110,9 @@ model and its data (it asks the user) and leaves the project's files.
   feasibility; raise soft weights to trade one business goal against another.
 - Model parameters (`params`) are settings of the model itself, such as a
   default priority or a pooling rule; `solverforge_workbench_model` lists
-  each with its kind and default. Unknown names are refused.
+  each with its label, kind, unit, default, allowed `options` and an object's
+  or list's `fields`. A value outside its options or fields is refused, naming
+  the field.
 - Routing models travel on real roads (OpenStreetMap, through solverforge-maps):
   a dataset's travel is measured along the roads when it is made, at each
   road's own speed, and the map draws routes along the roads. The first dataset
@@ -122,6 +126,23 @@ model and its data (it asks the user) and leaves the project's files.
 - Order, later winning: model defaults, parent dataset, profile, one-off
   `overrides`, the dataset's own settings. Use `overrides` for an experiment;
   save a profile when the user wants to keep the settings.
+
+## The page
+
+The Workbench section in the Desktop (sidebar) does everything the tools do.
+When the user would rather click than chat, point to the place:
+
+- A model's hub: Overview, Datasets, Runs, Profiles, Experiments, Trends.
+- A dataset: Solve (with profile, time limit, "keep everything before"),
+  "Change and solve…" for the model's own changes, "Compare profiles…" for an
+  experiment, and the Plan, Data and Runs tabs. Data is a searchable grid per
+  table (technicians, shifts, visits...) with an editor per field; changes
+  stay staged and save as a new dataset or in place.
+- A run: the verdict, the score against the plan as given and the run before,
+  what moved, the plan, and Replan (key `r`).
+- A profile: weights and typed settings, what differs from Standard, and
+  "Try it in an experiment".
+- Compare: score, KPIs, every rule that differs, and the plans side by side.
 
 ## Rules
 
