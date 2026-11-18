@@ -8,6 +8,7 @@ solve worker runs this module as a standalone script's dependency.
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 import threading
 import uuid
@@ -32,7 +33,7 @@ CREATE TABLE IF NOT EXISTS datasets (
     model_id    TEXT NOT NULL,
     name        TEXT NOT NULL,
     tags        TEXT NOT NULL DEFAULT '[]',
-    origin      TEXT NOT NULL CHECK (origin IN ('demo', 'upload', 'patch', 'input', 'run', 'fill')),
+    origin      TEXT NOT NULL CHECK (origin IN ('demo', 'upload', 'patch', 'input', 'run', 'fill', 'copy')),
     parent_id   TEXT REFERENCES datasets(id) ON DELETE SET NULL,
     plan        TEXT NOT NULL,           -- the problem, JSON
     config      TEXT NOT NULL DEFAULT '{}', -- settings carried by the dataset itself
@@ -106,6 +107,9 @@ CREATE TABLE IF NOT EXISTS run_points (
     PRIMARY KEY (run_id, elapsed_ms)
 );
 """
+
+ORIGIN_CHECK = "CHECK (origin IN ('demo', 'upload', 'patch', 'input', 'run', 'fill', 'copy'))"
+assert ORIGIN_CHECK in SCHEMA
 
 JSON_COLUMNS = {
     "manifest", "tags", "plan", "config", "patch", "weights", "params", "solve",
@@ -193,9 +197,9 @@ class Store:
         db = self._db()
         sql = {row["name"]: row["sql"] for row in
                db.execute("SELECT name, sql FROM sqlite_master WHERE type = 'table'").fetchall()}
-        if "datasets" in sql and "'fill'" not in sql["datasets"]:
-            # SQLite cannot change a CHECK constraint in place: rebuild the table with fill as an origin.
-            new = sql["datasets"].replace("'input', 'run')", "'input', 'run', 'fill')")
+        if "datasets" in sql and "'copy'" not in sql["datasets"]:
+            # SQLite cannot change a CHECK constraint in place: rebuild the table with every origin.
+            new = re.sub(r"CHECK \(origin IN \([^)]*\)\)", ORIGIN_CHECK, sql["datasets"], count=1)
             new = new.replace("CREATE TABLE datasets", "CREATE TABLE datasets_next", 1)
             db.execute("PRAGMA foreign_keys=OFF")
             db.executescript(

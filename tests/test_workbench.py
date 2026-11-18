@@ -366,8 +366,33 @@ def test_a_v0_1_database_migrates_keeping_its_records(tmp_path):
     assert store.dataset("d1")["size"] is None and store.run("r1")["label"] is None
     child = store.add_dataset(model_id="toy", name="Filled", plan={}, origin="fill", parent_id="d1")
     assert child["origin"] == "fill"
+    assert store.add_dataset(model_id="toy", name="Copy", plan={}, origin="copy", parent_id="d1")["origin"] == "copy"
     store.delete_dataset("d1")  # the rebuilt table keeps its cascade to runs
     assert store.run("r1") is None
+
+
+def test_a_database_with_fill_but_no_copy_migrates(tmp_path):
+    import sqlite3
+
+    from solverforge_workbench_plugin.store import SCHEMA
+
+    path = tmp_path / "fill.db"
+    db = sqlite3.connect(path)
+    db.executescript(SCHEMA.replace("'fill', 'copy'", "'fill'"))
+    db.execute("INSERT INTO datasets (id, model_id, name, origin, plan, created_at)"
+               " VALUES ('d1', 'toy', 'Old', 'fill', '{}', '2026-11-01')")
+    db.commit()
+    db.close()
+    store = Store(path)
+    assert store.dataset("d1")["origin"] == "fill"
+    assert store.add_dataset(model_id="toy", name="Copy", plan={}, origin="copy")["origin"] == "copy"
+
+
+def test_a_duplicate_is_a_copy_of_its_parent(wb):
+    parent = demo(wb, name="Week")
+    copy = wb.patch_dataset(parent["id"], [])
+    assert (copy["origin"], copy["name"], copy["parent_id"]) == ("copy", "Week (copy)", parent["id"])
+    assert wb.dataset(copy["id"], with_plan=True)["plan"] == wb.dataset(parent["id"], with_plan=True)["plan"]
 
 
 def test_a_run_is_named_with_its_dataset_and_profile_and_can_be_renamed(wb):

@@ -389,9 +389,12 @@ class Workbench:
             plan = apply_patch(base, operations) if operations else base
         except PatchError as exc:
             raise WorkbenchError("invalid_patch", str(exc)) from exc
+        origin = "patch" if operations else "run" if from_run else "copy"
+        default_name = {"patch": f"{parent['name']} (revised)", "run": f"{parent['name']} (replan)",
+                        "copy": f"{parent['name']} (copy)"}[origin]
         dataset = self.store.add_dataset(
-            model_id=parent["model_id"], name=name or f"{parent['name']} (revised)", plan=plan,
-            origin="patch" if operations else "run", tags=parent["tags"], parent_id=dataset_id,
+            model_id=parent["model_id"], name=name or default_name, plan=plan,
+            origin=origin, tags=parent["tags"], parent_id=dataset_id,
             config=parent["config"], patch=operations or None, size=self.size_of(parent["model_id"], plan))
         self.changed("dataset", id=dataset["id"])
         return self.dataset_view(dataset)
