@@ -1,7 +1,7 @@
 {
  "ok": true,
  "dataset": {
-  "id": "08d9bb18e920",
+  "id": "872d491076f2",
   "model_id": "toy",
   "name": "Demo Week",
   "tags": [
@@ -14,7 +14,7 @@
    "params": {},
    "solve": {}
   },
-  "created_at": "2026-11-18T13:32:05.749+00:00",
+  "created_at": "2026-11-18T13:47:54.483+00:00",
   "size": [
    {
     "label": "nurses",
@@ -27,54 +27,110 @@
     "count": 6
    }
   ],
+  "plan": {
+   "nurses": [
+    {
+     "id": 0,
+     "name": "nurse-0"
+    },
+    {
+     "id": 1,
+     "name": "nurse-1"
+    },
+    {
+     "id": 2,
+     "name": "nurse-2"
+    }
+   ],
+   "score": null,
+   "shifts": [
+    {
+     "day": 0,
+     "id": 0,
+     "nurse_idx": null,
+     "pinned": false
+    },
+    {
+     "day": 0,
+     "id": 1,
+     "nurse_idx": null,
+     "pinned": false
+    },
+    {
+     "day": 1,
+     "id": 2,
+     "nurse_idx": null,
+     "pinned": false
+    },
+    {
+     "day": 1,
+     "id": 3,
+     "nurse_idx": null,
+     "pinned": false
+    },
+    {
+     "day": 2,
+     "id": 4,
+     "nurse_idx": null,
+     "pinned": false
+    },
+    {
+     "day": 2,
+     "id": 5,
+     "nurse_idx": null,
+     "pinned": false
+    }
+   ],
+   "weights": {}
+  },
   "runs": [
    {
-    "id": "c8fe32184637",
-    "dataset_id": "08d9bb18e920",
+    "id": "d447b9c54d99",
+    "dataset_id": "872d491076f2",
     "model_id": "toy",
     "kind": "solve",
     "status": "completed",
     "priority": 3,
-    "profile_id": "74038d9b1a8d",
-    "experiment_id": "5405f7ddcbe9",
+    "profile_id": "443d2f09715b",
+    "experiment_id": "d496ec34cd8e",
     "initial_score": "-6hard/0soft",
     "score": "0hard/0soft",
     "feasible": 1,
     "label": null,
     "profile_name": "Blind",
     "dataset_name": "Demo Week",
-    "created_at": "2026-11-18T13:32:08.053+00:00",
-    "started_at": "2026-11-18T13:32:08.202+00:00",
-    "finished_at": "2026-11-18T13:32:08.283+00:00",
+    "created_at": "2026-11-18T13:47:56.754+00:00",
+    "started_at": "2026-11-18T13:47:56.877+00:00",
+    "finished_at": "2026-11-18T13:47:56.928+00:00",
     "error": null,
     "elapsed_ms": 0,
     "seconds": 30
    },
    {
-    "id": "cdd97d779f64",
-    "dataset_id": "08d9bb18e920",
+    "id": "ef7435a7e6f9",
+    "dataset_id": "872d491076f2",
     "model_id": "toy",
     "kind": "solve",
     "status": "completed",
     "priority": 3,
     "profile_id": "toy-standard",
-    "experiment_id": "5405f7ddcbe9",
+    "experiment_id": "d496ec34cd8e",
     "initial_score": "-6hard/0soft",
     "score": "0hard/0soft",
     "feasible": 1,
     "label": null,
     "profile_name": "Standard",
     "dataset_name": "Demo Week",
-    "created_at": "2026-11-18T13:32:08.047+00:00",
-    "started_at": "2026-11-18T13:32:08.186+00:00",
-    "finished_at": "2026-11-18T13:32:08.289+00:00",
+    "created_at": "2026-11-18T13:47:56.749+00:00",
+    "started_at": "2026-11-18T13:47:56.828+00:00",
+    "finished_at": "2026-11-18T13:47:56.871+00:00",
     "error": null,
     "elapsed_ms": 0,
     "seconds": 30
    },
    {
-    "id": "4f927ca5dacc",
-    "dataset_id": "08d9bb18e920",
+    "id": "ac29c01b98fd",
+    "dataset_id": "872d491076f2",
     "model_id": "toy",
     "kind": "solve",
     "status": "completed",
@@ -87,16 +143,16 @@
     "label": null,
     "profile_name": "Standard",
     "dataset_name": "Demo Week",
-    "created_at": "2026-11-18T13:32:05.785+00:00",
-    "started_at": "2026-11-18T13:32:05.930+00:00",
-    "finished_at": "2026-11-18T13:32:07.972+00:00",
+    "created_at": "2026-11-18T13:47:54.507+00:00",
+    "started_at": "2026-11-18T13:47:54.566+00:00",
+    "finished_at": "2026-11-18T13:47:56.598+00:00",
     "error": null,
     "elapsed_ms": 2000,
     "seconds": 2
    },
    {
-    "id": "a80b2bf8a617",
-    "dataset_id": "08d9bb18e920",
+    "id": "9d12a8c719f3",
+    "dataset_id": "872d491076f2",
     "model_id": "toy",
     "kind": "evaluate",
     "status": "completed",
@@ -109,9 +165,9 @@
     "label": null,
     "profile_name": "Standard",
     "dataset_name": "Demo Week",
-    "created_at": "2026-11-18T13:32:05.765+00:00",
+    "created_at": "2026-11-18T13:47:54.494+00:00",
     "started_at": null,
-    "finished_at": "2026-11-18T13:32:05.777+00:00",
+    "finished_at": "2026-11-18T13:47:54.501+00:00",
     "error": null,
     "elapsed_ms": null,
     "seconds": 60

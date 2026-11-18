@@ -1099,7 +1099,7 @@ function ModelHub({ place }) {
     const counts = { datasets: tally(datasets, 'datasets'), runs: tally(runs, 'runs'), profiles: model.profiles.length, experiments: tally(experiments, 'experiments') }
     const body = {
       overview: () => e(Overview, { model }),
-      datasets: () => (place.id ? e(DatasetPage, { key: place.id, model, id: place.id }) : e(DatasetsTab, { model })),
+      datasets: () => (place.id ? e(DatasetPage, { key: place.id, model, id: place.id, tab: place.extra }) : e(DatasetsTab, { model })),
       runs: () => (place.id === 'compare' ? e(ComparePage, { model, ids: place.extra || '' }) : place.id ? e(RunPage, { key: place.id, model, id: place.id }) : e(RunsTab, { model })),
       profiles: () => e(ProfilesTab, { model, picked: place.id }),
       experiments: () => (place.id === 'new' ? e(ExperimentNew, { model, datasets: place.extra ? place.extra.split(',') : [], profiles: place.also ? place.also.split(',') : [] })
@@ -1355,7 +1355,7 @@ function DatasetHeader({ model, dataset }) {
     e(DeleteButton, { action: 'dataset_delete', args: { dataset: dataset.id }, what: 'this dataset', onDone: () => go(placeOf(model.id, 'datasets')) }))
 }
 
-function DatasetPage({ model, id }) {
+function DatasetPage({ model, id, tab: wanted }) {
   const { go } = useNav()
   const query = useRead('dataset', { dataset: id })
   const [profile, setProfile] = useState('')
@@ -1399,19 +1399,185 @@ function DatasetPage({ model, id }) {
         e(Button, { size: 'xs', variant: 'outline', disabled: evaluate.isPending, onClick: () => evaluate.mutate(body) }, 'Check as is'),
         e(Button, { size: 'xs', disabled: solve.isPending, onClick: () => solve.mutate(body) }, solve.isPending ? 'Starting…' : 'Solve')),
       freeze ? e('div', { style: faint }, `Everything that starts before ${freeze.replace('T', ' ')} keeps its place.`) : null),
-    model.view
-      ? e('div', { style: stack(8) },
-          e('div', null, e(Button, { size: 'xs', variant: 'text', onClick: () => setShown(!shown) }, `${shown ? 'Hide' : 'Show'} the input ${viewName(model.view).toLowerCase()}`)),
-          shown ? e(PlanView, { dataset: dataset.id, kind: model.view }) : null)
-      : null,
-    e(FillPanel, { dataset: dataset.id, profile, model: model.id }),
-    e(Card, null,
-      e('div', { style: row(8) }, e(Label, null, 'Runs'), spacer(),
-        selected.length >= 2 ? e(Button, { size: 'xs', variant: 'secondary', onClick: () => go(placeOf(model.id, 'runs', 'compare', selected.join(','))) }, `Compare ${selected.length}`) : null),
-      e(RunTable, { model, runs: dataset.runs.map(item => ({ item, hits: [] })), selected, showDataset: false,
-        onSelect: r => setSelected(selected.includes(r) ? selected.filter(x => x !== r) : [...selected, r].slice(-4)),
-        empty: e('div', { style: faint }, 'Not solved yet. Solve it above.') })),
+    (() => {
+      const tab = ['plan', 'data', 'runs'].includes(wanted) ? wanted : dataset.runs.length ? 'runs' : 'plan'
+      return e('div', { style: stack(10) },
+        e(TabBar, { tabs: [{ id: 'plan', label: 'Plan' }, { id: 'data', label: 'Data' }, { id: 'runs', label: 'Runs', count: dataset.runs.length }],
+          value: tab, onChange: next => go(placeOf(model.id, 'datasets', dataset.id, next)) }),
+        tab === 'plan'
+          ? e('div', { style: stack(10) },
+              model.view
+                ? e('div', { style: stack(8) },
+                    e('div', null, e(Button, { size: 'xs', variant: 'text', onClick: () => setShown(!shown) }, `${shown ? 'Hide' : 'Show'} the input ${viewName(model.view).toLowerCase()}`)),
+                    shown ? e(PlanView, { dataset: dataset.id, kind: model.view }) : null)
+                : null,
+              e(FillPanel, { dataset: dataset.id, profile, model: model.id }))
+          : tab === 'data'
+            ? e(DataEditor, { model, dataset })
+            : e(Card, null,
+                e('div', { style: row(8) }, e(Label, null, 'Runs'), spacer(),
+                  selected.length >= 2 ? e(Button, { size: 'xs', variant: 'secondary', onClick: () => go(placeOf(model.id, 'runs', 'compare', selected.join(','))) }, `Compare ${selected.length}`) : null),
+                e(RunTable, { model, runs: dataset.runs.map(item => ({ item, hits: [] })), selected, showDataset: false,
+                  onSelect: r => setSelected(selected.includes(r) ? selected.filter(x => x !== r) : [...selected, r].slice(-4)),
+                  empty: e('div', { style: faint }, 'Not solved yet. Solve it above.') })))
+    })(),
     e(ReplanDialog, { model, dataset, open: replanning, onClose: () => setReplanning(false) })))
+}
+
+// ---- the data editor ----------------------------------------------------------------
+
+// The rows at a table's path ("visits", or each vehicle's shifts as vehicles/STAR/shifts with
+// STAR the wildcard), each with the JSON Patch path that addresses it by id and its parent row.
+export function tableRows(plan, path) {
+  let level = [{ value: plan, at: '', parent: null }]
+  for (const part of path.split('/')) {
+    if (part === '*') {
+      level = level.flatMap(({ value, at }) => (Array.isArray(value) ? value : []).map(row => ({ value: row, at: `${at}/[id=${row.id}]`, parent: row })))
+    } else {
+      level = level.map(({ value, at, parent }) => ({ value: value && value[part], at: `${at}/${part}`, parent }))
+    }
+  }
+  return level.flatMap(({ value, at, parent }) => (Array.isArray(value) ? value : []).map(row => ({ row, at: `${at}/[id=${row.id}]`, parent })))
+}
+
+const kindOf = value => (typeof value === 'boolean' ? 'boolean' : typeof value === 'number' ? (Number.isInteger(value) ? 'integer' : 'number')
+  : typeof value === 'string' ? (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value) ? 'date_time' : 'text') : 'json')
+
+/** Tables for a model that describes none (a custom model): every top-level list of records
+ *  with ids, its columns read from the records themselves. */
+export function inferTables(plan) {
+  return Object.entries(plan || {})
+    .filter(([, v]) => Array.isArray(v) && v.length && v.every(r => r && typeof r === 'object' && !Array.isArray(r) && 'id' in r))
+    .map(([key, rows]) => {
+      const names = [...new Set(rows.flatMap(r => Object.keys(r)))].filter(n => n !== 'id')
+      return {
+        id: key, label: key[0].toUpperCase() + key.slice(1), one: key.replace(/s$/, ''), path: key, title: names.includes('name') ? 'name' : '',
+        columns: names.map(name => {
+          const seen = rows.map(r => r[name]).filter(v => v !== undefined && v !== null)
+          const kinds = [...new Set(seen.map(kindOf))]
+          return { name, label: name, kind: kinds.length === 1 ? kinds[0] : 'json', optional: seen.length < rows.length }
+        })
+      }
+    })
+}
+
+/** A column as the editor of its value: references become choices among the rows they name. */
+function asParam(column, choices) {
+  const options = column.reference
+    ? [...(column.optional ? [{ value: '', label: 'none' }] : []), ...(choices[column.reference] || [])]
+    : column.options
+  return { ...column, kind: column.reference ? 'text' : column.kind, options, fields: (column.fields || []).map(f => asParam(f, choices)) }
+}
+
+/** A value in a few words for the grid. */
+export function cellText(column, value) {
+  if (value === undefined || value === null || value === '') return '—'
+  if (column.kind === 'location' && Array.isArray(value)) return value.map(v => Number(v).toFixed(4)).join(', ')
+  if (column.kind === 'date_time') return String(value).slice(0, 16).replace('T', ' ')
+  if (column.kind === 'list' && Array.isArray(value)) {
+    const item = (column.fields || [])[0] || {}
+    if (!value.length) return '—'
+    if (item.kind === 'object') {
+      return value.map(v => (item.fields || []).filter(f => v && v[f.name] !== undefined && v[f.name] !== null)
+        .map(f => cellText(f, v[f.name])).join(' · ')).join('; ')
+    }
+    return value.map(v => cellText(item, v)).join(', ')
+  }
+  if (column.kind === 'object' && value && typeof value === 'object') {
+    return (column.fields || []).filter(f => value[f.name] !== undefined).map(f => `${f.label.toLowerCase()} ${cellText(f, value[f.name])}`).join(' · ')
+  }
+  if (typeof value === 'object') return JSON.stringify(value)
+  return paramText(column, value)
+}
+
+/** Staged changes as id-addressed JSON Patch operations against the plan as stored. */
+export function stagedOperations(staged) {
+  return Object.values(staged)
+    .filter(c => c.value !== undefined || c.had)
+    .map(c => (c.value === undefined ? { op: 'remove', path: c.path } : { op: c.had ? 'replace' : 'add', path: c.path, value: c.value }))
+}
+
+export function DataEditor({ model, dataset }) {
+  const { go } = useNav()
+  const query = useRead('dataset', { dataset: dataset.id, include_plan: true })
+  const [staged, setStaged] = useState({})
+  const [tab, setTab] = useStored(`${model.id}.data.tab`, '')
+  const [search, setSearch] = useState('')
+  const [open, setOpen] = useState(null)
+  const [name, setName] = useState(`${dataset.name}, edited`)
+  const save = useAction('dataset_patch', r => {
+    setStaged({})
+    if (r.dataset && r.dataset.id !== dataset.id) go(placeOf(model.id, 'datasets', r.dataset.id, 'data'))
+  })
+  return e(Loading, { query }, ({ dataset: full }) => {
+    const plan = full.plan || {}
+    const tables = (model.tables && model.tables.length ? model.tables : inferTables(plan))
+    if (!tables.length) return e('div', { style: faint }, 'This model’s data has no lists of records to edit here. Export it, change the JSON and import it as a new dataset.')
+    const current = tables.find(t => t.id === tab) || tables[0]
+    const rowsOf = t => tableRows(plan, t.path)
+    const titleOf = (t, row) => (t.title && row[t.title]) || row.id
+    const choices = Object.fromEntries(tables.map(t => [t.id, rowsOf(t).map(({ row }) => ({ value: String(row.id), label: titleOf(t, row) === row.id ? String(row.id) : `${titleOf(t, row)} (${row.id})` }))]))
+    const valueOf = (at, row, column) => {
+      const change = staged[`${at}/${column.name}`]
+      return change ? change.value : row[column.name]
+    }
+    const stage = (t, at, row, column, value) => {
+      const path = `${at}/${column.name}`
+      const had = row[column.name] !== undefined
+      const same = JSON.stringify(value) === JSON.stringify(row[column.name])
+      const next = { ...staged }
+      if (same) delete next[path]
+      else next[path] = { path, had, value, words: `${t.one[0].toUpperCase()}${t.one.slice(1)} ${titleOf(t, row)}: ${column.label.toLowerCase()} ${cellText(column, value)}` }
+      setStaged(next)
+    }
+    const all = rowsOf(current)
+    const found = searchItems(all, search, [[({ row }) => titleOf(current, row), 1], [({ row }) => String(row.id), 0.9],
+      ...current.columns.map(c => [({ row, at }) => cellText(c, valueOf(at, row, c)), 0.5])])
+    const shown = current.columns.slice(0, 5)
+    const changes = Object.values(staged)
+    const operations = stagedOperations(staged)
+    const hasRuns = (dataset.runs || []).length > 0
+    return e('div', { style: stack(10) },
+      e(TabBar, { tabs: tables.map(t => ({ id: t.id, label: t.label, count: rowsOf(t).length })), value: current.id, onChange: id => { setTab(id); setSearch(''); setOpen(null) } }),
+      e(ListSearch, { value: search, onChange: setSearch, shown: found.length, total: all.length, noun: current.one, placeholder: `Search ${current.label.toLowerCase()}` }),
+      e(Table, {
+        empty: e('div', { style: faint }, `No ${current.label.toLowerCase()}.`),
+        columns: [{ id: '_title', label: current.title ? 'Name' : 'Id' }, ...(current.parent ? [{ id: '_parent', label: 'Of' }] : []), ...shown.map(c => ({ id: c.name, label: c.label }))],
+        rows: found.slice(0, 200).map(({ item: { row, at, parent }, hits }) => ({
+          key: at, at,
+          _title: e('span', { style: { fontWeight: open === at ? 600 : 400 } }, e(Highlight, { text: String(titleOf(current, row)), hits }),
+            Object.keys(staged).some(p => p.startsWith(`${at}/`)) ? e('span', { style: { color: 'var(--ui-accent)' } }, ' •') : null),
+          _parent: parent ? e('span', { style: faint }, (() => { const t = tables.find(x => x.id === current.parent); return t ? titleOf(t, parent) : parent.id })()) : null,
+          ...Object.fromEntries(shown.map(c => [c.name, e('span', { style: muted }, cellText(c, valueOf(at, row, c)))]))
+        })),
+        onRow: r => setOpen(open === r.at ? null : r.at)
+      }),
+      found.length > 200 ? e('div', { style: faint }, `Showing the first 200 of ${fmt(found.length)}; search to narrow them.`) : null,
+      (() => {
+        const hit = all.find(x => x.at === open)
+        if (!hit) return null
+        return e(Card, null,
+          e('div', { style: row(8) }, e(Label, null, `${current.one[0].toUpperCase()}${current.one.slice(1)} ${titleOf(current, hit.row)}`), spacer(),
+            e(Button, { size: 'xs', variant: 'text', onClick: () => setOpen(null) }, 'Close')),
+          e('div', { style: { display: 'grid', gridTemplateColumns: 'minmax(120px, max-content) 1fr', gap: '8px 14px', alignItems: 'start' } },
+            current.columns.flatMap(c => [
+              e('span', { key: `${c.name}-l`, style: muted }, c.label),
+              e(ParamCell, { key: `${c.name}-v`, param: asParam(c, choices), value: valueOf(hit.at, hit.row, c), changed: Boolean(staged[`${hit.at}/${c.name}`]),
+                onChange: v => stage(current, hit.at, hit.row, c, c.reference && v === '' ? undefined : v) })])))
+      })(),
+      changes.length
+        ? e(Card, null,
+            e(Label, null, `${count(changes.length, 'change')} not saved`),
+            e('ul', { 'aria-label': 'Changes not saved', style: { margin: 0, paddingLeft: 18, ...muted } }, changes.map(c => e('li', { key: c.path }, c.words))),
+            e('div', { style: row(8) },
+              e('input', { value: name, 'aria-label': 'Name of the new dataset', style: { ...input, width: 220 }, onChange: event => setName(event.target.value) }),
+              e(Button, { size: 'xs', disabled: save.isPending, onClick: () => save.mutate({ dataset: dataset.id, operations, name }) }, 'Save as a new dataset'),
+              e(Button, { size: 'xs', variant: 'outline', disabled: save.isPending || hasRuns, title: hasRuns ? 'Runs used this dataset as it is; save the change as a new one.' : undefined,
+                onClick: () => save.mutate({ dataset: dataset.id, operations, in_place: true }) }, 'Save here'),
+              e(Button, { size: 'xs', variant: 'text', onClick: () => setStaged({}) }, 'Discard')),
+            e('div', { style: faint }, 'The model reads the changed data before it is saved; nothing is saved if it cannot.'))
+        : e('div', { style: faint }, 'Click a row to change it. Changes stay here until you save them.'))
+  })
 }
 
 // ---- runs --------------------------------------------------------------------------
@@ -1628,7 +1794,22 @@ export function ParamCell({ param, value, onChange, changed }) {
   }
   if (param.kind === 'object' && param.fields && param.fields.length) return e(ObjectCell, { param, value, onChange, ring })
   if (param.kind === 'array' && param.fields && param.fields.length) return e(ListCell, { param, value, onChange, ring })
-  if (param.kind === 'object' || param.kind === 'array') return e(JsonCell, { param, value, onChange, ring })
+  if (param.kind === 'object' || param.kind === 'array' || param.kind === 'json') return e(JsonCell, { param, value, onChange, ring })
+  if (param.kind === 'location') {
+    const [lat, lng] = Array.isArray(value) ? value : ['', '']
+    const part = (n, words) => e('input', {
+      type: 'number', step: 'any', value: [lat, lng][n] ?? '', 'aria-label': `${label} ${words}`, style: { ...input, width: 96, textAlign: 'right', ...ring },
+      onChange: event => {
+        const v = Number(event.target.value)
+        if (event.target.value !== '' && Number.isFinite(v)) onChange(n ? [Number(lat) || 0, v] : [v, Number(lng) || 0])
+      }
+    })
+    return e('span', { style: row(4) }, part(0, 'latitude'), part(1, 'longitude'))
+  }
+  if (param.kind === 'date_time') {
+    return e('input', { type: 'datetime-local', value: value ? String(value).slice(0, 16) : '', 'aria-label': label, style: { ...input, ...ring },
+      onChange: event => onChange(event.target.value || undefined) })
+  }
   if (param.options && param.options.length) {
     return e('select', { value: value ?? '', 'aria-label': label, style: { ...input, ...ring }, onChange: event => onChange(event.target.value) },
       param.options.map(o => e('option', { key: o.value, value: o.value }, o.label)))
@@ -1636,10 +1817,10 @@ export function ParamCell({ param, value, onChange, changed }) {
   if (param.kind === 'date') {
     return e('input', { type: 'date', value: value ?? '', 'aria-label': label, style: { ...input, ...ring }, onChange: event => onChange(event.target.value) })
   }
-  if (param.kind === 'string') {
+  if (param.kind === 'string' || param.kind === 'text') {
     return e('input', { value: value ?? '', 'aria-label': label, style: { ...input, width: 160, ...ring }, onChange: event => onChange(event.target.value) })
   }
-  const whole = param.kind === 'integer' || param.kind === 'duration'
+  const whole = param.kind === 'integer' || param.kind === 'duration' || param.kind === 'minutes'
   return e('span', { style: row(4) },
     e('input', {
       type: 'number', step: whole ? 1 : 'any', value: value ?? '', 'aria-label': label, style: { ...input, width: 96, textAlign: 'right', ...ring },
@@ -1648,7 +1829,7 @@ export function ParamCell({ param, value, onChange, changed }) {
         if (event.target.value !== '' && Number.isFinite(n)) onChange(whole ? Math.trunc(n) : n)
       }
     }),
-    e('span', { style: faint }, param.unit || (param.kind === 'duration' ? 'minutes' : '')))
+    e('span', { style: faint }, param.unit || (param.kind === 'duration' || param.kind === 'minutes' ? 'minutes' : '')))
 }
 
 /** An object setting: each of its fields with its own editor. */
@@ -1664,7 +1845,8 @@ function ObjectCell({ param, value, onChange, ring }) {
 function ListCell({ param, value, onChange, ring }) {
   const items = Array.isArray(value) ? value : (param.default || [])
   const item = param.fields[0]
-  const blank = item.kind === 'boolean' ? false : item.kind === 'object' ? {} : ['integer', 'number', 'duration'].includes(item.kind) ? 0 : ''
+  const blank = item.kind === 'boolean' ? false : item.kind === 'object' ? {} : ['integer', 'number', 'duration', 'minutes'].includes(item.kind) ? 0
+    : item.kind === 'location' ? [0, 0] : item.options && item.options.length ? item.options[0].value : ''
   return e('span', { style: { ...stack(4), ...ring } },
     items.length ? null : e('span', { style: faint }, 'None'),
     items.map((v, n) => e('span', { key: n, style: row(4) },
@@ -1685,13 +1867,13 @@ function JsonCell({ param, value, onChange, ring }) {
         setText(event.target.value)
         try {
           const parsed = JSON.parse(event.target.value)
-          const fits = param.kind === 'array' ? Array.isArray(parsed) : parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
+          const fits = param.kind === 'json' || (param.kind === 'array' ? Array.isArray(parsed) : parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed))
           setBad(!fits)
           if (fits) onChange(parsed)
         } catch { setBad(true) }
       }
     }),
-    bad ? e('span', { style: { ...faint, color: 'var(--ui-danger, #e5534b)' } }, param.kind === 'array' ? 'Write a JSON list.' : 'Write a JSON object.') : null)
+    bad ? e('span', { style: { ...faint, color: 'var(--ui-danger, #e5534b)' } }, param.kind === 'json' ? 'Write JSON.' : param.kind === 'array' ? 'Write a JSON list.' : 'Write a JSON object.') : null)
 }
 
 /** A setting's value in words: its option's label, its unit, an object's fields, a list's items. */

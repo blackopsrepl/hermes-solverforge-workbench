@@ -1,18 +1,18 @@
 {
  "ok": true,
  "dataset": {
-  "id": "77b2dddceb5b",
+  "id": "c0ec30f344b0",
   "model_id": "toy",
   "name": "Week without shift 0",
   "tags": [],
   "origin": "run",
-  "parent_id": "09b75bb58b21",
+  "parent_id": "f758b1f4fcff",
   "config": {
    "weights": {},
    "params": {},
    "solve": {}
   },
-  "created_at": "2026-11-18T13:32:09.908+00:00",
+  "created_at": "2026-11-18T13:47:58.588+00:00",
   "size": [
    {
     "label": "nurses",
@@ -28,7 +28,7 @@
   "patch": [
    {
     "op": "replan",
-    "from_run": "79318eb4ef15"
+    "from_run": "75f374f4057d"
    },
    {
     "op": "edit",
@@ -42,8 +42,8 @@
   "parent_name": "Demo Week",
   "runs": [
    {
-    "id": "f512eb1595b2",
-    "dataset_id": "77b2dddceb5b",
+    "id": "e5799b7faeb3",
+    "dataset_id": "c0ec30f344b0",
     "model_id": "toy",
     "kind": "solve",
     "status": "completed",
@@ -56,9 +56,9 @@
     "label": null,
     "profile_name": "Standard",
     "dataset_name": "Week without shift 0",
-    "created_at": "2026-11-18T13:32:09.914+00:00",
-    "started_at": "2026-11-18T13:32:10.048+00:00",
-    "finished_at": "2026-11-18T13:32:11.087+00:00",
+    "created_at": "2026-11-18T13:47:58.603+00:00",
+    "started_at": "2026-11-18T13:47:58.674+00:00",
+    "finished_at": "2026-11-18T13:47:59.702+00:00",
     "error": null,
     "elapsed_ms": 1000,
     "seconds": 1
@@ -68,10 +68,10 @@
   "lineage": {
    "ancestors": [
     {
-     "id": "09b75bb58b21",
+     "id": "f758b1f4fcff",
      "name": "Demo Week",
      "origin": "demo",
-     "created_at": "2026-11-18T13:32:08.671+00:00"
+     "created_at": "2026-11-18T13:47:57.365+00:00"
     }
    ],
    "children": []

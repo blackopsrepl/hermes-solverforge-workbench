@@ -51,7 +51,7 @@ wb.store.update_build(b['id'], status='building', phase='Compiling', compiled=41
                       log='   Compiling serde v1.0.228\n   Compiling solverforge-core v0.31.1')
 out = {
  'status': call('solverforge_workbench_status'), 'models': call('solverforge_workbench_models'), 'model': call('solverforge_workbench_model', {'model':'toy'}),
- 'datasets': call('solverforge_workbench_datasets'), 'dataset': call('solverforge_workbench_dataset', {'dataset': d['id']}),
+ 'datasets': call('solverforge_workbench_datasets'), 'dataset': call('solverforge_workbench_dataset', {'dataset': d['id'], 'include_plan': True}),
  'runs': call('solverforge_workbench_runs'), 'run': call('solverforge_workbench_run', {'run': r['id'], 'max_matches': 10}),
  'evaluated': call('solverforge_workbench_run', {'run': ev['id'], 'max_matches': 10}),
  'compare': call('solverforge_workbench_compare', {'runs': [ev['id'], r['id']]}),

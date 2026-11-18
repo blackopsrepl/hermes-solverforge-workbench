@@ -17,7 +17,8 @@ cpSync(join(here, '../../desktop/plugin.js'), join(here, '.build/plugin.mjs'))
 const {
   default: plugin, Workbench, ScoreChart, StatusChip, FillPanel, TrendLine, parseScore, openBeside, openPage,
   parseAt, placeOf, hrefOf, runName, ago, duration, count, errorText, madeFrom, CheckResult, BuildProgress, parseTags, profileLabel, ImportDataset, CopyDataset,
-  ReplanForm, scoreDelta, verdictText, editArgs, ParamCell, paramText, profileChanges
+  ReplanForm, scoreDelta, verdictText, editArgs, ParamCell, paramText, profileChanges,
+  DataEditor, tableRows, inferTables, cellText, stagedOperations
 } = await import('./.build/plugin.mjs')
 
 // React reports misuse (lost keys, bad props) through console.error; any of it fails the run.
@@ -125,8 +126,9 @@ test('a dataset says what it holds and where it came from, solves, checks, keeps
   assert.match(page, /Demo Week demo Rename Duplicate Export Delete 3 nurses · 6 shifts · Demo · just now/)
   assert.match(page, /Standard \(default\) Blind Lenient Keep everything before Change and solve… Compare profiles… Check as is Solve/)
   assert.match(html, /type="datetime-local"/)
-  assert.match(page, /Find places for open items/)
-  assert.match(page, /Runs Run Profile Status Score Time Run \d\d:\d\d just now Blind Finished 0 hard 0 soft/)
+  // A solved dataset opens on its runs; the plan and the data are a tab away.
+  assert.match(text(at(placeOf('toy', 'datasets', datasetId, 'plan'))), /Plan Data Runs 4 Show the input assignments Find places for open items/)
+  assert.match(page, /Plan Data Runs 4 Runs Run Profile Status Score Time Run \d\d:\d\d just now Blind Finished 0 hard 0 soft/)
   assert.match(html, /data-c="CopyButton" data-text="[0-9a-f]{12}" aria-label="Copy the dataset&#x27;s id"/)
 })
 
@@ -497,4 +499,65 @@ test('compare shows the plans side by side', () => {
   const html = at(placeOf('toy', 'runs', 'compare', 'a,b'))
   assert.match(text(html), /Show the plans side by side/)
   assert.equal((html.match(/<iframe /g) || []).length, 2)
+})
+
+const FSR_TABLES = [
+  { id: 'technicians', label: 'Technicians', one: 'technician', path: 'vehicles', title: 'name', columns: [{ name: 'name', label: 'Name', kind: 'text', optional: true }] },
+  { id: 'shifts', label: 'Shifts', one: 'shift', path: 'vehicles/*/shifts', parent: 'technicians', title: '', columns: [
+    { name: 'minStartTime', label: 'Starts', kind: 'date_time', optional: true },
+    { name: 'skills', label: 'Skills', kind: 'list', optional: true, fields: [{ name: 'skill', label: 'Skill', kind: 'object', fields: [
+      { name: 'name', label: 'Skill', kind: 'text' }, { name: 'level', label: 'Level', kind: 'integer', optional: true }] }] }] },
+  { id: 'visits', label: 'Visits', one: 'visit', path: 'visits', title: 'name', columns: [
+    { name: 'location', label: 'Place', kind: 'location' },
+    { name: 'timeWindows', label: 'Time windows', kind: 'list', optional: true, fields: [{ name: 'window', label: 'Window', kind: 'object', fields: [
+      { name: 'minStartTime', label: 'From', kind: 'date_time', optional: true }, { name: 'maxEndTime', label: 'Done by', kind: 'date_time', optional: true }] }] },
+    { name: 'requiredVehicles', label: 'Only technicians', kind: 'list', optional: true, fields: [{ name: 'technician', label: 'Technician', kind: 'text', reference: 'technicians' }] }] }
+]
+const FSR_PLAN = {
+  vehicles: [{ id: 'giorgio', name: 'Giorgio', shifts: [{ id: 'giorgio-1', minStartTime: '2027-03-01T08:00', skills: [{ name: 'electric', level: 2 }] }] }],
+  visits: [{ id: 'v1', name: 'Lingotto', location: [45.03, 7.66], timeWindows: [{ minStartTime: '2027-03-01T09:00', maxEndTime: '2027-03-01T12:00' }], requiredVehicles: ['giorgio'] }]
+}
+
+test('the data editor finds every table, nested rows included, and reads each value in words', () => {
+  assert.deepEqual(tableRows(FSR_PLAN, 'vehicles/*/shifts').map(r => r.at), ['/vehicles/[id=giorgio]/shifts/[id=giorgio-1]'])
+  assert.equal(tableRows(FSR_PLAN, 'vehicles/*/shifts')[0].parent.name, 'Giorgio')
+  assert.deepEqual(tableRows(FSR_PLAN, 'visits').map(r => r.at), ['/visits/[id=v1]'])
+  const [, shifts, visits] = FSR_TABLES
+  assert.equal(cellText(shifts.columns[1], FSR_PLAN.vehicles[0].shifts[0].skills), 'electric · 2')
+  assert.equal(cellText(visits.columns[1], FSR_PLAN.visits[0].timeWindows), '2027-03-01 09:00 · 2027-03-01 12:00')
+  assert.equal(cellText(visits.columns[0], [45.03, 7.66]), '45.0300, 7.6600')
+  assert.equal(cellText(visits.columns[2], ['giorgio']), 'giorgio')
+  assert.equal(cellText(visits.columns[1], undefined), '—')
+})
+
+test('staged edits become id-addressed patch operations: replace, add, remove', () => {
+  const ops = stagedOperations({
+    a: { path: '/vehicles/[id=giorgio]/shifts/[id=giorgio-1]/skills', had: true, value: [{ name: 'electric', level: 3 }] },
+    b: { path: '/visits/[id=v1]/priority', had: false, value: '2' },
+    c: { path: '/visits/[id=v1]/requiredVehicles', had: true, value: undefined },
+    d: { path: '/visits/[id=v1]/name2', had: false, value: undefined }
+  })
+  assert.deepEqual(ops, [
+    { op: 'replace', path: '/vehicles/[id=giorgio]/shifts/[id=giorgio-1]/skills', value: [{ name: 'electric', level: 3 }] },
+    { op: 'add', path: '/visits/[id=v1]/priority', value: '2' },
+    { op: 'remove', path: '/visits/[id=v1]/requiredVehicles' }
+  ])
+})
+
+test('a model that describes no tables gets one per list of records in its data', () => {
+  const tables = inferTables(real.dataset.dataset.plan)
+  assert.deepEqual(tables.map(t => [t.id, t.label, t.title]), [['nurses', 'Nurses', 'name'], ['shifts', 'Shifts', '']])
+  assert.deepEqual(tables[1].columns.map(c => [c.name, c.kind]), [['day', 'integer'], ['nurse_idx', 'json'], ['pinned', 'boolean']])
+})
+
+test('the data tab shows a searchable grid per table', () => {
+  const page = text(at(placeOf('toy', 'datasets', datasetId, 'data')))
+  assert.match(page, /Plan Data Runs 4 Nurses 3 Shifts 6/)
+  assert.match(page, /Click a row to change it\. Changes stay here until you save them\./)
+  const fixture = structuredClone(real)
+  fixture.dataset.dataset.plan = FSR_PLAN
+  setFixture(fixture)
+  const grid = text(render(h(DataEditor, { model: { ...real.model.model, tables: FSR_TABLES }, dataset: fixture.dataset.dataset })))
+  assert.match(grid, /Technicians 1 Shifts 1 Visits 1/)
+  assert.match(grid, /Giorgio/)
 })

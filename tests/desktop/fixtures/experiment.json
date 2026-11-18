@@ -1,16 +1,16 @@
 {
  "ok": true,
  "experiment": {
-  "id": "5405f7ddcbe9",
+  "id": "d496ec34cd8e",
   "model_id": "toy",
   "name": "Experiment 1",
   "datasets": [
-   "08d9bb18e920",
-   "4bcec56d6649"
+   "872d491076f2",
+   "5b833ec6bb04"
   ],
   "profiles": [
    "toy-standard",
-   "74038d9b1a8d"
+   "443d2f09715b"
   ],
   "judge": "toy-standard",
   "repeats": 1,
@@ -22,15 +22,15 @@
     "best_score": "0hard/0soft"
    }
   },
-  "created_at": "2026-11-18T13:32:08.040+00:00",
+  "created_at": "2026-11-18T13:47:56.743+00:00",
   "judge_name": "Standard",
   "dataset_names": {
-   "08d9bb18e920": "Demo Week",
-   "4bcec56d6649": "Demo Week B"
+   "872d491076f2": "Demo Week",
+   "5b833ec6bb04": "Demo Week B"
   },
   "profile_names": {
    "toy-standard": "Standard",
-   "74038d9b1a8d": "Blind"
+   "443d2f09715b": "Blind"
   },
   "statuses": {
    "completed": 4
@@ -38,13 +38,13 @@
   "done": true,
   "cells": [
    {
-    "dataset_id": "08d9bb18e920",
+    "dataset_id": "872d491076f2",
     "profile_id": "toy-standard",
     "runs": 1,
     "finished": 1,
     "feasible": 1,
     "best": {
-     "run_id": "cdd97d779f64",
+     "run_id": "ef7435a7e6f9",
      "score": "0hard/0soft",
      "feasible": true
     },
@@ -55,17 +55,17 @@
      "assigned": 6.0
     },
     "run_ids": [
-     "cdd97d779f64"
+     "ef7435a7e6f9"
     ]
    },
    {
-    "dataset_id": "08d9bb18e920",
-    "profile_id": "74038d9b1a8d",
+    "dataset_id": "872d491076f2",
+    "profile_id": "443d2f09715b",
     "runs": 1,
     "finished": 1,
     "feasible": 1,
     "best": {
-     "run_id": "c8fe32184637",
+     "run_id": "d447b9c54d99",
      "score": "0hard/0soft",
      "feasible": true
     },
@@ -76,38 +76,38 @@
      "assigned": 6.0
     },
     "run_ids": [
-     "c8fe32184637"
+     "d447b9c54d99"
     ]
    },
    {
-    "dataset_id": "4bcec56d6649",
+    "dataset_id": "5b833ec6bb04",
     "profile_id": "toy-standard",
     "runs": 1,
     "finished": 1,
     "feasible": 1,
     "best": {
-     "run_id": "9f8d08d44103",
+     "run_id": "1066c8eb51f3",
      "score": "0hard/0soft",
      "feasible": true
     },
     "median": "0hard/0soft",
     "worst": "0hard/0soft",
-    "mean_elapsed_ms": 2,
+    "mean_elapsed_ms": 1,
     "kpis": {
      "assigned": 6.0
     },
     "run_ids": [
-     "9f8d08d44103"
+     "1066c8eb51f3"
     ]
    },
    {
-    "dataset_id": "4bcec56d6649",
-    "profile_id": "74038d9b1a8d",
+    "dataset_id": "5b833ec6bb04",
+    "profile_id": "443d2f09715b",
     "runs": 1,
     "finished": 1,
     "feasible": 1,
     "best": {
-     "run_id": "e2b3a8698599",
+     "run_id": "04d46b1db533",
      "score": "0hard/0soft",
      "feasible": true
     },
@@ -118,7 +118,7 @@
      "assigned": 6.0
     },
     "run_ids": [
-     "e2b3a8698599"
+     "04d46b1db533"
     ]
    }
   ],
@@ -133,7 +133,7 @@
     "place": 1
    },
    {
-    "profile_id": "74038d9b1a8d",
+    "profile_id": "443d2f09715b",
     "profile": "Blind",
     "finished": 2,
     "feasible": 2,
