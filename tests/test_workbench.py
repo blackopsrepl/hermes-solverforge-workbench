@@ -513,3 +513,20 @@ def test_a_model_card_carries_its_summary_demos_and_latest_solve(wb):
     run = wait_for(wb, wb.solve(dataset["id"], overrides={"solve": {"seconds": 2}})["id"])
     card = next(m for m in wb.models() if m["id"] == "toy")
     assert card["latest_run"]["id"] == run["id"]
+
+
+def test_a_parameter_value_must_fit_its_kind_options_and_fields():
+    from solverforge_workbench_plugin.service import _parameter_problem
+    pooling = {"kind": "string", "options": [{"value": "ALL", "label": "Anything"}, {"value": "NONE", "label": "Nothing"}]}
+    assert _parameter_problem(pooling, "ALL") is None
+    assert _parameter_problem(pooling, "SOME") == "is one of ALL, NONE"
+    adjust = {"kind": "object", "fields": [{"name": "multiplier", "kind": "number"},
+                                           {"name": "extraTime", "kind": "duration"}]}
+    assert _parameter_problem(adjust, {"multiplier": 1.2, "extraTime": 5}) is None
+    assert _parameter_problem(adjust, {"extraTime": 2.5}) == "field 'extraTime' is a duration"
+    assert _parameter_problem(adjust, {"speed": 3}) == "has no field 'speed'"
+    holidays = {"kind": "array", "fields": [{"name": "date", "kind": "date"}]}
+    assert _parameter_problem(holidays, ["2027-04-05"]) is None
+    assert _parameter_problem(holidays, ["2027-04-05", "Easter"]) == "item 2 is a date"
+    assert _parameter_problem({"kind": "duration"}, None) is None
+    assert _parameter_problem({"kind": "integer"}, True) == "is an integer"

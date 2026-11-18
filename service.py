@@ -589,17 +589,10 @@ class Workbench:
             raise WorkbenchError("unknown_parameter", f"model {model_id} has no parameter named {unknown[0]!r}",
                                  unknown=unknown, known=sorted(listed))
         for name, value in params.items():
-            kind = listed[name].get("kind")
-            fits = {
-                "integer": isinstance(value, int) and not isinstance(value, bool),
-                "duration": isinstance(value, int) and not isinstance(value, bool),
-                "number": isinstance(value, (int, float)) and not isinstance(value, bool),
-                "boolean": isinstance(value, bool),
-                "string": isinstance(value, str),
-            }.get(kind, True)
-            if not fits:
-                raise WorkbenchError("invalid_parameter", f"parameter {name!r} of {model_id} is a {kind}",
-                                     parameter=name, kind=kind)
+            problem = _parameter_problem(listed[name], value)
+            if problem:
+                raise WorkbenchError("invalid_parameter", f"parameter {name!r} of {model_id} {problem}",
+                                     parameter=name, kind=listed[name].get("kind"))
 
     def set_default_profile(self, model_id: str, ref: str) -> dict[str, Any]:
         profile = self.profile_record(model_id, ref)
@@ -1111,12 +1104,14 @@ class Workbench:
         manifest = self.model_record(model_id)["manifest"]
         solves = self.store.finished_solves(model_id)
         names = {}
+        profiles = {p["id"]: p["name"] for p in self.store.profiles(model_id)}
         points = []
         for run in solves:
             if run["dataset_id"] not in names:
                 names[run["dataset_id"]] = (self.store.dataset(run["dataset_id"]) or {}).get("name", run["dataset_id"])
             points.append({"run_id": run["id"], "dataset_id": run["dataset_id"], "dataset": names[run["dataset_id"]],
-                           "profile_id": run["profile_id"], "experiment_id": run["experiment_id"],
+                           "profile_id": run["profile_id"], "profile": profiles.get(run["profile_id"]),
+                           "experiment_id": run["experiment_id"],
                            "finished_at": run["finished_at"], "score": run["score"],
                            "feasible": bool(run["feasible"]),
                            "kpis": {k["id"]: k["value"] for k in run.get("kpis") or []
@@ -1263,6 +1258,44 @@ def _zero(score: str) -> bool:
 def _now() -> str:
     from .store import now
     return now()
+
+
+_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _parameter_problem(param: dict[str, Any], value: Any) -> str | None:
+    """Why ``value`` does not fit ``param`` (kind, options, fields), or None."""
+    kind = param.get("kind")
+    if value is None:
+        return None  # unset: the model's default applies
+    whole = isinstance(value, int) and not isinstance(value, bool)
+    fits = {
+        "integer": whole, "duration": whole,
+        "number": isinstance(value, (int, float)) and not isinstance(value, bool),
+        "boolean": isinstance(value, bool), "string": isinstance(value, str),
+        "date": isinstance(value, str) and bool(_DATE.match(value)),
+        "object": isinstance(value, dict), "array": isinstance(value, list),
+    }.get(kind, True)
+    if not fits:
+        return f"is {'an' if str(kind)[:1] in 'aeiou' else 'a'} {kind}"
+    options = [o["value"] for o in param.get("options") or []]
+    if options and value not in options:
+        return f"is one of {', '.join(options)}"
+    fields = param.get("fields") or []
+    if kind == "object" and fields:
+        known = {f["name"]: f for f in fields}
+        for key, inner in value.items():
+            if key not in known:
+                return f"has no field {key!r}"
+            problem = _parameter_problem(known[key], inner)
+            if problem:
+                return f"field {key!r} {problem}"
+    if kind == "array" and fields:
+        for n, inner in enumerate(value):
+            problem = _parameter_problem(fields[0], inner)
+            if problem:
+                return f"item {n + 1} {problem}"
+    return None
 
 
 # Lanes a timeline keeps for what is not assigned to anyone.
