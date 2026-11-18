@@ -551,6 +551,49 @@ test('the data editor finds every table, nested rows included, and reads each va
   assert.equal(cellText(visits.columns[1], undefined), '—')
 })
 
+test('rows without ids are addressed by position, and a path holding one object is a one-row table', () => {
+  const plan = {
+    contracts: [{ id: 'full', rules: [{ kind: 'restBetween', min: 600 }, { kind: 'daysOff' }] }],
+    planningWindow: { startDate: '2027-02-01T00:00', endDate: '2027-02-03T00:00' }
+  }
+  assert.deepEqual(tableRows(plan, 'contracts/*/rules').map(r => r.at), ['/contracts/[id=full]/rules/0', '/contracts/[id=full]/rules/1'])
+  const [window] = tableRows(plan, 'planningWindow')
+  assert.deepEqual([window.at, window.single, window.row.endDate], ['/planningWindow', true, '2027-02-03T00:00'])
+  const tables = [
+    { id: 'contracts', label: 'Contracts', one: 'contract', path: 'contracts', columns: [] },
+    { id: 'rules', label: 'Contract rules', one: 'rule', path: 'contracts/*/rules', parent: 'contracts', title: 'kind', columns: [
+      { name: 'kind', label: 'Rule', kind: 'text', options: [{ value: 'restBetween', label: 'Rest between shifts' }, { value: 'daysOff', label: 'Days off' }] },
+      { name: 'min', label: 'At least', kind: 'integer', optional: true }] },
+    { id: 'planningWindow', label: 'Planning window', one: 'planning window', path: 'planningWindow', columns: [
+      { name: 'startDate', label: 'From', kind: 'date_time' }, { name: 'endDate', label: 'Until', kind: 'date_time' },
+      { name: 'metrics', label: 'Totals', kind: 'object', read_only: true, optional: true, fields: [{ name: 'travelMeters', label: 'Distance', kind: 'integer', unit: 'm' }] }] }
+  ]
+  const fixture = structuredClone(real)
+  fixture.dataset.dataset.plan = plan
+  setFixture(fixture)
+  // The first table opens first: a rule is named by its kind in words, a one-row table opens
+  // that row's editor at once, and the tabs wrap instead of scrolling away.
+  const editor = first => render(h(DataEditor, { model: { ...real.model.model, id: 'toy', tables: [first, ...tables.filter(t => t !== first)] }, dataset: fixture.dataset.dataset }))
+  const rules = editor(tables[1])
+  assert.match(text(rules), /2 rules Rule Of At least Rest between shifts full 600 Days off full — Click/)
+  assert.match(rules, /flex-wrap:wrap/)
+  const one = text(editor(tables[2]))
+  assert.match(one, /Planning window 2027-02-01 00:00 2027-02-03 00:00 — Planning window From Until Totals — Changes stay here/)
+  assert.doesNotMatch(one, /Close|Click a row/)
+  setFixture(real)
+})
+
+test('a list column edits item by item, an optional choice can be unset, and solver output is read only', () => {
+  const skills = { name: 'skills', label: 'Skills', kind: 'list', optional: true, fields: [{ name: 'skill', label: 'Skill', kind: 'object', fields: [
+    { name: 'name', label: 'Skill', kind: 'text' }, { name: 'level', label: 'Level', kind: 'integer', optional: true }] }] }
+  const html = render(h(ParamCell, { param: skills, value: [{ name: 'electric', level: 2 }], onChange: () => {} }))
+  assert.match(text(html), /Add skill/)
+  assert.match(html, /value="electric"/)
+  const kind = { name: 'policy', label: 'Jobs on board', kind: 'text', optional: true, options: [{ value: 'PERMIT_JOBS', label: 'May stay on board' }, { value: 'REJECT_JOBS', label: 'None on board' }] }
+  assert.match(render(h(ParamCell, { param: kind, value: undefined, onChange: () => {} })), /<option value="" selected="">not set<\/option>/)
+  assert.doesNotMatch(render(h(ParamCell, { param: { ...kind, optional: false }, value: 'PERMIT_JOBS', onChange: () => {} })), /not set/)
+})
+
 test('staged edits become id-addressed patch operations: replace, add, remove', () => {
   const ops = stagedOperations({
     a: { path: '/vehicles/[id=giorgio]/shifts/[id=giorgio-1]/skills', had: true, value: [{ name: 'electric', level: 3 }] },

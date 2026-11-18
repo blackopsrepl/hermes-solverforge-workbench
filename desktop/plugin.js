@@ -475,8 +475,9 @@ function Crumbs({ items }) {
         : e(Link, { to: item.to }, item.label))))
 }
 
-function TabBar({ tabs, value, onChange }) {
-  return e('div', { role: 'tablist', style: { display: 'flex', gap: 2, borderBottom: '1px solid var(--ui-stroke-tertiary)', overflowX: 'auto' } },
+function TabBar({ tabs, value, onChange, wrap = false }) {
+  // Many tabs (a model's data tables) wrap onto more lines instead of hiding past the edge.
+  return e('div', { role: 'tablist', style: { display: 'flex', gap: 2, borderBottom: '1px solid var(--ui-stroke-tertiary)', ...(wrap ? { flexWrap: 'wrap' } : { overflowX: 'auto' }) } },
     tabs.map(t => e('button', {
       key: t.id, type: 'button', role: 'tab', 'aria-selected': t.id === value, onClick: () => onChange(t.id),
       style: { background: 'none', border: 0, borderBottom: `2px solid ${t.id === value ? 'var(--ui-accent)' : 'transparent'}`,
@@ -1533,18 +1534,24 @@ function DatasetPage({ model, id, tab: wanted }) {
 
 // ---- the data editor ----------------------------------------------------------------
 
+// A row in a list as JSON Patch addresses it: by id when it has one, by position otherwise.
+const rowAt = (at, row, n) => (row && row.id !== undefined && row.id !== null ? `${at}/[id=${row.id}]` : `${at}/${n}`)
+
 // The rows at a table's path ("visits", or each vehicle's shifts as vehicles/STAR/shifts with
-// STAR the wildcard), each with the JSON Patch path that addresses it by id and its parent row.
+// STAR the wildcard), each with the JSON Patch path that addresses it and its parent row. A path
+// that holds one object (planningWindow) is a table of that one row.
 export function tableRows(plan, path) {
   let level = [{ value: plan, at: '', parent: null }]
   for (const part of path.split('/')) {
     if (part === '*') {
-      level = level.flatMap(({ value, at }) => (Array.isArray(value) ? value : []).map(row => ({ value: row, at: `${at}/[id=${row.id}]`, parent: row })))
+      level = level.flatMap(({ value, at }) => (Array.isArray(value) ? value : []).map((row, n) => ({ value: row, at: rowAt(at, row, n), parent: row })))
     } else {
       level = level.map(({ value, at, parent }) => ({ value: value && value[part], at: `${at}/${part}`, parent }))
     }
   }
-  return level.flatMap(({ value, at, parent }) => (Array.isArray(value) ? value : []).map(row => ({ row, at: `${at}/[id=${row.id}]`, parent })))
+  return level.flatMap(({ value, at, parent }) => (Array.isArray(value)
+    ? value.map((row, n) => ({ row, at: rowAt(at, row, n), parent, n }))
+    : value && typeof value === 'object' ? [{ row: value, at, parent, single: true }] : []))
 }
 
 const kindOf = value => (typeof value === 'boolean' ? 'boolean' : typeof value === 'number' ? (Number.isInteger(value) ? 'integer' : 'number')
@@ -1622,37 +1629,47 @@ export function DataEditor({ model, dataset }) {
     if (!tables.length) return e('div', { style: faint }, 'This model’s data has no lists of records to edit here. Export it, change the JSON and import it as a new dataset.')
     const current = tables.find(t => t.id === tab) || tables[0]
     const rowsOf = t => tableRows(plan, t.path)
-    const titleOf = (t, row) => (t.title && row[t.title]) || row.id
-    const choices = Object.fromEntries(tables.map(t => [t.id, rowsOf(t).map(({ row }) => ({ value: String(row.id), label: titleOf(t, row) === row.id ? String(row.id) : `${titleOf(t, row)} (${row.id})` }))]))
+    // A row's name: its title field (in words when it is a choice), its id, else its place.
+    const titleOf = (t, row, n) => {
+      const column = t.title && t.columns.find(c => c.name === t.title)
+      if (column && row[t.title] !== undefined && row[t.title] !== '') return column.options ? cellText(column, row[t.title]) : row[t.title]
+      if (t.title && row[t.title]) return row[t.title]
+      if (row.id !== undefined && row.id !== null) return row.id
+      return n === undefined ? t.label : `${t.one[0].toUpperCase()}${t.one.slice(1)} ${n + 1}`
+    }
+    const choices = Object.fromEntries(tables.map(t => [t.id, rowsOf(t).filter(({ row }) => row.id !== undefined && row.id !== null)
+      .map(({ row }) => ({ value: String(row.id), label: titleOf(t, row) === row.id ? String(row.id) : `${titleOf(t, row)} (${row.id})` }))]))
     const valueOf = (at, row, column) => {
       const change = staged[`${at}/${column.name}`]
       return change ? change.value : row[column.name]
     }
-    const stage = (t, at, row, column, value) => {
+    const stage = (t, hit, column, value) => {
+      const { at, row, n } = hit
       const path = `${at}/${column.name}`
       const had = row[column.name] !== undefined
       const same = JSON.stringify(value) === JSON.stringify(row[column.name])
       const next = { ...staged }
-      if (same) delete next[path]
-      else next[path] = { path, had, value, words: `${t.one[0].toUpperCase()}${t.one.slice(1)} ${titleOf(t, row)}: ${column.label.toLowerCase()} ${cellText(column, value)}` }
+      if (same || (!had && value === undefined)) delete next[path]
+      else next[path] = { path, had, value, words: `${hit.single ? t.label : `${t.one[0].toUpperCase()}${t.one.slice(1)} ${titleOf(t, row, n)}`}: ${column.label.toLowerCase()} ${value === undefined ? 'not set' : cellText(column, value)}` }
       setStaged(next)
     }
     const all = rowsOf(current)
-    const found = searchItems(all, search, [[({ row }) => titleOf(current, row), 1], [({ row }) => String(row.id), 0.9],
+    const found = searchItems(all, search, [[({ row, n }) => String(titleOf(current, row, n)), 1], [({ row }) => String(row.id ?? ''), 0.9],
       ...current.columns.map(c => [({ row, at }) => cellText(c, valueOf(at, row, c)), 0.5])])
-    const shown = current.columns.slice(0, 5)
+    // The title column already names each row; the grid shows the next five.
+    const shown = current.columns.filter(c => c.name !== current.title).slice(0, 5)
     const changes = Object.values(staged)
     const operations = stagedOperations(staged)
     const hasRuns = (dataset.runs || []).length > 0
     return e('div', { style: stack(10) },
-      e(TabBar, { tabs: tables.map(t => ({ id: t.id, label: t.label, count: rowsOf(t).length })), value: current.id, onChange: id => { setTab(id); setSearch(''); setOpen(null) } }),
+      e(TabBar, { wrap: true, tabs: tables.map(t => ({ id: t.id, label: t.label, count: rowsOf(t).length })), value: current.id, onChange: id => { setTab(id); setSearch(''); setOpen(null) } }),
       e(ListSearch, { value: search, onChange: setSearch, shown: found.length, total: all.length, noun: current.one, placeholder: `Search ${current.label.toLowerCase()}` }),
       e(Table, {
         empty: e('div', { style: faint }, `No ${current.label.toLowerCase()}.`),
-        columns: [{ id: '_title', label: current.title ? 'Name' : 'Id' }, ...(current.parent ? [{ id: '_parent', label: 'Of' }] : []), ...shown.map(c => ({ id: c.name, label: c.label }))],
-        rows: found.slice(0, 200).map(({ item: { row, at, parent }, hits }) => ({
+        columns: [{ id: '_title', label: current.title ? (current.columns.find(c => c.name === current.title) || {}).label || 'Name' : 'Id' }, ...(current.parent ? [{ id: '_parent', label: 'Of' }] : []), ...shown.map(c => ({ id: c.name, label: c.label }))],
+        rows: found.slice(0, 200).map(({ item: { row, at, parent, n }, hits }) => ({
           key: at, at,
-          _title: e('span', { style: { fontWeight: open === at ? 600 : 400 } }, e(Highlight, { text: String(titleOf(current, row)), hits }),
+          _title: e('span', { style: { fontWeight: open === at ? 600 : 400 } }, e(Highlight, { text: String(titleOf(current, row, n)), hits }),
             Object.keys(staged).some(p => p.startsWith(`${at}/`)) ? e('span', { style: { color: 'var(--ui-accent)' } }, ' •') : null),
           _parent: parent ? e('span', { style: faint }, (() => { const t = tables.find(x => x.id === current.parent); return t ? titleOf(t, parent) : parent.id })()) : null,
           ...Object.fromEntries(shown.map(c => [c.name, e('span', { style: muted }, cellText(c, valueOf(at, row, c)))]))
@@ -1661,16 +1678,19 @@ export function DataEditor({ model, dataset }) {
       }),
       found.length > 200 ? e('div', { style: faint }, `Showing the first 200 of ${fmt(found.length)}; search to narrow them.`) : null,
       (() => {
-        const hit = all.find(x => x.at === open)
+        const hit = all.find(x => x.at === open) || (all.length === 1 && all[0].single ? all[0] : null)
         if (!hit) return null
         return e(Card, null,
-          e('div', { style: row(8) }, e(Label, null, `${current.one[0].toUpperCase()}${current.one.slice(1)} ${titleOf(current, hit.row)}`), spacer(),
-            e(Button, { size: 'xs', variant: 'text', onClick: () => setOpen(null) }, 'Close')),
+          e('div', { style: row(8) }, e(Label, null, hit.single ? current.label : `${current.one[0].toUpperCase()}${current.one.slice(1)} ${titleOf(current, hit.row, hit.n)}`), spacer(),
+            hit.single ? null : e(Button, { size: 'xs', variant: 'text', onClick: () => setOpen(null) }, 'Close')),
           e('div', { style: { display: 'grid', gridTemplateColumns: 'minmax(120px, max-content) 1fr', gap: '8px 14px', alignItems: 'start' } },
             current.columns.flatMap(c => [
               e('span', { key: `${c.name}-l`, style: muted }, c.label),
-              e(ParamCell, { key: `${c.name}-v`, param: asParam(c, choices), value: valueOf(hit.at, hit.row, c), changed: Boolean(staged[`${hit.at}/${c.name}`]),
-                onChange: v => stage(current, hit.at, hit.row, c, c.reference && v === '' ? undefined : v) })])))
+              // What the solver writes is shown as it stands, never edited.
+              c.read_only
+                ? e('span', { key: `${c.name}-v`, style: { ...muted, overflowWrap: 'anywhere' } }, cellText(c, hit.row[c.name]))
+                : e(ParamCell, { key: `${c.name}-v`, param: asParam(c, choices), value: valueOf(hit.at, hit.row, c), changed: Boolean(staged[`${hit.at}/${c.name}`]),
+                  onChange: v => stage(current, hit, c, c.reference && v === '' ? undefined : v) })])))
       })(),
       changes.length
         ? e(Card, null,
@@ -1683,7 +1703,7 @@ export function DataEditor({ model, dataset }) {
                 onClick: () => save.mutate({ dataset: dataset.id, operations, in_place: true }) }, 'Save here'),
               e(Button, { size: 'xs', variant: 'text', onClick: () => setStaged({}) }, 'Discard')),
             e('div', { style: faint }, 'The model reads the changed data before it is saved; nothing is saved if it cannot.'))
-        : e('div', { style: faint }, 'Click a row to change it. Changes stay here until you save them.'))
+        : e('div', { style: faint }, all.length === 1 && all[0].single ? 'Changes stay here until you save them.' : 'Click a row to change it. Changes stay here until you save them.'))
   })
 }
 
@@ -1903,7 +1923,7 @@ export function ParamCell({ param, value, onChange, changed }) {
     return e('input', { type: 'checkbox', checked: Boolean(value), 'aria-label': label, onChange: event => onChange(event.target.checked) })
   }
   if (param.kind === 'object' && param.fields && param.fields.length) return e(ObjectCell, { param, value, onChange, ring })
-  if (param.kind === 'array' && param.fields && param.fields.length) return e(ListCell, { param, value, onChange, ring })
+  if ((param.kind === 'array' || param.kind === 'list') && param.fields && param.fields.length) return e(ListCell, { param, value, onChange, ring })
   if (param.kind === 'object' || param.kind === 'array' || param.kind === 'json') return e(JsonCell, { param, value, onChange, ring })
   if (param.kind === 'location') {
     const [lat, lng] = Array.isArray(value) ? value : ['', '']
@@ -1921,22 +1941,29 @@ export function ParamCell({ param, value, onChange, changed }) {
       onChange: event => onChange(event.target.value || undefined) })
   }
   if (param.options && param.options.length) {
-    return e('select', { value: value ?? '', 'aria-label': label, style: { ...input, ...ring }, onChange: event => onChange(event.target.value) },
+    // An optional choice can go back to unset: the model's default.
+    const unset = param.optional && !param.options.some(o => o.value === '')
+    return e('select', { value: value ?? '', 'aria-label': label, style: { ...input, ...ring },
+      onChange: event => onChange(event.target.value === '' && unset ? undefined : event.target.value) },
+      unset ? e('option', { value: '' }, 'not set') : null,
       param.options.map(o => e('option', { key: o.value, value: o.value }, o.label)))
   }
   if (param.kind === 'date') {
     return e('input', { type: 'date', value: value ?? '', 'aria-label': label, style: { ...input, ...ring }, onChange: event => onChange(event.target.value) })
   }
   if (param.kind === 'string' || param.kind === 'text') {
-    return e('input', { value: value ?? '', 'aria-label': label, style: { ...input, width: 160, ...ring }, onChange: event => onChange(event.target.value) })
+    return e('input', { value: value ?? '', 'aria-label': label, style: { ...input, width: 160, ...ring },
+      onChange: event => onChange(event.target.value === '' && param.optional ? undefined : event.target.value) })
   }
   const whole = param.kind === 'integer' || param.kind === 'duration' || param.kind === 'minutes'
   return e('span', { style: row(4) },
     e('input', {
       type: 'number', step: whole ? 1 : 'any', value: value ?? '', 'aria-label': label, style: { ...input, width: 96, textAlign: 'right', ...ring },
       onChange: event => {
+        // An optional number cleared is left out; a required one keeps its last value.
+        if (event.target.value === '') { if (param.optional) onChange(undefined); return }
         const n = Number(event.target.value)
-        if (event.target.value !== '' && Number.isFinite(n)) onChange(whole ? Math.trunc(n) : n)
+        if (Number.isFinite(n)) onChange(whole ? Math.trunc(n) : n)
       }
     }),
     e('span', { style: faint }, param.unit || (param.kind === 'duration' || param.kind === 'minutes' ? 'minutes' : '')))
@@ -1956,7 +1983,8 @@ function ListCell({ param, value, onChange, ring }) {
   const items = Array.isArray(value) ? value : (param.default || [])
   const item = param.fields[0]
   const blank = item.kind === 'boolean' ? false : item.kind === 'object' ? {} : ['integer', 'number', 'duration', 'minutes'].includes(item.kind) ? 0
-    : item.kind === 'location' ? [0, 0] : item.options && item.options.length ? item.options[0].value : ''
+    : item.kind === 'location' ? [0, 0] : item.kind === 'list' || item.kind === 'array' ? []
+      : item.options && item.options.length ? item.options[0].value : ''
   return e('span', { style: { ...stack(4), ...ring } },
     items.length ? null : e('span', { style: faint }, 'None'),
     items.map((v, n) => e('span', { key: n, style: row(4) },
