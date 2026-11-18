@@ -1,5 +1,7 @@
 # SolverForge Workbench for Hermes
 
+<p align="center"><img src="docs/assets/mascot.png" alt="The SolverForge dragon tuning a plan at a workbench while the Nous Girl checks the results" width="320"></p>
+
 Optimization models you configure, solve and explain from Hermes, on your own
 machine. Pick a model, load a dataset, tune what matters with constraint
 weights and profiles, solve in the background, and read which rule cost what
@@ -172,6 +174,8 @@ Under **Settings → Plugins → SolverForge Workbench**
   The Desktop cannot delete.
 
 ## How it works
+
+![Architecture: you, Hermes, the Python plugin and the Rust engine, with the pick, tune, solve, explain, replan and compare steps](docs/architecture.png)
 
 - [`engine/`](engine) is a Rust workspace on the published `solverforge`
   crate. `host/` runs any SolverForge model behind one JSON-lines contract
