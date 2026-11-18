@@ -601,6 +601,7 @@ class Workbench:
                                                "label", "profile_name", "dataset_name",
                                                "created_at", "started_at", "finished_at", "error")}
         brief["elapsed_ms"] = (run.get("telemetry") or {}).get("elapsed_ms")
+        brief["seconds"] = ((run.get("config") or {}).get("solve") or {}).get("seconds")
         return brief
 
     def rename_run(self, run_id: str, label: str) -> dict[str, Any]:

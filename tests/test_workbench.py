@@ -358,7 +358,7 @@ def test_a_run_is_named_with_its_dataset_and_profile_and_can_be_renamed(wb):
     run = wait_for(wb, wb.solve(dataset["id"], overrides={"solve": {"seconds": 2}})["id"])
     brief = wb.runs(dataset_id=dataset["id"])[0]
     assert (brief["dataset_name"], brief["profile_name"], brief["label"]) == ("Small week", "Standard", None)
-    assert isinstance(brief["elapsed_ms"], int)
+    assert isinstance(brief["elapsed_ms"], int) and brief["seconds"] == 2
     assert wb.rename_run(run["id"], "  First try ")["label"] == "First try"
     assert wb.run(run["id"])["label"] == "First try"
     assert wb.rename_run(run["id"], "")["label"] is None
