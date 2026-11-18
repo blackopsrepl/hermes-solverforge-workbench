@@ -2,16 +2,16 @@
  "ok": true,
  "experiments": [
   {
-   "id": "6baeb972c78e",
+   "id": "5405f7ddcbe9",
    "model_id": "toy",
    "name": "Experiment 1",
    "datasets": [
-    "f6d65b9db2ca",
-    "f7a375ef4744"
+    "08d9bb18e920",
+    "4bcec56d6649"
    ],
    "profiles": [
     "toy-standard",
-    "262cecde4a86"
+    "74038d9b1a8d"
    ],
    "judge": "toy-standard",
    "repeats": 1,
@@ -23,7 +23,7 @@
      "best_score": "0hard/0soft"
     }
    },
-   "created_at": "2026-11-18T13:26:01.294+00:00",
+   "created_at": "2026-11-18T13:32:08.040+00:00",
    "runs": 4,
    "finished": 4,
    "done": true

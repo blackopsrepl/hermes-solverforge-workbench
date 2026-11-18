@@ -1,7 +1,7 @@
 {
  "ok": true,
  "build": {
-  "id": "f69b6d294572",
+  "id": "0307c648d293",
   "model_id": "crew-tasks",
   "name": "Crew tasks",
   "path": "/home/user/crew-tasks",
@@ -10,7 +10,7 @@
   "compiled": 41,
   "total": 212,
   "error": null,
-  "created_at": "2026-11-18T13:26:04.600+00:00",
+  "created_at": "2026-11-18T13:32:11.132+00:00",
   "started_at": null,
   "finished_at": null,
   "log": [

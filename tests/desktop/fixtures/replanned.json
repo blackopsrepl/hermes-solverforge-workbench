@@ -1,8 +1,8 @@
 {
  "ok": true,
  "run": {
-  "id": "f7c3b8b022a3",
-  "dataset_id": "880866a1b59a",
+  "id": "f512eb1595b2",
+  "dataset_id": "77b2dddceb5b",
   "model_id": "toy",
   "kind": "solve",
   "status": "completed",
@@ -15,9 +15,9 @@
   "label": null,
   "profile_name": "Standard",
   "dataset_name": "Week without shift 0",
-  "created_at": "2026-11-18T13:26:03.389+00:00",
-  "started_at": "2026-11-18T13:26:03.449+00:00",
-  "finished_at": "2026-11-18T13:26:04.477+00:00",
+  "created_at": "2026-11-18T13:32:09.914+00:00",
+  "started_at": "2026-11-18T13:32:10.048+00:00",
+  "finished_at": "2026-11-18T13:32:11.087+00:00",
   "error": null,
   "elapsed_ms": 1000,
   "seconds": 1,
@@ -45,9 +45,9 @@
   "issues": [],
   "telemetry": {
    "elapsed_ms": 1000,
-   "moves_accepted": 139071,
-   "moves_evaluated": 246262,
-   "steps": 139071
+   "moves_accepted": 106829,
+   "moves_evaluated": 181500,
+   "steps": 106829
   },
   "points": [
    {
@@ -89,10 +89,10 @@
   "lineage": {
    "ancestors": [
     {
-     "id": "7caa58a01ed3",
+     "id": "09b75bb58b21",
      "name": "Demo Week",
      "origin": "demo",
-     "created_at": "2026-11-18T13:26:02.160+00:00"
+     "created_at": "2026-11-18T13:32:08.671+00:00"
     }
    ],
    "children": []

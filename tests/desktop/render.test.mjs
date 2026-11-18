@@ -17,7 +17,7 @@ cpSync(join(here, '../../desktop/plugin.js'), join(here, '.build/plugin.mjs'))
 const {
   default: plugin, Workbench, ScoreChart, StatusChip, FillPanel, TrendLine, parseScore, openBeside, openPage,
   parseAt, placeOf, hrefOf, runName, ago, duration, count, errorText, madeFrom, CheckResult, BuildProgress, parseTags, profileLabel, ImportDataset, CopyDataset,
-  ReplanForm, scoreDelta, verdictText, editArgs
+  ReplanForm, scoreDelta, verdictText, editArgs, ParamCell, paramText, profileChanges
 } = await import('./.build/plugin.mjs')
 
 // React reports misuse (lost keys, bad props) through console.error; any of it fails the run.
@@ -123,7 +123,7 @@ test('a dataset says what it holds and where it came from, solves, checks, keeps
   const page = text(html)
   assert.match(page, /› Toy roster › Datasets › Demo Week /)
   assert.match(page, /Demo Week demo Rename Duplicate Export Delete 3 nurses · 6 shifts · Demo · just now/)
-  assert.match(page, /Standard \(default\) Blind Lenient Keep everything before Change and solve… Check as is Solve/)
+  assert.match(page, /Standard \(default\) Blind Lenient Keep everything before Change and solve… Compare profiles… Check as is Solve/)
   assert.match(html, /type="datetime-local"/)
   assert.match(page, /Find places for open items/)
   assert.match(page, /Runs Run Profile Status Score Time Run \d\d:\d\d just now Blind Finished 0 hard 0 soft/)
@@ -222,7 +222,7 @@ test('an experiment ranks its profiles and shows each dataset × profile cell', 
   const page = text(at(placeOf('toy', 'experiments', x.id)))
   assert.match(page, /› Experiments › Experiment 1 /)
   assert.match(page, /Done Delete 2 datasets × 2 profiles × 1 · judged by Standard/)
-  assert.match(page, /# Profile Feasible Average place 1 Standard 2 of 2 1 2 Blind 2 of 2 2/)
+  assert.match(page, /# Profile What it changes Feasible Average place 1 Standard the model’s own weights 2 of 2 1 2 Blind Shift for the first nurse ×0 2 of 2 2/)
   assert.match(page, /By dataset Dataset Standard Blind Demo Week 0 hard 0 soft 1 of 1 feasible/)
   assert.match(text(at(placeOf('toy', 'experiments'))), /1 experiment New experiment Experiment Datasets × profiles × repeats Solves Started Experiment 1 2 × 2 × 1 Finished/)
 })
@@ -239,7 +239,7 @@ test('a new experiment starts from the model and the dataset it was opened on', 
 test('trends draw every KPI across finished solves', () => {
   const page = text(at(placeOf('toy', 'trends')))
   assert.match(page, /5 finished solves · 100% feasible/)
-  assert.match(page, /Assigned shifts · 5 solves · latest 6 shifts/)
+  assert.match(page, /just now · 6 Assigned shifts · 5 solves · range 6–6 shifts 6 · just now/)
   assert.equal(render(h(TrendLine, { kpi: { label: 'X', unit: '', points: [] } })).includes('no data'), true)
 })
 
@@ -454,4 +454,47 @@ test('scores compare level by level, and verdicts and change fields read as word
 test('a click on an open item opens its places only', () => {
   const html = render(h(FillPanel, { run: runId, model: 'toy', items: ['3'], onClear() {} }))
   assert.match(text(html), /Places for .* Every open item/)
+})
+
+const ADJUST = { name: 'travelTimeAdjustment', label: 'Travel time adjustment', kind: 'object', default: { multiplier: 1, extraTime: 0 },
+  fields: [{ name: 'multiplier', label: 'Multiplier', kind: 'number', unit: '×', default: 1 }, { name: 'extraTime', label: 'Extra time', kind: 'duration', unit: 'minutes', default: 0 }] }
+const HOLIDAYS = { name: 'holidays', label: 'Holidays', kind: 'array', default: [], fields: [{ name: 'date', label: 'Date', kind: 'date' }] }
+const POOLING = { name: 'pooling', label: 'Pooling', kind: 'string', default: 'ALL', options: [{ value: 'ALL', label: 'Anything' }, { value: 'NONE', label: 'Nothing' }] }
+
+test('every kind of setting gets its own editor, and its value reads in words', () => {
+  const object = render(h(ParamCell, { param: ADJUST, value: { multiplier: 1.2, extraTime: 5 }, onChange() {} }))
+  assert.match(text(object), /Multiplier ×? *Extra time *minutes/)
+  assert.match(object, /aria-label="Multiplier" [^>]*value="1.2"/)
+  const list = render(h(ParamCell, { param: HOLIDAYS, value: ['2027-04-05'], onChange() {} }))
+  assert.match(list, /type="date" aria-label="Date 1"[^>]*value="2027-04-05"/)
+  assert.match(text(list), /Remove +Add date/)
+  const choice = render(h(ParamCell, { param: POOLING, value: 'NONE', onChange() {} }))
+  assert.match(choice, /<select[^>]*aria-label="Pooling"/)
+  assert.match(text(choice), /Anything +Nothing/)
+  assert.equal(paramText(ADJUST, { multiplier: 1.2, extraTime: 5 }), 'multiplier 1.2 × · extra time 5 minutes')
+  assert.equal(paramText(HOLIDAYS, []), 'none')
+  assert.equal(paramText(POOLING, 'NONE'), 'Nothing')
+  assert.equal(paramText({ kind: 'boolean' }, true), 'yes')
+})
+
+test('a profile says what it changes against Standard and can be tried in an experiment', () => {
+  const blind = real.model.model.profiles.find(p => p.name === 'Blind')
+  const page = text(at(placeOf('toy', 'profiles', blind.id)))
+  assert.match(page, /Against Standard: 1 rule weighed differently · 0 settings changed Only what differs Try it in an experiment/)
+  assert.equal(profileChanges(real.model.model, blind.id), 'Shift for the first nurse ×0')
+  const html = at(placeOf('toy', 'experiments', 'new', '', blind.id))
+  const checked = [...html.matchAll(/<input type="checkbox" checked=""\/>([^<]+)</g)].map(m => m[1])
+  assert.deepEqual(checked, ['Standard', 'Blind'])
+})
+
+test('trends mark each solve with its dataset, profile and time', () => {
+  const html = at(placeOf('toy', 'trends'))
+  assert.equal((html.match(/<circle /g) || []).length, 5)
+  assert.match(html, /<title>6 shifts · Demo Week · Blind · just now<\/title>/)
+})
+
+test('compare shows the plans side by side', () => {
+  const html = at(placeOf('toy', 'runs', 'compare', 'a,b'))
+  assert.match(text(html), /Show the plans side by side/)
+  assert.equal((html.match(/<iframe /g) || []).length, 2)
 })

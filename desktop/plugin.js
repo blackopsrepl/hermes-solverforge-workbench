@@ -410,16 +410,16 @@ function readAt() {
 export function parseAt(at) {
   const [first, ...more] = String(at || '').split('/').filter(Boolean).map(decodeURIComponent)
   if (first === 'm' && more[0]) {
-    const [model, tab = 'overview', id, extra] = more
-    return { page: 'model', model, tab, id, extra }
+    const [model, tab = 'overview', id, extra, also] = more
+    return { page: 'model', model, tab, id, extra: extra === '-' ? undefined : extra, ...(also ? { also } : {}) }
   }
   if (first === 'runs' || first === 'experiments') return { page: first }
   if (first === 'add-model') return { page: 'add' }
   if (first === 'run' || first === 'dataset' || first === 'experiment') return { page: 'find', kind: first, id: more[0] }
   return { page: 'home' }
 }
-export const placeOf = (model, tab, id, extra) =>
-  `/m/${[model, tab, id, extra].filter(Boolean).map(encodeURIComponent).join('/')}`
+export const placeOf = (model, tab, id, extra, also) =>
+  `/m/${[model, tab, id, extra || (also ? '-' : ''), also].filter(Boolean).map(encodeURIComponent).join('/')}`
 
 const Nav = createContext({ at: '/home', go: () => {}, docked: false })
 const useNav = () => useContext(Nav)
@@ -1102,7 +1102,7 @@ function ModelHub({ place }) {
       datasets: () => (place.id ? e(DatasetPage, { key: place.id, model, id: place.id }) : e(DatasetsTab, { model })),
       runs: () => (place.id === 'compare' ? e(ComparePage, { model, ids: place.extra || '' }) : place.id ? e(RunPage, { key: place.id, model, id: place.id }) : e(RunsTab, { model })),
       profiles: () => e(ProfilesTab, { model, picked: place.id }),
-      experiments: () => (place.id === 'new' ? e(ExperimentNew, { model, datasets: place.extra ? place.extra.split(',') : [] })
+      experiments: () => (place.id === 'new' ? e(ExperimentNew, { model, datasets: place.extra ? place.extra.split(',') : [], profiles: place.also ? place.also.split(',') : [] })
         : place.id ? e(ExperimentPage, { key: place.id, model, id: place.id }) : e(ExperimentsTab, { model })),
       trends: () => e(TrendsTab, { model })
     }[place.tab] || (() => e(Overview, { model }))
@@ -1395,6 +1395,7 @@ function DatasetPage({ model, id }) {
           e('input', { type: 'datetime-local', value: freeze, style: input, 'aria-label': 'Keep everything that starts before', onChange: event => setFreeze(event.target.value) })),
         spacer(),
         e(Button, { size: 'xs', variant: 'outline', onClick: () => setReplanning(true) }, 'Change and solve…'),
+        e(Button, { size: 'xs', variant: 'outline', onClick: () => go(placeOf(model.id, 'experiments', 'new', id)) }, 'Compare profiles…'),
         e(Button, { size: 'xs', variant: 'outline', disabled: evaluate.isPending, onClick: () => evaluate.mutate(body) }, 'Check as is'),
         e(Button, { size: 'xs', disabled: solve.isPending, onClick: () => solve.mutate(body) }, solve.isPending ? 'Starting…' : 'Solve')),
       freeze ? e('div', { style: faint }, `Everything that starts before ${freeze.replace('T', ' ')} keeps its place.`) : null),
@@ -1577,9 +1578,11 @@ function RunPage({ model, id }) {
   })
 }
 
-function ComparePage({ ids }) {
+function ComparePage({ model, ids }) {
+  const { docked } = useNav()
   const query = useRead('compare', { runs: ids })
   const [all, setAll] = useState(false)
+  const [plans, setPlans] = useStored(`${model.id}.compare.plans`, true)
   return e(Loading, { query }, data => {
     const columns = [{ id: 'name', label: '' }, ...data.runs.map((r, i) => ({ id: `r${i}`, label: `${r.dataset} · ${r.profile || 'Standard'} · ${runName(r)}`, num: true }))]
     const line = (key, name, values) => ({ key, name, ...Object.fromEntries(values.map((v, i) => [`r${i}`, v])) })
@@ -1594,7 +1597,15 @@ function ComparePage({ ids }) {
         ...data.kpis.map(k => line(`kpi:${k.id}`, k.label, k.values.map(v => (v == null ? '—' : `${fmt(v)} ${k.unit}`)))),
         ...constraints.map(c => line(`c:${c.name}`, c.name, c.scores.map(s => e(ScoreText, { score: s }))))
       ] }),
-      !constraints.length ? e('div', { style: faint }, 'Every rule scores the same in these runs.') : null)
+      !constraints.length ? e('div', { style: faint }, 'Every rule scores the same in these runs.') : null,
+      model.view
+        ? e('div', { style: stack(8) },
+            e('label', { style: { ...row(4), ...faint } }, e('input', { type: 'checkbox', checked: plans, onChange: event => setPlans(event.target.checked) }), 'Show the plans side by side'),
+            plans ? e('div', { style: { display: 'grid', gridTemplateColumns: docked ? '1fr' : `repeat(${Math.min(data.runs.length, 2)}, minmax(0, 1fr))`, gap: 12 } },
+              data.runs.map(r => e('div', { key: r.id, style: stack(6) },
+                e(Link, { to: placeOf(model.id, 'runs', r.id), style: { fontWeight: 600 } }, `${r.dataset} · ${r.profile || 'Standard'} · ${runName(r)}`),
+                e(PlanView, { run: r.id, kind: model.view, version: r.score })))) : null)
+        : null)
   })
 }
 
@@ -1609,13 +1620,22 @@ function WeightCell({ value, editable, onChange, changed }) {
   })
 }
 
-function ParamCell({ param, value, onChange, changed }) {
+export function ParamCell({ param, value, onChange, changed }) {
   const ring = changed ? { borderColor: 'var(--ui-accent)' } : {}
   const label = param.label || param.name
   if (param.kind === 'boolean') {
     return e('input', { type: 'checkbox', checked: Boolean(value), 'aria-label': label, onChange: event => onChange(event.target.checked) })
   }
+  if (param.kind === 'object' && param.fields && param.fields.length) return e(ObjectCell, { param, value, onChange, ring })
+  if (param.kind === 'array' && param.fields && param.fields.length) return e(ListCell, { param, value, onChange, ring })
   if (param.kind === 'object' || param.kind === 'array') return e(JsonCell, { param, value, onChange, ring })
+  if (param.options && param.options.length) {
+    return e('select', { value: value ?? '', 'aria-label': label, style: { ...input, ...ring }, onChange: event => onChange(event.target.value) },
+      param.options.map(o => e('option', { key: o.value, value: o.value }, o.label)))
+  }
+  if (param.kind === 'date') {
+    return e('input', { type: 'date', value: value ?? '', 'aria-label': label, style: { ...input, ...ring }, onChange: event => onChange(event.target.value) })
+  }
   if (param.kind === 'string') {
     return e('input', { value: value ?? '', 'aria-label': label, style: { ...input, width: 160, ...ring }, onChange: event => onChange(event.target.value) })
   }
@@ -1628,7 +1648,29 @@ function ParamCell({ param, value, onChange, changed }) {
         if (event.target.value !== '' && Number.isFinite(n)) onChange(whole ? Math.trunc(n) : n)
       }
     }),
-    e('span', { style: faint }, param.unit || (param.kind === 'duration' ? 'min' : '')))
+    e('span', { style: faint }, param.unit || (param.kind === 'duration' ? 'minutes' : '')))
+}
+
+/** An object setting: each of its fields with its own editor. */
+function ObjectCell({ param, value, onChange, ring }) {
+  const current = value && typeof value === 'object' && !Array.isArray(value) ? value : (param.default || {})
+  return e('span', { style: { ...stack(4), ...ring } },
+    param.fields.map(field => e('label', { key: field.name, style: { ...row(6), ...faint } },
+      e('span', { style: { minWidth: 90 }, title: field.description }, field.label || field.name),
+      e(ParamCell, { param: field, value: current[field.name] ?? field.default, onChange: inner => onChange({ ...current, [field.name]: inner }) }))))
+}
+
+/** A list setting: one editor per item, with add and remove. */
+function ListCell({ param, value, onChange, ring }) {
+  const items = Array.isArray(value) ? value : (param.default || [])
+  const item = param.fields[0]
+  const blank = item.kind === 'boolean' ? false : item.kind === 'object' ? {} : ['integer', 'number', 'duration'].includes(item.kind) ? 0 : ''
+  return e('span', { style: { ...stack(4), ...ring } },
+    items.length ? null : e('span', { style: faint }, 'None'),
+    items.map((v, n) => e('span', { key: n, style: row(4) },
+      e(ParamCell, { param: { ...item, label: `${item.label || item.name} ${n + 1}` }, value: v, onChange: inner => onChange(items.map((x, i) => i === n ? inner : x)) }),
+      e(Button, { size: 'xs', variant: 'text', onClick: () => onChange(items.filter((_, i) => i !== n)) }, 'Remove'))),
+    e('span', null, e(Button, { size: 'xs', variant: 'outline', onClick: () => onChange([...items, blank]) }, `Add ${(item.label || item.name).toLowerCase()}`)))
 }
 
 /** A list or object setting edited as JSON, kept only while it parses to the right shape. */
@@ -1652,7 +1694,19 @@ function JsonCell({ param, value, onChange, ring }) {
     bad ? e('span', { style: { ...faint, color: 'var(--ui-danger, #e5534b)' } }, param.kind === 'array' ? 'Write a JSON list.' : 'Write a JSON object.') : null)
 }
 
-const shown = value => (value !== null && typeof value === 'object' ? JSON.stringify(value) : String(value))
+/** A setting's value in words: its option's label, its unit, an object's fields, a list's items. */
+export function paramText(param, value) {
+  if (value === null || value === undefined) return 'not set'
+  if (param.kind === 'boolean') return value ? 'yes' : 'no'
+  const option = (param.options || []).find(o => o.value === value)
+  if (option) return option.label
+  if (param.kind === 'object' && param.fields && param.fields.length) {
+    return param.fields.map(f => `${(f.label || f.name).toLowerCase()} ${paramText(f, value[f.name] ?? f.default)}`).join(' · ')
+  }
+  if (Array.isArray(value)) return value.length ? value.map(v => paramText((param.fields || [])[0] || {}, v)).join(', ') : 'none'
+  if (typeof value === 'object') return JSON.stringify(value)
+  return typeof value === 'number' ? `${fmt(value)}${param.unit ? ` ${param.unit}` : ''}` : String(value)
+}
 
 function ImportProfile({ model }) {
   const { go } = useNav()
@@ -1704,7 +1758,12 @@ function ProfileEditor({ model, profile }) {
   const parameters = model.parameters || []
   const changed = Object.keys(draft).length > 0 || Object.keys(draftParams).length > 0
   const settings = { weights, params, solve: profile.solve }
-  const results = searchConstraints(model.constraints, search)
+  const [onlyDiff, setOnlyDiff] = useStored(`${model.id}.profile.only-diff`, false)
+  const differs = c => (weights[c.name] ?? 1) !== 1
+  const paramDiffers = p => p.name in params && JSON.stringify(params[p.name]) !== JSON.stringify(p.default)
+  const weightDiffs = model.constraints.filter(differs).length
+  const paramDiffs = (model.parameters || []).filter(paramDiffers).length
+  const results = searchConstraints(onlyDiff ? model.constraints.filter(differs) : model.constraints, search)
   const groups = []
   for (const r of results) {
     const group = r.item.group || 'Rules'
@@ -1726,16 +1785,26 @@ function ProfileEditor({ model, profile }) {
       changed ? e(Button, { size: 'xs', variant: 'outline', disabled: !name.trim() || save.isPending, onClick: () => save.mutate({ model: model.id, name: name.trim(), settings }) }, 'Save as new') : null,
       changed && !profile.read_only ? e(Button, { size: 'xs', disabled: save.isPending, onClick: () => save.mutate({ model: model.id, name: profile.name, description: profile.description, profile: profile.id, expected_revision: profile.revision, settings }) }, 'Save') : null),
     profile.read_only ? e('div', { style: faint }, 'Standard keeps the model’s own weights. Change a value, then save it as a new profile.') : null,
+    !profile.read_only || changed
+      ? e('div', { style: row(10) },
+          e('span', { style: muted }, weightDiffs || paramDiffs
+            ? `Against Standard: ${count(weightDiffs, 'rule')} weighed differently · ${count(paramDiffs, 'setting')} changed`
+            : 'The same as Standard'),
+          e('label', { style: { ...row(4), ...faint } },
+            e('input', { type: 'checkbox', checked: onlyDiff, onChange: event => setOnlyDiff(event.target.checked) }), 'Only what differs'),
+          spacer(),
+          !changed && !profile.read_only ? e(Button, { size: 'xs', variant: 'outline', onClick: () => go(placeOf(model.id, 'experiments', 'new', '', profile.id)) }, 'Try it in an experiment') : null)
+      : null,
     !editable ? e('div', { style: faint }, 'This model has fixed weights; only its settings can change.') : null,
     e(TabBar, { value: parameters.length ? section : 'rules', onChange: setSection,
       tabs: [{ id: 'rules', label: 'Rules and weights', count: model.constraints.length }, ...(parameters.length ? [{ id: 'settings', label: 'Settings', count: parameters.length }] : [])] }),
     section === 'settings' && parameters.length
       ? e(Table, {
           columns: [{ id: 'name', label: 'Setting' }, { id: 'standard', label: 'Standard', num: true, width: 130 }, { id: 'value', label: 'This profile', width: 300 }],
-          rows: parameters.map(prm => ({
+          rows: parameters.filter(prm => !onlyDiff || paramDiffers(prm)).map(prm => ({
             key: prm.name,
             name: e('div', null, prm.label || prm.name, prm.description ? e('div', { style: faint }, prm.description) : null),
-            standard: e('span', { style: faint }, shown(prm.default)),
+            standard: e('span', { style: faint }, paramText(prm, prm.default)),
             value: e(ParamCell, { param: prm, value: params[prm.name] ?? prm.default, changed: prm.name in (profile.params || {}) || prm.name in draftParams,
               onChange: v => setDraftParams({ ...draftParams, [prm.name]: v }) })
           }))
@@ -1804,11 +1873,13 @@ function Picks({ label, options, chosen, onChange }) {
       : e('div', { style: faint }, 'None yet.'))
 }
 
-function ExperimentNew({ model, datasets: initial }) {
+function ExperimentNew({ model, datasets: initial, profiles: chosen }) {
   const { go } = useNav()
   const datasetQuery = useRead('datasets', { model: model.id })
   const [datasets, setDatasets] = useState(initial || [])
-  const [profiles, setProfiles] = useState([])
+  // A profile opened from its editor is tried against Standard, the baseline it changes.
+  const standard = (model.profiles.find(p => p.read_only) || {}).id
+  const [profiles, setProfiles] = useState(() => chosen && chosen.length ? [...new Set([standard, ...chosen].filter(Boolean))] : [])
   const [repeats, setRepeats] = useState('2')
   const [seconds, setSeconds] = useState('30')
   const [judge, setJudge] = useState('')
@@ -1837,6 +1908,19 @@ function ExperimentNew({ model, datasets: initial }) {
     total > 200 ? e('div', { role: 'alert', style: muted }, 'At most 200 solves per experiment.') : null)
 }
 
+/** What a profile changes against the model's own weights and settings, in a few words. */
+export function profileChanges(model, profileId) {
+  const profile = model.profiles.find(p => p.id === profileId)
+  if (!profile) return 'a deleted profile'
+  const params = new Map((model.parameters || []).map(p => [p.name, p]))
+  const parts = [
+    ...Object.entries(profile.weights || {}).filter(([, w]) => w !== 1).map(([name, w]) => `${name} ×${fmt(w)}`),
+    ...Object.entries(profile.params || {}).map(([name, v]) => `${(params.get(name) || {}).label || name}: ${paramText(params.get(name) || {}, v)}`)
+  ]
+  if (!parts.length) return 'the model’s own weights'
+  return parts.length > 3 ? `${parts.slice(0, 3).join(' · ')} and ${parts.length - 3} more` : parts.join(' · ')
+}
+
 function ExperimentPage({ model, id }) {
   const { go } = useNav()
   const query = useRead('experiment', { experiment: id })
@@ -1854,9 +1938,11 @@ function ExperimentPage({ model, id }) {
       e('div', { style: muted }, `${count(x.datasets.length, 'dataset')} × ${count(x.profiles.length, 'profile')} × ${x.repeats} · judged by ${x.judge_name} · ${ago(x.created_at)}`),
       e(Card, null, e(Label, null, 'Ranking'),
         e(Table, {
-          columns: [{ id: 'place', label: '#', width: 32 }, { id: 'profile', label: 'Profile' }, { id: 'feasible', label: 'Feasible', num: true }, { id: 'avg', label: 'Average place', num: true }],
+          columns: [{ id: 'place', label: '#', width: 32 }, { id: 'profile', label: 'Profile' }, { id: 'changes', label: 'What it changes' },
+            { id: 'feasible', label: 'Feasible', num: true }, { id: 'avg', label: 'Average place', num: true }],
           rows: x.ranking.map(r => ({
             key: r.profile_id, place: r.place, profile: e('strong', null, r.profile),
+            changes: e('span', { style: faint }, profileChanges(model, r.profile_id)),
             feasible: r.finished ? `${r.feasible} of ${r.finished}` : '—',
             avg: r.average_place == null ? '—' : r.average_place
           }))
@@ -1880,19 +1966,34 @@ function ExperimentPage({ model, id }) {
   })
 }
 
-/** One KPI over time: a line through every finished solve, oldest on the left. */
-export function TrendLine({ kpi, width = 520, height = 64 }) {
+/** One KPI over time: a line through every finished solve, oldest on the left, each solve a
+ *  point that names its dataset, profile and time and opens its run. */
+export function TrendLine({ kpi, solves = [], model, width = 520, height = 72 }) {
+  const { go } = useNav()
   const values = kpi.points.map(p => p[1])
   if (values.length < 2) return e('div', { style: faint }, `${kpi.label}: ${values.length ? `${fmt(values[0])} ${kpi.unit || ''}` : 'no data'}`)
   const low = Math.min(...values)
   const high = Math.max(...values)
   const span = high - low || 1
-  const padding = 4
-  const d = values.map((v, i) => `${i ? 'L' : 'M'}${(padding + (i / (values.length - 1)) * (width - 2 * padding)).toFixed(1)},${(padding + ((high - v) / span) * (height - 2 * padding)).toFixed(1)}`).join('')
+  const padding = 6
+  const x = i => padding + (i / (values.length - 1)) * (width - 2 * padding)
+  const y = v => padding + ((high - v) / span) * (height - 2 * padding)
+  const d = values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('')
+  const byRun = new Map(solves.map(s => [s.run_id, s]))
   return e('figure', { style: { margin: 0 } },
-    e('svg', { role: 'img', 'aria-label': `${kpi.label} over time`, viewBox: `0 0 ${width} ${height}`, width: '100%', height, preserveAspectRatio: 'none', style: { display: 'block' } },
-      e('path', { d, fill: 'none', stroke: 'var(--ui-accent)', strokeWidth: 1.5, vectorEffect: 'non-scaling-stroke' })),
-    e('figcaption', { style: faint }, `${kpi.label} · ${count(values.length, 'solve')} · latest ${fmt(values[values.length - 1])} ${kpi.unit || ''} · range ${fmt(low)}–${fmt(high)}`))
+    e('svg', { role: 'img', 'aria-label': `${kpi.label} over time`, viewBox: `0 0 ${width} ${height}`, width: '100%', height, preserveAspectRatio: 'none', style: { display: 'block', overflow: 'visible' } },
+      e('path', { d, fill: 'none', stroke: 'var(--ui-accent)', strokeWidth: 1.5, vectorEffect: 'non-scaling-stroke' }),
+      kpi.points.map(([when, v, runId], i) => {
+        const solve = byRun.get(runId)
+        const words = `${fmt(v)} ${kpi.unit || ''} · ${solve ? `${solve.dataset} · ${solve.profile || 'Standard'} · ` : ''}${ago(when)}`
+        return e('circle', { key: `${runId}-${i}`, cx: x(i), cy: y(v), r: 3.5, fill: solve && !solve.feasible ? 'var(--ui-danger, #e5534b)' : 'var(--ui-accent)',
+          style: { cursor: runId && model ? 'pointer' : 'default' }, vectorEffect: 'non-scaling-stroke',
+          onClick: runId && model ? () => go(placeOf(model, 'runs', runId)) : undefined }, e('title', null, words))
+      })),
+    e('figcaption', { style: { ...faint, ...row(12), justifyContent: 'space-between' } },
+      e('span', null, `${ago(kpi.points[0][0])} · ${fmt(values[0])}`),
+      e('span', null, `${kpi.label} · ${count(values.length, 'solve')} · range ${fmt(low)}–${fmt(high)} ${kpi.unit || ''}`),
+      e('span', null, `${fmt(values[values.length - 1])} · ${ago(kpi.points[kpi.points.length - 1][0])}`)))
 }
 
 function TrendsTab({ model }) {
@@ -1901,7 +2002,7 @@ function TrendsTab({ model }) {
     data.solves.length
       ? e('div', { style: muted }, `${count(data.solves.length, 'finished solve')} · ${Math.round(data.feasible_share * 100)}% feasible · ${ago(data.solves[0].finished_at)} to ${ago(data.solves[data.solves.length - 1].finished_at)}`)
       : e(Empty, { title: 'No finished solves yet', description: 'Trends appear once this model has solved plans.' }),
-    data.kpis.map(k => e(Card, { key: k.id }, e(TrendLine, { kpi: k })))))
+    data.kpis.map(k => e(Card, { key: k.id }, e(TrendLine, { kpi: k, solves: data.solves, model: model.id })))))
 }
 
 // ---- across models -------------------------------------------------------------------
