@@ -3,7 +3,8 @@
 Optimization models you configure, solve and explain from Hermes, on your own
 machine. Pick a model, load a dataset, tune what matters with constraint
 weights and profiles, solve in the background, and read which rule cost what
-and why. The Desktop shows each solved plan as a schedule.
+and why. The Desktop shows each solved plan as a schedule, or on a map along
+the roads.
 
 ## Try it
 
@@ -92,16 +93,44 @@ constraint weights from a `#[constraint_weights]` field on the plan.
 
 ## The Desktop
 
-- **SolverForge Workbench** in the sidebar: models, datasets and runs.
-- A model's page lists its constraints by group with the selected profile's
-  weights, editable in place, and a fuzzy search over name, group, level and
-  description (`rst btwn` finds *Rest between shifts*).
-- A run's page shows the score and how far it moved, a score-over-time chart
-  per level, the KPIs, the plan as a roster and every constraint with its
-  matches, each naming the employees and shifts it blames. On the roster, one
-  lane per employee: red marks a shift that breaks a hard rule, rose a medium
-  one, and a rule over an employee's whole roster (overlaps, rest, work limits)
-  is named on their row; grey is time off.
+**SolverForge Workbench** in the sidebar opens every model, dataset, profile,
+run and experiment; the command palette also opens it beside the chat. Every
+list has a fuzzy search (`rst btwn` finds *Rest between shifts*).
+
+![The models, each with its latest plan](docs/screenshots/home.png)
+
+- **A run** shows a verdict in words, the score and how far it moved, a
+  score-over-time chart per level, the KPIs, the plan, and every constraint
+  with the matches it blames. From there: replan with a change (a technician
+  off for a day, a new visit, a moved time window), export, or compare.
+
+  ![A field service run](docs/screenshots/run.png)
+
+- **Routes** fill the page on a map, along the roads, beside a searchable list
+  of routes with their visits, distance and driving time. Picking a route zooms
+  to it and dims the rest; an unplanned visit offers the best places for it.
+  The day-by-day timeline follows below.
+
+  ![Two days of Turin building services on the map](docs/screenshots/routes.png)
+
+- **Rosters and schedules** show one lane per employee or machine: red marks
+  an assignment that breaks a hard rule, rose a medium one, grey is time off.
+- **A dataset's data** opens as one grid per table (technicians, shifts,
+  visits) with typed cell editors. Changes are staged, checked by the engine
+  and saved as a new dataset, or in place while no run has used it.
+
+  ![The data editor](docs/screenshots/data.png)
+
+- **Profiles** edit weights and parameters in place, each setting typed with
+  its unit, and show what differs from Standard.
+
+  ![A profile against Standard](docs/screenshots/profile.png)
+
+- **Experiments** solve every dataset under every profile and rank the
+  profiles; **trends** chart a model's solves over time.
+
+  ![An experiment](docs/screenshots/experiment.png)
+
 - A `::solverforge-workbench{run="…"}` card in the chat shows what costs score
   in a run, and a status-bar chip counts running solves.
 

@@ -985,7 +985,8 @@ function ModelCard({ model }) {
       spacer(),
       e(Badge, { variant: model.kind === 'custom' ? 'outline' : 'muted' }, model.kind === 'custom' ? 'Yours' : 'Stock'),
       model.changed ? e(Badge, { variant: 'warn' }, 'Project changed') : null),
-    e('div', { style: { ...muted, lineHeight: 1.45 } }, model.summary || (model.kind === 'custom' ? `Your model, from ${model.source}` : '')),
+    // A project path has no spaces to wrap at: let it break anywhere inside the card.
+    e('div', { style: { ...muted, lineHeight: 1.45, overflowWrap: 'anywhere' } }, model.summary || (model.kind === 'custom' ? `Your model, from ${model.source}` : '')),
     e('div', { style: faint }, `${count(model.constraints, 'rule')} · ${fmt(model.levels.hard)} hard · ${count(model.datasets, 'dataset')}`),
     spacer(),
     e('div', { style: { ...stack(4), borderTop: '1px solid var(--ui-stroke-tertiary)', paddingTop: 10 } },
