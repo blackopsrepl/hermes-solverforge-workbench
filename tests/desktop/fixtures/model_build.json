@@ -1,0 +1,21 @@
+{
+ "ok": true,
+ "build": {
+  "id": "ae21261f9f69",
+  "model_id": "crew-tasks",
+  "name": "Crew tasks",
+  "path": "/home/user/crew-tasks",
+  "status": "building",
+  "phase": "Compiling",
+  "compiled": 41,
+  "total": 212,
+  "error": null,
+  "created_at": "2026-11-18T11:42:08.861+00:00",
+  "started_at": null,
+  "finished_at": null,
+  "log": [
+   "   Compiling serde v1.0.228",
+   "   Compiling solverforge-core v0.31.1"
+  ]
+ }
+}

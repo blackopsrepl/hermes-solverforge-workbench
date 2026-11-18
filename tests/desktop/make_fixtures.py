@@ -29,6 +29,11 @@ call('solverforge_workbench_profile_save', {'model':'toy','name':'Blind','settin
 x = call('solverforge_workbench_experiment_create', {'datasets': [d['id'], d2['id']], 'profiles': ['Standard', 'Blind'],
                                                     'repeats': 1, 'overrides': {'solve': {'seconds': 30, 'best_score': '0hard/0soft'}}})['experiment']
 while not wb.experiment(x['id'])['done']: time.sleep(0.2)
+good = wb.dataset(d['id'], with_plan=True)['plan']
+# A build as the store records one mid-way, read back through the tool.
+b = wb.store.add_build(model_id='crew-tasks', name='Crew tasks', path='/home/user/crew-tasks')
+wb.store.update_build(b['id'], status='building', phase='Compiling', compiled=41, total=212,
+                      log='   Compiling serde v1.0.228\n   Compiling solverforge-core v0.31.1')
 out = {
  'status': call('solverforge_workbench_status'), 'models': call('solverforge_workbench_models'), 'model': call('solverforge_workbench_model', {'model':'toy'}),
  'datasets': call('solverforge_workbench_datasets'), 'dataset': call('solverforge_workbench_dataset', {'dataset': d['id']}),
@@ -39,6 +44,10 @@ out = {
  'experiments': call('solverforge_workbench_experiments'),
  'experiment': call('solverforge_workbench_experiment', {'experiment': x['id']}),
  'trends': call('solverforge_workbench_trends', {'model': 'toy'}),
+ 'dataset_check': call('solverforge_workbench_dataset_check', {'model': 'toy', 'plan': good}),
+ 'check_broken': call('solverforge_workbench_dataset_check', {'model': 'toy', 'plan': {
+     'nurses': [{'id': 0, 'name': 'solo'}], 'shifts': [{'id': 0, 'day': 0, 'nurse_idx': 4}]}}),
+ 'model_build': call('solverforge_workbench_model_build', {'build': b['id']}),
 }
 # Fixtures are committed: absolute paths of this checkout become relative ones.
 checkout = str(Path('.').resolve()) + '/'

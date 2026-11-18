@@ -16,6 +16,7 @@
 import {
   Badge,
   Button,
+  ConfirmDialog,
   CopyButton,
   EmptyState,
   ErrorState,
@@ -43,6 +44,9 @@ const FINISHED = ['completed', 'incomplete']
 
 let rest = () => Promise.reject(new Error('SolverForge Workbench not loaded'))
 let storage = { get: (_key, fallback) => fallback, set() {} }
+// The host's OS and folder doors (save dialogs, the folder picker); absent on older hosts.
+let os = null
+let files = null
 
 // One element: a single child goes in as is, several as a static list.
 // React reads `key` from jsx()'s third argument; inside props it is dropped.
@@ -165,7 +169,7 @@ export function duration(ms) {
 export const plural = noun => (noun.endsWith('y') ? noun.slice(0, -1) + 'ies' : noun + 's')
 export const count = (n, noun) => `${fmt(n)} ${n === 1 ? noun : plural(noun)}`
 
-export const sizeText = sizes => (Array.isArray(sizes) ? sizes : []).map(s => `${fmt(s.count)} ${s.label}`).join(' · ')
+export const sizeText = sizes => (Array.isArray(sizes) ? sizes : []).map(s => `${fmt(s.count)} ${s.count === 1 && s.one ? s.one : s.label}`).join(' · ')
 
 /** Where a dataset came from, in words. */
 export function madeFrom(dataset) {
@@ -176,9 +180,13 @@ export function madeFrom(dataset) {
     input: 'Entered',
     patch: `Edited from ${parent}`,
     run: `Replan of ${parent}`,
-    fill: `Fill on ${parent}`
+    fill: `Fill on ${parent}`,
+    copy: `Copy of ${parent}`
   }[dataset.origin] || dataset.origin
 }
+
+/** The profile a run was solved under; runs keep their results when their profile is deleted. */
+export const profileLabel = run => run.profile_name || (run.profile_id && !String(run.profile_id).endsWith('-standard') ? 'A deleted profile' : 'Standard')
 
 /** One sentence per refusal code; anything else keeps the backend's own message. */
 const ERRORS = {
@@ -197,7 +205,15 @@ const ERRORS = {
   finished: 'This run has already finished.',
   no_plan: 'There is no plan here yet.',
   no_view: 'This model does not draw its plans.',
-  storage_error: 'The workbench could not read its data folder.'
+  storage_error: 'The workbench could not read its data folder.',
+  confirm_required: 'Confirm the deletion in its dialog.',
+  model_busy: 'This model is still solving. Stop its solves first.',
+  stock_model: 'Stock models cannot be removed.',
+  not_a_project: 'That folder is not a solverforge-cli project: it has no solverforge.app.toml.',
+  cargo_missing: 'Building your model needs a Rust toolchain. Install rustup (rustup.rs) and try again.',
+  id_taken: 'Another model already has this id.',
+  invalid_profile: 'That file is not an exported profile.',
+  invalid_patch: 'That change does not fit this dataset.'
 }
 export function errorText(result, fallback = 'Something went wrong.') {
   if (!result) return fallback
@@ -387,6 +403,7 @@ export function parseAt(at) {
     return { page: 'model', model, tab, id, extra }
   }
   if (first === 'runs' || first === 'experiments') return { page: first }
+  if (first === 'add-model') return { page: 'add' }
   if (first === 'run' || first === 'dataset' || first === 'experiment') return { page: 'find', kind: first, id: more[0] }
   return { page: 'home' }
 }
@@ -483,6 +500,59 @@ function Table({ columns, rows, onRow, empty }) {
 
 /** An id kept out of sight: a quiet copy button. */
 const CopyId = ({ id, what }) => e(CopyButton, { text: id, label: `Copy the ${what}'s id`, title: `Copy the ${what}'s id`, appearance: 'icon', buttonSize: 'icon-xs', buttonVariant: 'ghost' })
+
+/** Delete, asked first in a dialog that says what goes with it (the agent's approval sentence). */
+function DeleteButton({ action, args, what, onDone, label = 'Delete' }) {
+  const [open, setOpen] = useState(false)
+  const text = useRead('confirm', { action, ...args }, { enabled: open })
+  const remove = useAction(action, result => { setOpen(false); if (onDone) onDone(result) })
+  return e('span', null,
+    e(Button, { size: 'xs', variant: 'text', onClick: () => setOpen(true) }, label),
+    e(ConfirmDialog, {
+      open, onClose: () => setOpen(false), destructive: true, confirmLabel: label, busyLabel: 'Deleting…',
+      title: `${label} ${what}?`,
+      description: (text.data && text.data.ok && text.data.text) || ' ',
+      onConfirm: () => remove.mutateAsync({ ...args, confirm: true })
+    }))
+}
+
+const fileName = name => String(name || 'export').replace(/[^\w .-]+/g, '').trim().replace(/\s+/g, '-').toLowerCase() || 'export'
+
+/** Saves JSON the backend writes (a dataset, a run's plan, a profile) where the user picks. */
+async function exportJson(action, args, name) {
+  if (!os || typeof os.pickSavePath !== 'function') {
+    host.notify({ kind: 'error', message: 'This Hermes Desktop has no save dialog. Ask Hermes to export it instead.' })
+    return
+  }
+  const path = await os.pickSavePath({ defaultPath: `${fileName(name)}.json`, title: 'Export', filters: [{ name: 'JSON', extensions: ['json'] }] })
+  if (!path) return
+  const result = await rest(`/actions/${action}`, { method: 'POST', body: { ...args, path: path.endsWith('.json') ? path : `${path}.json` } })
+    .catch(error => ({ ok: false, error: error && error.message }))
+  host.notify(result && result.ok ? { kind: 'success', message: `Saved to ${result.path}` } : { kind: 'error', message: errorText(result) })
+}
+
+const ExportButton = ({ action, args, name, label = 'Export' }) =>
+  e(Button, { size: 'xs', variant: 'text', onClick: () => exportJson(action, args, name) }, label)
+
+/** A button that opens a JSON file and hands its name and parsed contents on. */
+function JsonFileButton({ label, onFile, variant = 'outline' }) {
+  const field = useRef(null)
+  return e('span', null,
+    e(Button, { size: 'xs', variant, onClick: () => field.current && field.current.click() }, label),
+    e('input', {
+      ref: field, type: 'file', accept: '.json,application/json', style: { display: 'none' }, 'aria-label': label,
+      onChange: async event => {
+        const file = event.target.files && event.target.files[0]
+        event.target.value = ''
+        if (!file) return
+        try {
+          onFile({ name: file.name.replace(/\.json$/i, ''), value: JSON.parse(await file.text()) })
+        } catch {
+          onFile({ name: file.name, error: `${file.name} is not valid JSON.` })
+        }
+      }
+    }))
+}
 
 /** Score over time: one band per level that changes, each on its own scale, hard on top. */
 export function ScoreChart({ points, width = 520, height = 120 }) {
@@ -612,7 +682,26 @@ function ModelCard({ model }) {
       e(Button, { size: 'xs', variant: 'text', onClick: () => go(placeOf(model.id, 'datasets')) }, 'Datasets')))
 }
 
+function AddModelCard() {
+  const { go } = useNav()
+  return e(Card, { style: { minHeight: 200, borderStyle: 'dashed', justifyContent: 'center' } },
+    e(H2, null, 'Add your model'),
+    e('div', { style: { ...muted, lineHeight: 1.45 } }, 'Bring a solverforge-cli project: it gets datasets, profiles, solves, analysis and experiments like these.'),
+    e('div', null, e(Button, { size: 'xs', variant: 'outline', onClick: () => go('/add-model') }, 'Add your model')))
+}
+
+/** Re-renders every `ms` while `on`: a clock for time used, not a fetch. */
+function useTick(on, ms = 1000) {
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    if (!on) return undefined
+    const timer = setInterval(() => setTick(n => n + 1), ms)
+    return () => clearInterval(timer)
+  }, [on, ms])
+}
+
 function RunProgress({ run }) {
+  useTick(run.status === 'solving')
   const elapsed = run.started_at ? Math.max(0, Date.now() - new Date(run.started_at).getTime()) : 0
   const share = run.seconds ? Math.min(1, elapsed / (run.seconds * 1000)) : null
   return e('div', { style: stack(5) },
@@ -621,7 +710,7 @@ function RunProgress({ run }) {
       e(Link, { to: placeOf(run.model_id, 'runs', run.id) }, e('strong', null, run.dataset_name || 'Dataset')),
       spacer(),
       run.status === 'solving' && run.seconds ? e('span', { style: faint }, `${duration(elapsed)} of ${duration(run.seconds * 1000)}`) : null),
-    e('div', { style: faint }, `${runName(run)} · ${run.profile_name || 'Standard'}`),
+    e('div', { style: faint }, `${runName(run)} · ${profileLabel(run)}`),
     share !== null && run.status === 'solving'
       ? e('div', { role: 'progressbar', 'aria-label': 'Time used', 'aria-valuenow': Math.round(share * 100), 'aria-valuemin': 0, 'aria-valuemax': 100,
           style: { height: 5, borderRadius: 3, background: 'var(--ui-stroke-tertiary)', overflow: 'hidden' } },
@@ -632,7 +721,7 @@ function RunProgress({ run }) {
 
 function RunningNow() {
   const { go } = useNav()
-  const query = useRead('runs', {}, { refetchInterval: 2_000 })
+  const query = useRead('runs', {})
   const runs = answer(query, 'runs') || []
   const live = runs.filter(r => LIVE.includes(r.status))
   const recent = runs.filter(r => !LIVE.includes(r.status)).slice(0, 6)
@@ -647,7 +736,7 @@ function RunningNow() {
             columns: [{ id: 'dot', label: '', width: 16 }, { id: 'name', label: 'Run' }, { id: 'when', label: '', num: true, width: 96 }],
             rows: recent.map(r => ({ key: r.id, id: r.id, model: r.model_id,
               dot: e(Dot, { status: r.status }),
-              name: e('div', null, r.dataset_name || 'Dataset', e('div', { style: faint }, `${runName(r)} · ${r.profile_name || 'Standard'}`)),
+              name: e('div', null, r.dataset_name || 'Dataset', e('div', { style: faint }, `${runName(r)} · ${profileLabel(r)}`)),
               when: e('span', { style: faint }, ago(r.finished_at || r.created_at)) })),
             onRow: r => go(placeOf(r.model, 'runs', r.id))
           })
@@ -668,11 +757,121 @@ function Home() {
         e(ListSearch, { value: search, onChange: setSearch, shown: found.length, total: data.models.length, noun: 'model' }),
         data.models.length
           ? e('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 } },
-              found.map(({ item }) => e(ModelCard, { key: item.id, model: item })))
+              found.map(({ item }) => e(ModelCard, { key: item.id, model: item })),
+              search.trim() ? null : e(AddModelCard, null))
           : e(Empty, { title: 'No models yet', description: 'Install the engine: type /solverforge-workbench install in the chat.' }),
         search.trim() && !found.length ? e('div', { style: muted }, 'No model matches.') : null),
       e(RunningNow, null))
   })
+}
+
+// ---- your models ----------------------------------------------------------------------
+
+/** Whether the backend runs on this computer, so a folder picked here is a path it can read. */
+function useLocalBackend() {
+  const [where, setWhere] = useState('checking')
+  useEffect(() => {
+    let live = true
+    ;(async () => {
+      const id = typeof host.activeConnectionId === 'function' ? host.activeConnectionId() : null
+      if (!id) return 'local'
+      const listed = await host.connections()
+      const found = (Array.isArray(listed) ? listed : (listed && listed.connections) || []).find(c => c.id === id)
+      return found && found.kind === 'local' ? 'local' : 'remote'
+    })().then(value => { if (live) setWhere(value) }, () => { if (live) setWhere('local') })
+    return () => { live = false }
+  }, [])
+  return where
+}
+
+/** A custom model build as it happens: the phase, packages compiled, cargo's last lines, the errors. */
+export function BuildProgress({ build, onOpen }) {
+  const share = build.total ? Math.min(1, build.compiled / build.total) : 0
+  const active = build.status === 'queued' || build.status === 'building'
+  const errors = (build.error && build.error.errors) || []
+  return e('div', { style: stack(8) },
+    e('div', { style: row(8) },
+      e('span', { style: { ...row(6), display: 'inline-flex' } },
+        e(Dot, { status: { queued: 'queued', building: 'solving', done: 'completed', failed: 'failed' }[build.status] }),
+        { queued: 'Waiting', building: 'Building', done: 'Ready', failed: 'Failed' }[build.status] || build.status),
+      e('strong', null, build.name),
+      e('span', { style: muted }, build.status === 'failed' ? errorText(build.error) : build.phase),
+      spacer(),
+      build.total ? e('span', { style: faint }, `${fmt(build.compiled)} of ${count(build.total, 'package')}`) : null),
+    active || build.status === 'done'
+      ? e('div', { role: 'progressbar', 'aria-label': 'Packages compiled', 'aria-valuenow': Math.round(share * 100), 'aria-valuemin': 0, 'aria-valuemax': 100,
+          style: { height: 5, borderRadius: 3, background: 'var(--ui-stroke-tertiary)', overflow: 'hidden' } },
+          e('div', { style: { height: '100%', width: `${(build.status === 'done' ? 1 : share) * 100}%`, background: 'var(--ui-accent)' } }))
+      : null,
+    errors.length ? e('pre', { role: 'alert', style: { ...faint, color: 'var(--ui-danger, #e5534b)', whiteSpace: 'pre-wrap', margin: 0 } }, errors.join('\n')) : null,
+    (build.log || []).length
+      ? e('pre', { 'aria-label': 'Build log', style: { ...faint, fontFamily: 'var(--font-mono, monospace)', whiteSpace: 'pre-wrap', maxHeight: 180, overflow: 'auto', margin: 0,
+          background: 'var(--ui-bg-tertiary)', borderRadius: 6, padding: 8 } }, build.log.slice(-12).join('\n'))
+      : null,
+    build.status === 'done' && onOpen ? e('div', null, e(Button, { size: 'xs', onClick: onOpen }, `Open ${build.name}`)) : null)
+}
+
+function AddModel() {
+  const { go } = useNav()
+  const where = useLocalBackend()
+  const [folder, setFolder] = useState(null)
+  const [started, setStarted] = useState(null)
+  const register = useAction('model_register', r => {
+    if (r.model && !r.build) go(placeOf(r.model.id))
+    else setStarted(r)
+  })
+  const build = useRead('model_build', { build: started && started.build ? started.build.id : '' }, { enabled: Boolean(started && started.build) })
+  const current = answer(build, 'build') || (started && started.build)
+  const choose = async () => {
+    if (!files || typeof files.requestFolder !== 'function') {
+      host.notify({ kind: 'error', message: 'This Hermes Desktop cannot pick folders. Ask Hermes to register the project instead.' })
+      return
+    }
+    const picked = await files.requestFolder()
+    if (picked && picked.ok && picked.folder) {
+      setFolder(picked.folder)
+      setStarted(null)
+      register.mutate({ path: picked.folder.path })
+    } else if (picked && !picked.ok && picked.error !== 'cancelled') {
+      host.notify({ kind: 'error', message: picked.message || 'That folder cannot be used.' })
+    }
+  }
+  return e('div', { style: { ...stack(14), maxWidth: 760 } },
+    e(H1, null, 'Add your model'),
+    e('div', { style: { ...muted, lineHeight: 1.5 } },
+      'A solverforge-cli project becomes a model here, with everything a stock model has: datasets, profiles, solves, analysis, fill, experiments and trends. ',
+      'Make one with ', e('code', null, 'solverforge new'), ' and ', e('code', null, 'solverforge generate'), ', fill in its rules, then pick its folder. ',
+      'The first build takes a few minutes; later ones only rebuild what changed.'),
+    where === 'remote'
+      ? e(EmptyState, { title: 'Register a project on the computer that runs Hermes', description: 'This window talks to Hermes on another computer, so a folder picked here is not one it can read. Ask Hermes to register the project there.' })
+      : e(Card, null,
+          e('div', { style: row(8) },
+            e(Button, { size: 'xs', disabled: where === 'checking' || register.isPending || Boolean(current && (current.status === 'queued' || current.status === 'building')), onClick: choose },
+              folder ? 'Choose another folder' : 'Choose the project folder'),
+            folder ? e('span', { style: faint }, folder.path) : null),
+          register.isPending ? e('div', { style: muted }, 'Reading the project…') : null,
+          started && (started.warnings || []).length
+            ? e('div', { style: stack(2) }, e(Label, null, 'Before you solve'),
+                e('ul', { style: { margin: 0, paddingLeft: 18, ...muted } }, started.warnings.map((w, i) => e('li', { key: i }, errorText({ error: typeof w === 'string' ? w : w.message })))))
+            : null,
+          current ? e(BuildProgress, { build: current, onOpen: () => go(placeOf(current.model_id)) }) : null))
+}
+
+/** A custom model's own project: where it lives, whether it changed, rebuild and remove. */
+function ProjectCard({ model }) {
+  const { go } = useNav()
+  const builds = useRead('model_build', { model: model.id })
+  const latest = (answer(builds, 'builds') || [])[0]
+  const active = latest && (latest.status === 'queued' || latest.status === 'building')
+  const rebuild = useAction('model_register', r => { if (r.model && !r.build) host.notify({ kind: 'success', message: `${model.name} is up to date.` }) })
+  return e(Card, null, e(Label, null, 'Your project'),
+    e('div', { style: { ...faint, overflowWrap: 'anywhere' } }, model.source),
+    model.changed ? e('div', null, e(Badge, { variant: 'warn' }, 'Project changed since this build')) : null,
+    latest && (active || latest.status === 'failed') ? e(BuildProgress, { build: latest }) : null,
+    e('div', { style: row(6) },
+      e(Button, { size: 'xs', variant: model.changed ? 'default' : 'outline', disabled: active || rebuild.isPending,
+        onClick: () => rebuild.mutate({ path: model.source, model: model.id }) }, active ? 'Building…' : 'Rebuild'),
+      e(DeleteButton, { action: 'model_remove', args: { model: model.id }, what: 'this model', label: 'Remove', onDone: () => go('/home') })))
 }
 
 // ---- a model's hub -----------------------------------------------------------------
@@ -733,15 +932,7 @@ function Overview({ model }) {
   return e('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))', gap: 16, alignItems: 'start' } },
     e('div', { style: { ...stack(16), gridColumn: 'span 2', minWidth: 0 } },
       model.summary ? e('div', { style: { ...muted, fontSize: '0.85rem', lineHeight: 1.5 } }, model.summary) : null,
-      e(Card, null, e(Label, null, 'Start'),
-        (model.demo_info || []).length
-          ? e('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 } },
-              model.demo_info.map(d => e('div', { key: d.id, style: { ...card, ...stack(8) } },
-                e('strong', null, d.name),
-                e('div', { style: { ...faint, lineHeight: 1.5 } }, d.summary || 'A sample dataset that comes with the model.'),
-                e('div', null, e(Button, { size: 'xs', disabled: create.isPending, onClick: () => create.mutate({ model: model.id, demo: d.id, name: d.name }) },
-                  create.isPending ? 'Creating…' : 'Use this demo')))))
-          : e('div', { style: faint }, 'This model has no demo data.')),
+      e(NewDataset, { model, create }),
       e(Card, null,
         e('div', { style: row(8) }, e(Label, null, 'Your datasets'), spacer(),
           e(Link, { to: placeOf(model.id, 'datasets'), style: muted }, 'All datasets →')),
@@ -753,16 +944,124 @@ function Overview({ model }) {
           ? e('div', { style: stack(8) },
               e('div', null, e(Verdict, { run: latest })),
               e('div', null, e(ScoreText, { score: latest.score })),
-              e('div', { style: faint }, `${latest.dataset_name} · ${latest.profile_name || 'Standard'} · ${ago(latest.finished_at || latest.created_at)}`),
+              e('div', { style: faint }, `${latest.dataset_name} · ${profileLabel(latest)} · ${ago(latest.finished_at || latest.created_at)}`),
               e('div', null, e(Button, { size: 'xs', variant: 'outline', onClick: () => go(placeOf(model.id, 'runs', latest.id)) }, 'Open run')))
           : e('div', { style: faint }, 'Nothing solved yet.')),
       e(Card, null, e(Label, null, 'How it plans'),
         e(LevelCounts, { constraints: model.constraints }),
         e('div', { style: { ...faint, lineHeight: 1.6 } }, groups.map(([g, n]) => `${g} ${n}`).join(' · ')),
-        e('div', null, e(Button, { size: 'xs', variant: 'outline', onClick: () => go(placeOf(model.id, 'profiles')) }, 'Rules and weights')),
-        model.kind === 'custom'
-          ? e('div', { style: faint }, `From ${model.source}${model.changed ? ' · the project changed since this build' : ''}`)
-          : null)))
+        e('div', null, e(Button, { size: 'xs', variant: 'outline', onClick: () => go(placeOf(model.id, 'profiles')) }, 'Rules and weights'))),
+      model.kind === 'custom' ? e(ProjectCard, { model }) : null))
+}
+
+// ---- new datasets -------------------------------------------------------------------
+
+/** What a check found: whether the model reads the data, its size, its issues and its score as it stands. */
+export function CheckResult({ checked }) {
+  const errors = (checked.issues || []).filter(i => i.severity === 'error')
+  const notes = (checked.issues || []).filter(i => i.severity !== 'error')
+  const list = (items, color) => e('ul', { style: { margin: '2px 0', paddingLeft: 18, ...muted } },
+    items.slice(0, 12).map((i, n) => e('li', { key: n, style: color ? { color } : undefined }, i.message)),
+    items.length > 12 ? e('li', { style: faint }, `… ${count(items.length - 12, 'more issue')}`) : null)
+  if (!checked.valid) {
+    return e('div', { style: stack(6), role: 'alert' },
+      e('div', { style: row(8) }, e(Badge, { variant: 'destructive' }, 'Cannot be read'), e('span', { style: muted }, sizeText(checked.size))),
+      list(errors.length ? errors : checked.issues || [], 'var(--ui-danger, #e5534b)'))
+  }
+  return e('div', { style: stack(8) },
+    e('div', { style: row(8) },
+      e(Badge, { variant: 'success' }, 'Reads'), e('span', { style: muted }, sizeText(checked.size))),
+    e('div', { style: row(8) },
+      e(Verdict, { run: { score: checked.score } }), e(ScoreText, { score: checked.score }),
+      e('span', { style: faint }, `as it stands, scored by ${checked.profile || 'Standard'}`)),
+    checked.costing && checked.costing.length
+      ? e(Table, { columns: [{ id: 'name', label: 'What costs score as it stands' }, { id: 'level', label: 'Level', width: 80 }, { id: 'score', label: 'Score', num: true, width: 220 }],
+          rows: checked.costing.slice(0, 8).map(c => ({ key: c.name, name: c.name, level: e('span', { style: { color: levelColor(c.level) } }, c.level), score: e(ScoreText, { score: c.score }) })) })
+      : null,
+    notes.length ? e('div', { style: stack(2) }, e(Label, null, 'Notes'), list(notes)) : null)
+}
+
+export function ImportDataset({ model }) {
+  const { go } = useNav()
+  const [file, setFile] = useState(null)
+  const [checked, setChecked] = useState(null)
+  const [name, setName] = useState('')
+  const [tags, setTags] = useState('')
+  const [busy, setBusy] = useState(false)
+  const check = useAction('dataset_check', setChecked)
+  const pick = picked => {
+    setFile(picked)
+    setChecked(null)
+    setName(picked.name)
+    if (!picked.error) check.mutate({ model: model.id, plan: picked.value })
+  }
+  const create = async solve => {
+    setBusy(true)
+    try {
+      const made = await rest('/actions/dataset_create', { method: 'POST', body: { model: model.id, plan: file.value, name: name.trim() || file.name, tags: parseTags(tags) } })
+      if (!made || !made.ok) { host.notify({ kind: 'error', message: errorText(made) }); return }
+      if (solve) {
+        const run = await rest('/actions/solve', { method: 'POST', body: { dataset: made.dataset.id } })
+        if (run && run.ok) { go(placeOf(model.id, 'runs', run.run.id)); return }
+        host.notify({ kind: 'error', message: errorText(run) })
+      }
+      go(placeOf(model.id, 'datasets', made.dataset.id))
+    } catch (error) {
+      host.notify({ kind: 'error', message: errorText({ error: error && error.message }) })
+    } finally {
+      queryClient.invalidateQueries({ queryKey: [ID] })
+      setBusy(false)
+    }
+  }
+  return e('div', { style: stack(10) },
+    e('div', { style: row(8) },
+      e(JsonFileButton, { label: file ? 'Choose another file' : 'Choose a JSON file', onFile: pick }),
+      e('span', { style: faint }, file ? file.name : `A problem in ${model.name}’s format. A demo, exported, shows the format.`)),
+    file && file.error ? e('div', { role: 'alert', style: muted }, file.error) : null,
+    check.isPending ? e(Skeleton, { style: { height: 60, width: '100%' } }) : null,
+    checked ? e(CheckResult, { checked }) : null,
+    checked && checked.valid
+      ? e('div', { style: row(8) },
+          e('input', { value: name, 'aria-label': 'Dataset name', placeholder: 'Name', style: { ...input, width: 220 }, onChange: event => setName(event.target.value) }),
+          e('input', { value: tags, 'aria-label': 'Tags', placeholder: 'tags, comma separated', style: { ...input, width: 200 }, onChange: event => setTags(event.target.value) }),
+          e(Button, { size: 'xs', variant: 'outline', disabled: busy, onClick: () => create(false) }, 'Create'),
+          e(Button, { size: 'xs', disabled: busy, onClick: () => create(true) }, 'Create and solve'))
+      : null)
+}
+
+export function CopyDataset({ model }) {
+  const { go } = useNav()
+  const datasets = useRead('datasets', { model: model.id })
+  const [source, setSource] = useState('')
+  const [name, setName] = useState('')
+  const copy = useAction('dataset_patch', r => r.dataset && go(placeOf(model.id, 'datasets', r.dataset.id)))
+  const all = answer(datasets, 'datasets') || []
+  if (!all.length) return e('div', { style: faint }, 'There is no dataset to copy yet.')
+  return e('div', { style: row(8) },
+    e('select', { value: source, style: input, 'aria-label': 'Dataset to copy', onChange: event => setSource(event.target.value) },
+      e('option', { value: '' }, 'Pick a dataset'),
+      all.map(d => e('option', { key: d.id, value: d.id }, `${d.name} · ${sizeText(d.size)}`))),
+    e('input', { value: name, 'aria-label': 'Name of the copy', placeholder: 'Name of the copy', style: { ...input, width: 220 }, onChange: event => setName(event.target.value) }),
+    e(Button, { size: 'xs', disabled: !source || copy.isPending, onClick: () => copy.mutate({ dataset: source, operations: [], ...(name.trim() ? { name: name.trim() } : {}) }) }, 'Copy'))
+}
+
+/** One place, three sources: a demo, a file checked before it is saved, or a copy. */
+function NewDataset({ model, create }) {
+  const [source, setSource] = useStored(`${model.id}.new.source`, 'demo')
+  const demos = model.demo_info || []
+  return e(Card, null,
+    e('div', { style: row(8) }, e(Label, null, 'New dataset')),
+    e(TabBar, { value: source, onChange: setSource, tabs: [{ id: 'demo', label: 'From a demo', count: demos.length }, { id: 'import', label: 'Import a file' }, { id: 'copy', label: 'Copy a dataset' }] }),
+    source === 'import' ? e(ImportDataset, { model })
+      : source === 'copy' ? e(CopyDataset, { model })
+      : demos.length
+        ? e('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 } },
+            demos.map(d => e('div', { key: d.id, style: { ...card, ...stack(8) } },
+              e('strong', null, d.name),
+              e('div', { style: { ...faint, lineHeight: 1.5 } }, d.summary || 'A sample dataset that comes with the model.'),
+              e('div', null, e(Button, { size: 'xs', disabled: create.isPending, onClick: () => create.mutate({ model: model.id, demo: d.id, name: d.name }) },
+                create.isPending ? 'Creating…' : 'Use this demo')))))
+        : e('div', { style: faint }, 'This model has no demo data. Import a file instead.'))
 }
 
 // ---- datasets ----------------------------------------------------------------------
@@ -818,9 +1117,39 @@ function ProfilePicker({ model, value, onChange }) {
     model.profiles.filter(p => p.id !== model.default_profile).map(p => e('option', { key: p.id, value: p.id }, p.name)))
 }
 
+/** "a, b ,c" -> ['a', 'b', 'c']. */
+export const parseTags = text => [...new Set(String(text || '').split(',').map(t => t.trim()).filter(Boolean))]
+
+function DatasetHeader({ model, dataset }) {
+  const { go } = useNav()
+  const [editing, setEditing] = useState(null)
+  const update = useAction('dataset_update', () => setEditing(null))
+  const duplicate = useAction('dataset_patch', r => r.dataset && go(placeOf(model.id, 'datasets', r.dataset.id)))
+  if (editing) {
+    return e('form', { style: row(8), onSubmit: event => {
+      event.preventDefault()
+      update.mutate({ dataset: dataset.id, name: editing.name.trim() || dataset.name, tags: parseTags(editing.tags) })
+    } },
+      e('input', { value: editing.name, autoFocus: true, 'aria-label': 'Dataset name', style: { ...input, width: 240 },
+        onChange: event => setEditing({ ...editing, name: event.target.value }), onKeyDown: event => { if (event.key === 'Escape') setEditing(null) } }),
+      e('input', { value: editing.tags, placeholder: 'tags, comma separated', 'aria-label': 'Tags', style: { ...input, width: 220 },
+        onChange: event => setEditing({ ...editing, tags: event.target.value }) }),
+      e(Button, { size: 'xs', type: 'submit', disabled: update.isPending }, 'Save'),
+      e(Button, { size: 'xs', variant: 'text', onClick: () => setEditing(null) }, 'Cancel'))
+  }
+  return e('div', { style: row(8) },
+    e(H2, null, dataset.name), e(CopyId, { id: dataset.id, what: 'dataset' }),
+    (dataset.tags || []).map(t => e(Badge, { key: t, variant: 'outline' }, t)),
+    spacer(),
+    e(Button, { size: 'xs', variant: 'text', onClick: () => setEditing({ name: dataset.name, tags: (dataset.tags || []).join(', ') }) }, 'Rename'),
+    e(Button, { size: 'xs', variant: 'text', disabled: duplicate.isPending, onClick: () => duplicate.mutate({ dataset: dataset.id, operations: [] }) }, 'Duplicate'),
+    e(ExportButton, { action: 'export', args: { dataset: dataset.id }, name: dataset.name }),
+    e(DeleteButton, { action: 'dataset_delete', args: { dataset: dataset.id }, what: 'this dataset', onDone: () => go(placeOf(model.id, 'datasets')) }))
+}
+
 function DatasetPage({ model, id }) {
   const { go } = useNav()
-  const query = useRead('dataset', { dataset: id }, { refetchInterval: 2_000 })
+  const query = useRead('dataset', { dataset: id })
   const [profile, setProfile] = useState('')
   const [seconds, setSeconds] = useState('')
   const [freeze, setFreeze] = useState('')
@@ -832,9 +1161,7 @@ function DatasetPage({ model, id }) {
   const body = { dataset: id, ...(profile ? { profile } : {}), ...(Object.keys(solveSettings).length ? { overrides: { solve: solveSettings } } : {}) }
   useKeys({ s: () => solve.mutate(body), e: () => go(placeOf(model.id, 'experiments', 'new', id)) })
   return e(Loading, { query }, ({ dataset }) => e('div', { style: stack(14) },
-    e('div', { style: row(10) },
-      e(H2, null, dataset.name), e(CopyId, { id: dataset.id, what: 'dataset' }),
-      (dataset.tags || []).map(t => e(Badge, { key: t, variant: 'outline' }, t))),
+    e(DatasetHeader, { model, dataset }),
     e('div', { style: { ...row(8), ...muted } },
       e('span', null, sizeText(dataset.size)),
       e('span', { style: faint }, '·'),
@@ -890,7 +1217,7 @@ function RunTable({ model, runs, selected = [], onSelect, empty, showDataset = t
       name: e('div', null, e(Highlight, { text: runName(r), hits }), e('div', { style: faint }, ago(r.created_at))),
       model: e('span', { style: muted }, r.model_name || r.model_id),
       dataset: e('span', { style: muted }, r.dataset_name || '—'),
-      profile: e('span', { style: muted }, r.profile_name || 'Standard'),
+      profile: e('span', { style: muted }, profileLabel(r)),
       status: e(Status, { status: r.status }),
       score: e(ScoreText, { score: r.score }),
       time: e('span', { style: faint }, r.elapsed_ms != null && FINISHED.includes(r.status) ? duration(r.elapsed_ms) : '—')
@@ -905,7 +1232,7 @@ const pickRuns = (selected, run) => (selected.includes(run) ? selected.filter(x 
 
 function RunsTab({ model }) {
   const { go } = useNav()
-  const query = useRead('runs', { model: model.id }, { refetchInterval: 3_000 })
+  const query = useRead('runs', { model: model.id })
   const [search, setSearch] = useStored(`${model.id}.runs.search`, '')
   const [status, setStatus] = useStored(`${model.id}.runs.status`, '')
   const [profile, setProfile] = useStored(`${model.id}.runs.profile`, '')
@@ -930,9 +1257,7 @@ function RunPage({ model, id }) {
   const [search, setSearch] = useStored(`${model.id}.run.search`, '')
   const [costlyOnly, setCostlyOnly] = useStored(`${model.id}.run.costly`, true)
   const [naming, setNaming] = useState(null)
-  const query = useRead('run', { run: id, max_matches: 10 }, {
-    refetchInterval: q => (q && q.state && q.state.data && q.state.data.run && LIVE.includes(q.state.data.run.status) ? 1_500 : false)
-  })
+  const query = useRead('run', { run: id, max_matches: 10 })
   const cancel = useAction('cancel')
   const rename = useAction('run_update', () => setNaming(null))
   return e(Loading, { query }, ({ run }) => {
@@ -954,10 +1279,12 @@ function RunPage({ model, id }) {
               e(Button, { size: 'xs', variant: 'text', onClick: () => setNaming(run.label || '') }, 'Rename'),
               e(CopyId, { id: run.id, what: 'run' })),
         spacer(),
+        run.status !== 'queued' && !(run.status === 'invalid' || run.status === 'failed') && run.score
+          ? e(ExportButton, { action: 'export', args: { run: run.id }, name: `${run.dataset_name || 'plan'} ${runName(run)}`, label: 'Export plan' }) : null,
         live ? e(Button, { size: 'xs', variant: 'outline', disabled: cancel.isPending, onClick: () => cancel.mutate({ run: run.id }) }, 'Stop') : null),
       e('div', { style: { ...row(8), ...muted } },
         e(Link, { to: placeOf(model.id, 'datasets', run.dataset_id), style: { textDecoration: 'underline' } }, run.dataset_name || 'its dataset'),
-        e('span', null, `· ${run.profile_name || 'Standard'} · ${ago(run.created_at)}${run.elapsed_ms != null && !LIVE.includes(run.status) ? ` · ${duration(run.elapsed_ms)}` : ''}`)),
+        e('span', null, `· ${profileLabel(run)} · ${ago(run.created_at)}${run.elapsed_ms != null && !LIVE.includes(run.status) ? ` · ${duration(run.elapsed_ms)}` : ''}`)),
       e(Card, null,
         e('div', { style: row(10) },
           e(Status, { status: run.status }),
@@ -1078,6 +1405,20 @@ function JsonCell({ param, value, onChange, ring }) {
 
 const shown = value => (value !== null && typeof value === 'object' ? JSON.stringify(value) : String(value))
 
+function ImportProfile({ model }) {
+  const { go } = useNav()
+  const load = useAction('profile_import', r => r.profile && go(placeOf(model.id, 'profiles', r.profile.id)))
+  return e(JsonFileButton, { label: 'Import', variant: 'text', onFile: file => {
+    if (file.error) { host.notify({ kind: 'error', message: file.error }); return }
+    if (!file.value || file.value.model_id !== model.id) {
+      host.notify({ kind: 'error', message: file.value && file.value.model_id ? `That profile is for ${file.value.model_id}, not ${model.name}.` : errorText({ code: 'invalid_profile' }) })
+      return
+    }
+    const taken = model.profiles.some(p => p.name === file.value.name)
+    load.mutate({ document: file.value, ...(taken ? { name: `${file.value.name} (imported)` } : {}) })
+  } })
+}
+
 function ProfilesTab({ model, picked }) {
   const { go } = useNav()
   const [search, setSearch] = useStored(`${model.id}.profiles.search`, '')
@@ -1086,7 +1427,8 @@ function ProfilesTab({ model, picked }) {
   const found = searchItems(model.profiles, search, [['name', 1], ['description', 0.5]])
   return e('div', { style: { display: 'grid', gridTemplateColumns: 'minmax(200px, 260px) minmax(0, 1fr)', gap: 16, alignItems: 'start' } },
     e('div', { style: stack(8) },
-      e(ListSearch, { value: search, onChange: setSearch, shown: found.length, total: model.profiles.length, noun: 'profile' }),
+      e(ListSearch, { value: search, onChange: setSearch, shown: found.length, total: model.profiles.length, noun: 'profile' },
+        e(ImportProfile, { model })),
       found.map(({ item: p, hits }) => e('button', {
         key: p.id, type: 'button', onClick: () => go(placeOf(model.id, 'profiles', p.id)),
         style: { ...card, ...stack(3), padding: 10, textAlign: 'left', cursor: 'pointer', background: 'none', color: 'inherit',
@@ -1127,6 +1469,9 @@ function ProfileEditor({ model, profile }) {
       profile.id === model.default_profile ? e(Badge, { variant: 'muted' }, 'Default') : null,
       spacer(),
       profile.id !== model.default_profile ? e(Button, { size: 'xs', variant: 'text', onClick: () => makeDefault.mutate({ model: model.id, profile: profile.id }) }, 'Make default') : null,
+      !changed ? e(ExportButton, { action: 'profile_export', args: { model: model.id, profile: profile.id }, name: `${model.name} ${profile.name}` }) : null,
+      !changed && !profile.read_only ? e(DeleteButton, { action: 'profile_delete', args: { model: model.id, profile: profile.id }, what: 'this profile',
+        onDone: () => go(placeOf(model.id, 'profiles')) }) : null,
       changed ? e(Button, { size: 'xs', variant: 'text', onClick: () => { setDraft({}); setDraftParams({}) } }, 'Discard') : null,
       changed ? e('input', { value: name, placeholder: 'New profile name', style: input, 'aria-label': 'New profile name', onChange: event => setName(event.target.value) }) : null,
       changed ? e(Button, { size: 'xs', variant: 'outline', disabled: !name.trim() || save.isPending, onClick: () => save.mutate({ model: model.id, name: name.trim(), settings }) }, 'Save as new') : null,
@@ -1185,7 +1530,7 @@ function ExperimentTable({ experiments, empty, showModel = false }) {
 
 function ExperimentsTab({ model }) {
   const { go } = useNav()
-  const query = useRead('experiments', { model: model.id }, { refetchInterval: 3_000 })
+  const query = useRead('experiments', { model: model.id })
   const [search, setSearch] = useStored(`${model.id}.experiments.search`, '')
   useKeys({ e: () => go(placeOf(model.id, 'experiments', 'new')) })
   return e(Loading, { query }, data => {
@@ -1244,9 +1589,8 @@ function ExperimentNew({ model, datasets: initial }) {
 }
 
 function ExperimentPage({ model, id }) {
-  const query = useRead('experiment', { experiment: id }, {
-    refetchInterval: q => (q && q.state && q.state.data && q.state.data.experiment && !q.state.data.experiment.done ? 2_000 : false)
-  })
+  const { go } = useNav()
+  const query = useRead('experiment', { experiment: id })
   const cancel = useAction('experiment_cancel')
   return e(Loading, { query }, ({ experiment: x }) => {
     const finished = Object.entries(x.statuses).filter(([k]) => !LIVE.includes(k)).reduce((n, [, v]) => n + v, 0)
@@ -1256,7 +1600,8 @@ function ExperimentPage({ model, id }) {
       e('div', { style: row(10) }, e(H2, null, x.name), e(CopyId, { id: x.id, what: 'experiment' }),
         x.done ? e(Badge, { variant: 'success' }, 'Done') : e(Badge, null, `${finished} of ${runs} solves`),
         spacer(),
-        !x.done ? e(Button, { size: 'xs', variant: 'outline', disabled: cancel.isPending, onClick: () => cancel.mutate({ experiment: x.id }) }, 'Stop') : null),
+        !x.done ? e(Button, { size: 'xs', variant: 'outline', disabled: cancel.isPending, onClick: () => cancel.mutate({ experiment: x.id }) }, 'Stop') : null,
+        e(DeleteButton, { action: 'experiment_delete', args: { experiment: x.id }, what: 'this experiment', onDone: () => go(placeOf(model.id, 'experiments')) })),
       e('div', { style: muted }, `${count(x.datasets.length, 'dataset')} × ${count(x.profiles.length, 'profile')} × ${x.repeats} · judged by ${x.judge_name} · ${ago(x.created_at)}`),
       e(Card, null, e(Label, null, 'Ranking'),
         e(Table, {
@@ -1318,7 +1663,7 @@ function useModelNames() {
 }
 
 function AllRuns() {
-  const query = useRead('runs', {}, { refetchInterval: 3_000 })
+  const query = useRead('runs', {})
   const names = useModelNames()
   const [search, setSearch] = useStored('runs.search', '')
   const [status, setStatus] = useStored('runs.status', '')
@@ -1339,7 +1684,7 @@ function AllRuns() {
 
 function AllExperiments() {
   const { go } = useNav()
-  const query = useRead('experiments', {}, { refetchInterval: 3_000 })
+  const query = useRead('experiments', {})
   const names = useModelNames()
   const [search, setSearch] = useStored('experiments.search', '')
   const [model, setModel] = useStored('experiments.model', '')
@@ -1382,6 +1727,7 @@ function Breadcrumbs({ place }) {
   const items = [{ label: 'SolverForge Workbench', to: '/home' }]
   if (place.page === 'runs') items.push({ label: 'All runs' })
   if (place.page === 'experiments') items.push({ label: 'All experiments' })
+  if (place.page === 'add') items.push({ label: 'Add your model' })
   if (inModel) {
     items.push({ label: (m && m.name) || 'Model', to: placeOf(place.model) })
     const tab = MODEL_TABS.find(([id]) => id === place.tab)
@@ -1454,6 +1800,7 @@ export function Workbench({ start, docked = false }) {
     runs: () => e(AllRuns, null),
     experiments: () => e(AllExperiments, null),
     model: () => e(ModelHub, { key: place.model, place }),
+    add: () => e(AddModel, null),
     find: () => e(Find, { key: `${place.kind}:${place.id}`, kind: place.kind, id: place.id })
   }[place.page]
   return e(Nav.Provider, { value: { at, go, docked } },
@@ -1490,7 +1837,7 @@ export function openBeside(at = '/home') {
 }
 
 export function StatusChip() {
-  const query = useRead('status', {}, { refetchInterval: 4_000 })
+  const query = useRead('status', {})
   const data = query.data && query.data.ok ? query.data : null
   if (!data || !(data.solving || data.queued)) return null
   const label = `⚙ ${data.solving} solving${data.queued ? ` · ${data.queued} waiting` : ''}`
@@ -1511,9 +1858,7 @@ function RunCard({ attrs, streaming }) {
 }
 
 export function RunBrief({ id }) {
-  const query = useRead('run', { run: id, max_matches: 0 }, {
-    refetchInterval: q => (q && q.state && q.state.data && q.state.data.run && LIVE.includes(q.state.data.run.status) ? 1_500 : false)
-  })
+  const query = useRead('run', { run: id, max_matches: 0 })
   return e(Loading, { query }, ({ run }) => {
     const costing = (run.analysis || []).filter(c => parseScore(c.score).some(p => p.value !== 0)).slice(0, 6)
     return e('div', { style: stack(8), 'data-run': run.id },
@@ -1541,8 +1886,13 @@ export default {
   register(ctx) {
     rest = (path, opts) => ctx.rest(path, opts)
     if (ctx.storage) storage = ctx.storage
-    const refresh = () => queryClient.invalidateQueries({ queryKey: [ID] })
-    ctx.onEvent(`plugin.${ID}.changed`, refresh)
+    if (ctx.os) os = ctx.os
+    if (ctx.files) files = ctx.files
+    // Live updates come as events from the backend's watcher; nothing here polls.
+    const reread = kinds => queryClient.invalidateQueries({ predicate: q => q.queryKey[0] === ID && kinds.includes(q.queryKey[1]) })
+    ctx.onEvent(`plugin.${ID}.changed`, () => queryClient.invalidateQueries({ queryKey: [ID] }))
+    ctx.onEvent(`plugin.${ID}.run_progress`, () => reread(['run', 'runs', 'status', 'dataset', 'experiment', 'experiments']))
+    ctx.onEvent(`plugin.${ID}.build`, () => reread(['model_build']))
     ctx.registerMany([
       { id: 'run-card', area: TRANSCRIPT_DIRECTIVE_AREA, data: { name: 'solverforge-workbench', render: props => jsx(RunCard, props) } },
       { id: 'page', area: ROUTES_AREA, title: 'SolverForge Workbench', data: { path: BASE }, render: () => jsx(Workbench, {}) },

@@ -16,7 +16,7 @@ mkdirSync(join(here, '.build'), { recursive: true })
 cpSync(join(here, '../../desktop/plugin.js'), join(here, '.build/plugin.mjs'))
 const {
   default: plugin, Workbench, ScoreChart, StatusChip, FillPanel, TrendLine, parseScore, openBeside, openPage,
-  parseAt, placeOf, hrefOf, runName, ago, duration, count, errorText, madeFrom
+  parseAt, placeOf, hrefOf, runName, ago, duration, count, errorText, madeFrom, CheckResult, BuildProgress, parseTags, profileLabel, ImportDataset, CopyDataset
 } = await import('./.build/plugin.mjs')
 
 // React reports misuse (lost keys, bad props) through console.error; any of it fails the run.
@@ -98,7 +98,7 @@ test('a model opens on its overview: demos by name, datasets, latest result and 
   const page = text(at(placeOf('toy')))
   assert.match(page, /SolverForge Workbench › Toy roster Toy roster Stock model · 3 rules/)
   assert.match(page, /Overview Datasets 2 Runs 6 Profiles 3 Experiments 1 Trends/)
-  assert.match(page, /Start Week A sample dataset that comes with the model\. Use this demo/)
+  assert.match(page, /New dataset From a demo 1 Import a file Copy a dataset Week A sample dataset that comes with the model\. Use this demo/)
   assert.match(page, /Your datasets All datasets → Dataset Made from Size Latest Made Demo Week B Demo 3 nurses · 6 shifts/)
   assert.match(page, /Latest result Feasible 0 hard 0 soft Demo Week B · Blind/)
   assert.match(page, /How it plans 2 hard 1 soft Coverage 1 · Rules 2 Rules and weights/)
@@ -107,7 +107,7 @@ test('a model opens on its overview: demos by name, datasets, latest result and 
 test('a demo with a summary says what it holds', () => {
   const model = structuredClone(real.model)
   model.model.demo_info = [{ id: 'WEEK', name: 'A week', summary: '3 nurses and 6 shifts over one week.' }]
-  assert.match(text(at(placeOf('toy'), { ...real, model })), /Start A week 3 nurses and 6 shifts over one week\. Use this demo/)
+  assert.match(text(at(placeOf('toy'), { ...real, model })), /Copy a dataset A week 3 nurses and 6 shifts over one week\. Use this demo/)
 })
 
 test('the datasets tab searches, filters by origin and sorts', () => {
@@ -121,7 +121,7 @@ test('a dataset says what it holds and where it came from, solves, checks, keeps
   const html = at(placeOf('toy', 'datasets', datasetId))
   const page = text(html)
   assert.match(page, /› Toy roster › Datasets › Demo Week /)
-  assert.match(page, /Demo Week demo 3 nurses · 6 shifts · Demo · just now/)
+  assert.match(page, /Demo Week demo Rename Duplicate Export Delete 3 nurses · 6 shifts · Demo · just now/)
   assert.match(page, /Standard \(default\) Blind Lenient Keep everything before Check as is Solve/)
   assert.match(html, /type="datetime-local"/)
   assert.match(page, /Find places for open items/)
@@ -138,7 +138,7 @@ test('a replanned dataset links to the one it came from', () => {
 test('a solved run shows its verdict, score, KPIs and what costs score', () => {
   const page = text(at(placeOf('toy', 'runs', runId)))
   assert.match(page, /› Toy roster › Runs › Demo Week › Run \d\d:\d\d /)
-  assert.match(page, /Run \d\d:\d\d Rename Demo Week · Standard · just now · 2 s/)
+  assert.match(page, /Run \d\d:\d\d Rename Export plan Demo Week · Standard · just now · 2 s/)
   assert.match(page, /Finished Feasible 0 hard 0 soft from -6 hard 0 soft/)
   assert.match(page, /Score over time · top to bottom: hard, each on its own scale 2 s/)
   assert.match(page, /Assigned shifts 6 shifts/)
@@ -185,7 +185,7 @@ test('the runs tab filters by status and profile and offers compare', () => {
 
 test('profiles list beside the editor; Standard is read-only and groups its rules', () => {
   const page = text(at(placeOf('toy', 'profiles')))
-  assert.match(page, /3 profiles Standard default · the model’s own weights Blind 1 change · edited just now Lenient 1 change/)
+  assert.match(page, /3 profiles Import Standard default · the model’s own weights Blind 1 change · edited just now Lenient 1 change/)
   assert.match(page, /Standard keeps the model’s own weights\./)
   assert.match(page, /Rules and weights 3 .*Coverage · 1 Rule Level Weight Unassigned shift Every shift needs a nurse\. hard/)
   assert.doesNotMatch(page, /Make default/)
@@ -209,7 +209,7 @@ test('an experiment ranks its profiles and shows each dataset × profile cell', 
   const x = real.experiment.experiment
   const page = text(at(placeOf('toy', 'experiments', x.id)))
   assert.match(page, /› Experiments › Experiment 1 /)
-  assert.match(page, /Done 2 datasets × 2 profiles × 1 · judged by Standard/)
+  assert.match(page, /Done Delete 2 datasets × 2 profiles × 1 · judged by Standard/)
   assert.match(page, /# Profile Feasible Average place 1 Standard 2 of 2 1 2 Blind 2 of 2 2/)
   assert.match(page, /By dataset Dataset Standard Blind Demo Week 0 hard 0 soft 1 of 1 feasible/)
   assert.match(text(at(placeOf('toy', 'experiments'))), /1 experiment New experiment Experiment Datasets × profiles × repeats Solves Started Experiment 1 2 × 2 × 1 Finished/)
@@ -323,7 +323,77 @@ test('a custom model shows its project, and says when the project changed since 
   const model = structuredClone(real.model)
   Object.assign(model.model, { kind: 'custom', source: '/home/user/crew-tasks', changed: true })
   assert.match(text(at('/home', { ...real, models, model })), /Toy roster Yours Project changed Your model, from \/home\/user\/crew-tasks/)
-  assert.match(text(at(placeOf('toy'), { ...real, models, model })), /From \/home\/user\/crew-tasks · the project changed since this build/)
+  assert.match(text(at(placeOf('toy'), { ...real, models, model })), /Your project \/home\/user\/crew-tasks Project changed since this build/)
+})
+
+test('a new dataset comes from a demo, a checked file or a copy', () => {
+  const page = text(at(placeOf('toy')))
+  assert.match(page, /New dataset From a demo 1 Import a file Copy a dataset Week A sample dataset/)
+  setFixture(real)
+  const importing = render(h(ImportDataset, { model: real.model.model }))
+  assert.match(importing, /type="file" accept=".json,application\/json"/)
+  assert.match(text(importing), /^Choose a JSON file A problem in Toy roster’s format\. A demo, exported, shows the format\.$/)
+  assert.match(text(render(h(CopyDataset, { model: real.model.model }))), /^Pick a dataset Demo Week B · 3 nurses · 6 shifts Demo Week · 3 nurses · 6 shifts Copy$/)
+})
+
+test('a check says the model reads the file, its size, score and what costs, before anything is saved', () => {
+  const page = text(render(h(CheckResult, { checked: real.dataset_check })))
+  assert.match(page, /^Reads 3 nurses · 6 shifts Breaks hard rules · -6 hard -6 hard 0 soft as it stands, scored by Standard/)
+  assert.match(page, /What costs score as it stands Level Score Unassigned shift hard -6 hard 0 soft/)
+})
+
+test('a check that fails names each problem', () => {
+  const page = text(render(h(CheckResult, { checked: real.check_broken })))
+  assert.match(page, /^Cannot be read 1 nurse · 1 shift shift 0 names nurse 4, which does not exist$/)
+})
+
+test('a dataset is renamed, tagged, duplicated, exported and deleted from its header', () => {
+  const page = text(at(placeOf('toy', 'datasets', datasetId)))
+  assert.match(page, /Demo Week demo Rename Duplicate Export Delete 3 nurses · 6 shifts · Demo/)
+  assert.deepEqual(parseTags(' week, demo,, week ,spring'), ['week', 'demo', 'spring'])
+})
+
+test('profiles import, export and delete; Standard only exports', () => {
+  const standard = text(at(placeOf('toy', 'profiles')))
+  assert.match(standard, /3 profiles Import Standard/)
+  assert.match(standard, /Standard Default Export Standard keeps/)
+  assert.doesNotMatch(standard, /Delete/)
+  const blind = real.model.model.profiles.find(p => p.name === 'Blind')
+  assert.match(text(at(placeOf('toy', 'profiles', blind.id))), /Blind Make default Export Delete/)
+})
+
+test('an experiment can be deleted from its page', () => {
+  assert.match(text(at(placeOf('toy', 'experiments', real.experiment.experiment.id))), /Experiment 1 Done Delete/)
+})
+
+test('runs keep their profile’s name, or say it was deleted', () => {
+  assert.equal(profileLabel({ profile_name: 'Blind', profile_id: 'x' }), 'Blind')
+  assert.equal(profileLabel({ profile_name: null, profile_id: 'abc123' }), 'A deleted profile')
+  assert.equal(profileLabel({ profile_name: null, profile_id: 'toy-standard' }), 'Standard')
+  assert.equal(profileLabel({ profile_name: null, profile_id: null }), 'Standard')
+})
+
+test('home offers to add your own model, and the page explains the project it takes', () => {
+  assert.match(text(at('/home')), /Add your model Bring a solverforge-cli project/)
+  const page = text(at('/add-model'))
+  assert.match(page, /SolverForge Workbench › Add your model Add your model A solverforge-cli project becomes a model here/)
+  assert.match(page, /Choose the project folder$/)
+})
+
+test('a build shows its phase, the packages compiled and cargo’s last lines', () => {
+  const page = text(render(h(BuildProgress, { build: real.model_build.build })))
+  assert.match(page, /^Building Crew tasks Compiling 41 of 212 packages Compiling serde v1\.0\.228 Compiling solverforge-core v0\.31\.1$/)
+  const failed = { ...real.model_build.build, status: 'failed', phase: 'Failed', error: { code: 'build_failed', message: 'cargo could not build crew-tasks', errors: ['error[E0609]: no field `stops`'] } }
+  assert.match(text(render(h(BuildProgress, { build: failed }))), /^Failed Crew tasks Cargo could not build crew-tasks\. .*no field `stops`/)
+  const done = { ...real.model_build.build, status: 'done', phase: 'Ready', compiled: 212 }
+  assert.match(text(render(h(BuildProgress, { build: done, onOpen() {} }))), /Ready Crew tasks Ready 212 of 212 packages .*Open Crew tasks$/)
+})
+
+test('a custom model shows its project with rebuild and remove', () => {
+  const model = structuredClone(real.model)
+  Object.assign(model.model, { kind: 'custom', source: '/home/user/crew-tasks', changed: true })
+  const page = text(at(placeOf('toy'), { ...real, model }))
+  assert.match(page, /Your project \/home\/user\/crew-tasks Project changed since this build .*Rebuild Remove/)
 })
 
 test('every surface registers, with the page actions rebindable', () => {

@@ -1,0 +1,36 @@
+{
+ "ok": true,
+ "valid": true,
+ "size": [
+  {
+   "label": "nurses",
+   "one": "nurse",
+   "count": 3
+  },
+  {
+   "label": "shifts",
+   "one": "shift",
+   "count": 6
+  }
+ ],
+ "issues": [],
+ "score": "-6hard/0soft",
+ "feasible": false,
+ "kpis": [
+  {
+   "id": "assigned",
+   "label": "Assigned shifts",
+   "unit": "shifts",
+   "value": 0.0
+  }
+ ],
+ "costing": [
+  {
+   "name": "Unassigned shift",
+   "level": "hard",
+   "score": "-6hard/0soft",
+   "match_count": 6
+  }
+ ],
+ "profile": "Standard"
+}

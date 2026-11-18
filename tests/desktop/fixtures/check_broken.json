@@ -1,0 +1,28 @@
+{
+ "ok": true,
+ "valid": false,
+ "size": [
+  {
+   "label": "nurses",
+   "one": "nurse",
+   "count": 1
+  },
+  {
+   "label": "shifts",
+   "one": "shift",
+   "count": 1
+  }
+ ],
+ "issues": [
+  {
+   "code": "unknown_nurse",
+   "message": "shift 0 names nurse 4, which does not exist",
+   "severity": "error"
+  },
+  {
+   "code": "few_nurses",
+   "message": "fewer than two nurses cannot cover a day",
+   "severity": "warning"
+  }
+ ]
+}

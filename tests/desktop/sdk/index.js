@@ -33,7 +33,7 @@ export const TRANSCRIPT_DIRECTIVE_AREA = 'transcript'
 export const STATUSBAR_AREAS = { right: 'statusbar-right' }
 
 export const queryClient = { invalidateQueries() {} }
-export const useMutation = () => ({ mutate() {}, isPending: false })
+export const useMutation = () => ({ mutate() {}, mutateAsync: async () => ({}), isPending: false })
 export const host = {
   state: { profile: { get: () => 'default' } },
   notify() {},
@@ -45,4 +45,4 @@ export const host = {
 }
 
 // The query key is [plugin id, read name, ...query pairs]; fixtures are keyed by read name.
-export const useQuery = ({ queryKey }) => ({ data: fixture[queryKey[1]], isLoading: false })
+export const useQuery = ({ queryKey, enabled = true }) => ({ data: enabled ? fixture[queryKey[1]] : undefined, isLoading: false })
