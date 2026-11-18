@@ -648,17 +648,24 @@ fn replanning_changes_compile_to_patches_the_engine_accepts() {
 
 #[test]
 fn the_data_tables_match_the_demo() {
-    let mut demo =
+    // Every field of the demo has a column, and every column is a field the
+    // model reads and writes back: the data editor can change all of it.
+    let demo =
         PickupDeliveryRouting::present(&PickupDeliveryRouting::demo("MILAN_TWO_DAYS").unwrap());
-    // The demo's shifts all end where they start; an end place is a real field
-    // the plan keeps through a read and a write.
-    let start = demo["drivers"][0]["shifts"][0]["startLocation"].clone();
-    demo["drivers"][0]["shifts"][0]["endLocation"] = start;
-    let demo = PickupDeliveryRouting::present(
-        &serde_json::from_value::<solverforge_workbench_pickup_delivery_routing::Plan>(demo)
-            .unwrap(),
+    let tables = PickupDeliveryRouting::tables();
+    let mut problems = solverforge_workbench_host::data::mismatches(
+        &demo,
+        &tables,
+        &["unassignedJobs", "unassignedStops"],
     );
-    let problems =
-        solverforge_workbench_host::data::mismatches(&demo, &PickupDeliveryRouting::tables());
-    assert!(problems.is_empty(), "{problems:?}");
+    problems.extend(solverforge_workbench_host::data::unread(
+        &demo,
+        &tables,
+        |plan| {
+            serde_json::from_value::<solverforge_workbench_pickup_delivery_routing::Plan>(plan)
+                .map(|plan| PickupDeliveryRouting::present(&plan))
+                .map_err(|error| error.to_string())
+        },
+    ));
+    assert!(problems.is_empty(), "{problems:#?}");
 }

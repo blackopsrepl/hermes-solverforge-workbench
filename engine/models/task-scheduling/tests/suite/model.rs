@@ -356,7 +356,20 @@ fn replanning_changes_compile_to_patches_the_engine_accepts() {
 
 #[test]
 fn the_data_tables_match_the_demo() {
-    let plan = TaskScheduling::present(&demo_plan(TaskScheduling::demos()[0]));
-    let problems = solverforge_workbench_host::data::mismatches(&plan, &TaskScheduling::tables());
-    assert!(problems.is_empty(), "{problems:?}");
+    // Every field of the demo has a column, and every column is a field the
+    // model reads and writes back: the data editor can change all of it.
+    let demo = TaskScheduling::present(&demo_plan(TaskScheduling::demos()[0]));
+    let tables = TaskScheduling::tables();
+    let mut problems =
+        solverforge_workbench_host::data::mismatches(&demo, &tables, &["unassigned"]);
+    problems.extend(solverforge_workbench_host::data::unread(
+        &demo,
+        &tables,
+        |plan| {
+            serde_json::from_value::<solverforge_workbench_task_scheduling::Plan>(plan)
+                .map(|plan| TaskScheduling::present(&plan))
+                .map_err(|error| error.to_string())
+        },
+    ));
+    assert!(problems.is_empty(), "{problems:#?}");
 }

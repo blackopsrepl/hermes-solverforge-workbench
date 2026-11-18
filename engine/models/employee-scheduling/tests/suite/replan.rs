@@ -229,7 +229,19 @@ fn replanning_changes_compile_to_patches_the_engine_accepts() {
 
 #[test]
 fn the_data_tables_match_the_demo() {
-    let problems =
-        solverforge_workbench_host::data::mismatches(&month(), &EmployeeScheduling::tables());
-    assert!(problems.is_empty(), "{problems:?}");
+    // Every field of the demo has a column, and every column is a field the
+    // model reads and writes back: the data editor can change all of it.
+    let demo = month();
+    let tables = EmployeeScheduling::tables();
+    let mut problems = solverforge_workbench_host::data::mismatches(&demo, &tables, &[]);
+    problems.extend(solverforge_workbench_host::data::unread(
+        &demo,
+        &tables,
+        |plan| {
+            serde_json::from_value::<solverforge_workbench_employee_scheduling::Plan>(plan)
+                .map(|plan| EmployeeScheduling::present(&plan))
+                .map_err(|error| error.to_string())
+        },
+    ));
+    assert!(problems.is_empty(), "{problems:#?}");
 }
