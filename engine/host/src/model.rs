@@ -137,11 +137,13 @@ pub struct DemoInfo {
 }
 
 /// One count in a dataset's size: the items at `path` in the plan's wire JSON,
-/// a list key or `list.nested` (summed over the outer list), called `label`.
+/// a list key or `list.nested` (summed over the outer list), called `label`
+/// ("technicians"), or `one` when there is exactly one ("technician").
 #[derive(Debug, Clone, Serialize)]
 pub struct SizeField {
     pub path: &'static str,
     pub label: &'static str,
+    pub one: &'static str,
 }
 
 impl SizeField {
@@ -266,7 +268,14 @@ mod tests {
     #[test]
     fn a_size_field_counts_a_list_or_a_nested_list() {
         let plan = serde_json::json!({"vehicles": [{"shifts": [1, 2]}, {"shifts": [3]}, {}]});
-        let count = |path| SizeField { path, label: "x" }.count(&plan);
+        let count = |path| {
+            SizeField {
+                path,
+                label: "x",
+                one: "x",
+            }
+            .count(&plan)
+        };
         assert_eq!(count("vehicles"), 3);
         assert_eq!(count("vehicles.shifts"), 3);
         assert_eq!(count("visits"), 0);

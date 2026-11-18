@@ -66,7 +66,7 @@ def test_the_engines_models_join_the_catalog_with_a_read_only_standard_profile(w
 def test_a_demo_dataset_is_stored_with_its_size(wb):
     dataset = demo(wb, tags=["week", "demo"])
     assert dataset["origin"] == "demo"
-    assert dataset["size"] == [{"label": "nurses", "count": 3}, {"label": "shifts", "count": 6}]
+    assert dataset["size"] == [{"label": "nurses", "one": "nurse", "count": 3}, {"label": "shifts", "one": "shift", "count": 6}]
     assert wb.datasets(model_id="toy", tag="week")[0]["id"] == dataset["id"]
     assert wb.datasets(query="nothing-like-this") == []
 
@@ -134,7 +134,7 @@ def test_a_check_reads_scores_and_lists_issues_without_storing_anything(wb):
     good = wb.dataset(plan["id"], with_plan=True)["plan"]
     datasets, runs = len(wb.datasets()), len(wb.runs())
     checked = wb.check_dataset("toy", plan=good)
-    assert checked["valid"] and checked["size"] == [{"label": "nurses", "count": 3}, {"label": "shifts", "count": 6}]
+    assert checked["valid"] and checked["size"] == [{"label": "nurses", "one": "nurse", "count": 3}, {"label": "shifts", "one": "shift", "count": 6}]
     assert checked["score"] == "-6hard/0soft" and not checked["feasible"] and checked["profile"] == "Standard"
     assert [c["name"] for c in checked["costing"]] == ["Unassigned shift"]
     broken = wb.check_dataset("toy", plan={"nurses": [{"id": 0, "name": "solo"}],
@@ -386,6 +386,13 @@ def test_a_database_with_fill_but_no_copy_migrates(tmp_path):
     store = Store(path)
     assert store.dataset("d1")["origin"] == "fill"
     assert store.add_dataset(model_id="toy", name="Copy", plan={}, origin="copy")["origin"] == "copy"
+
+
+def test_size_words_have_a_singular_for_one():
+    from solverforge_workbench_plugin.service import _singular
+
+    assert [_singular(w) for w in ("nurses", "activities", "boxes", "crew members", "staff", "classes")] == [
+        "nurse", "activity", "box", "crew member", "staff", "class"]
 
 
 def test_a_duplicate_is_a_copy_of_its_parent(wb):

@@ -41,10 +41,12 @@ impl Model for TaskScheduling {
             SizeField {
                 path: "tasks",
                 label: "tasks",
+                one: "task",
             },
             SizeField {
                 path: "resources",
                 label: "machines and people",
+                one: "machine or person",
             },
         ]
     }

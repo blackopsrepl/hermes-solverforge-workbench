@@ -37,13 +37,10 @@ impl Model for Toy {
         let mut issues = Vec::new();
         let nurses = plan.nurses.len();
         for shift in &plan.shifts {
-            if shift.nurse_idx.is_some_and(|idx| idx >= nurses) {
+            if let Some(idx) = shift.nurse_idx.filter(|&idx| idx >= nurses) {
                 issues.push(Issue::error(
                     "unknown_nurse",
-                    format!(
-                        "shift {} names nurse {:?}, which does not exist",
-                        shift.id, shift.nurse_idx
-                    ),
+                    format!("shift {} names nurse {idx}, which does not exist", shift.id),
                 ));
             }
         }

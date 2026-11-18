@@ -41,14 +41,17 @@ impl Model for FieldServiceRouting {
             SizeField {
                 path: "visits",
                 label: "visits",
+                one: "visit",
             },
             SizeField {
                 path: "vehicles",
                 label: "technicians",
+                one: "technician",
             },
             SizeField {
                 path: "vehicles.shifts",
                 label: "shifts",
+                one: "shift",
             },
         ]
     }

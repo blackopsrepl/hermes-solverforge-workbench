@@ -39,10 +39,12 @@ impl Model for EmployeeScheduling {
             SizeField {
                 path: "employees",
                 label: "employees",
+                one: "employee",
             },
             SizeField {
                 path: "shifts",
                 label: "shifts",
+                one: "shift",
             },
         ]
     }

@@ -40,14 +40,17 @@ impl Model for PickupDeliveryRouting {
             SizeField {
                 path: "jobs",
                 label: "jobs",
+                one: "job",
             },
             SizeField {
                 path: "drivers",
                 label: "drivers",
+                one: "driver",
             },
             SizeField {
                 path: "drivers.shifts",
                 label: "shifts",
+                one: "shift",
             },
         ]
     }

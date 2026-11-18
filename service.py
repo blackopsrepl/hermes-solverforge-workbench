@@ -386,9 +386,10 @@ class Workbench:
             return []
         fields = (self.model_record(model_id)["manifest"].get("size") or [])
         if not fields:
-            return [{"label": _words(key), "count": len(value)} for key, value in plan.items()
-                    if isinstance(value, list) and value]
-        return [{"label": f["label"], "count": _count(plan, f["path"])} for f in fields]
+            return [{"label": _words(key), "one": _singular(_words(key)), "count": len(value)}
+                    for key, value in plan.items() if isinstance(value, list) and value]
+        return [{"label": f["label"], "one": f.get("one") or _singular(f["label"]), "count": _count(plan, f["path"])}
+                for f in fields]
 
     def dataset_view(self, dataset: dict[str, Any], with_plan: bool = False) -> dict[str, Any]:
         view = {key: dataset[key] for key in
@@ -1101,6 +1102,19 @@ def _demo_info(description: dict[str, Any]) -> list[dict[str, Any]]:
 def _words(key: str) -> str:
     """A wire key read as words: visitGroups -> visit groups."""
     return re.sub(r"(?<=[a-z0-9])([A-Z])", r" \1", key).replace("_", " ").lower()
+
+
+def _singular(label: str) -> str:
+    """The word for one of a plain English plural: "activities" -> "activity", "nurses" -> "nurse"."""
+    words = label.split(" ")
+    last = words[-1]
+    if last.endswith("ies") and len(last) > 3:
+        last = last[:-3] + "y"
+    elif last.endswith(("ches", "shes", "sses", "xes")):
+        last = last[:-2]
+    elif last.endswith("s") and not last.endswith("ss"):
+        last = last[:-1]
+    return " ".join(words[:-1] + [last])
 
 
 def _count(plan: dict[str, Any], path: str) -> int:
