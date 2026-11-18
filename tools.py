@@ -47,7 +47,15 @@ class Tools:
         return ok(model=self.wb.model(args["model"]))
 
     def model_register(self, args: dict) -> str:
-        return ok(**self.wb.register_custom(args["path"], args.get("model"), args.get("name")))
+        started = self.wb.start_register(args["path"], args.get("model"), args.get("name"))
+        if started["build"]:
+            started["next"] = "follow the build with solverforge_workbench_model_build until it is done or failed"
+        return ok(**started)
+
+    def model_build(self, args: dict) -> str:
+        if args.get("build"):
+            return ok(build=self.wb.build(args["build"]))
+        return ok(builds=self.wb.builds(args.get("model")))
 
     def model_remove(self, args: dict) -> str:
         self.wb.remove_custom(args["model"])

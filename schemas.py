@@ -56,12 +56,19 @@ SCHEMAS: list[dict[str, Any]] = [
           "workbench reads the project (solverforge.app.toml, the domain and constraint sources), builds its "
           "engine with cargo (a few minutes the first time, then incremental) and lists it beside the stock "
           "models with datasets, profiles, solves, analysis, fill, the plan view, experiments and trends. The "
-          "project must depend on the SolverForge release the workbench hosts. Answers with the model and "
-          "warnings to act on (a constraint without a description, a plan without constraint weights).",
+          "project must depend on the SolverForge release the workbench hosts. Answers at once: a refusal, the "
+          "model when its engine is already current, or a build running in the background to follow with "
+          "solverforge_workbench_model_build; plus warnings to act on (a constraint without a description, a "
+          "plan without constraint weights).",
           {"path": {"type": "string", "description": "The project directory (holds solverforge.app.toml)"},
            "model": {"type": "string", "description": "Model id; defaults to the crate name"},
            "name": {"type": "string", "description": "Display name; defaults to the crate name in words"}},
           ["path"]),
+    _tool("solverforge_workbench_model_build",
+          "Follow custom model builds: one build by id, or the latest builds (of one model, or all). Each has its "
+          "status (queued, building, done, failed), the phase in words, packages compiled of the total, cargo's "
+          "last lines and, when it failed, the compiler errors.",
+          {"build": {"type": "string"}, "model": {"type": "string"}}, []),
     _tool("solverforge_workbench_model_remove",
           "Forget a custom model with all its datasets, runs, profiles and experiments, and delete its built "
           "engine. The project itself is left untouched. Asks the user first.",

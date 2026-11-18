@@ -39,6 +39,7 @@ READS = {
     "experiments": "solverforge_workbench_experiments",
     "experiment": "solverforge_workbench_experiment",
     "trends": "solverforge_workbench_trends",
+    "model_build": "solverforge_workbench_model_build",
 }
 WRITES = {
     "solve": "solverforge_workbench_solve",
@@ -60,6 +61,7 @@ WRITES = {
     "profile_import": "solverforge_workbench_profile_import",
     "experiment_delete": "solverforge_workbench_experiment_delete",
     "model_remove": "solverforge_workbench_model_remove",
+    "model_register": "solverforge_workbench_model_register",
     # Stores nothing, but carries a whole plan: a POST like the writes.
     "dataset_check": "solverforge_workbench_dataset_check",
 }
@@ -138,7 +140,7 @@ def confirm(action: str, model: str = "", dataset: str = "", profile: str = "", 
 @router.get("/{action}")
 def read(action: str, model: str = "", dataset: str = "", run: str = "", runs: str = "", experiment: str = "",
          items: str = "", top: int = 5, profile: str = "", include_plan: bool = False,
-         max_matches: int = 10) -> JSONResponse:
+         max_matches: int = 10, build: str = "") -> JSONResponse:
     if action not in READS:
         return JSONResponse({"ok": False, "code": "unknown_action", "error": f"no read named {action!r}"},
                             status_code=404)
@@ -151,6 +153,8 @@ def read(action: str, model: str = "", dataset: str = "", run: str = "", runs: s
         args = {"runs": [r for r in runs.split(",") if r]}
     if action == "experiment":
         args = {"experiment": experiment}
+    if action == "model_build":
+        args = {"build": build or None, "model": model or None}
     if action == "fill":
         args = {"run": run or None, "dataset": dataset or None, "top": max(1, min(top, 50)),
                 "profile": profile or None, "items": [i for i in items.split(",") if i] or None}

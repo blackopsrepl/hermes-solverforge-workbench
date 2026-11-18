@@ -143,7 +143,12 @@ def wait_for(wb: Workbench, run_id: str, limit_s: float = 120) -> dict:
 
 def test_a_scalar_project_is_a_model_with_weights_solves_views_and_fill(wb, tmp_path):
     root = project(tmp_path, "crew-tasks")
-    registered = wb.register_custom(str(root), name="Crew tasks")
+    reports: list[dict] = []
+    registered = wb.register_custom(str(root), name="Crew tasks", report=lambda **r: reports.append(r))
+    phases = [r["phase"] for r in reports if r.get("phase")]
+    assert phases[0] == "Fetching dependencies" and phases[-1] == "Reading the model"
+    totals = {r["total"] for r in reports if r.get("total")}
+    assert len(totals) == 1 and reports[-2]["compiled"] == totals.pop()
     assert registered["built"] is True and registered["warnings"] == []
     model = registered["model"]
     assert (model["id"], model["kind"], model["name"], model["source"]) == (
@@ -253,6 +258,14 @@ def test_a_build_failure_reports_the_compiler_errors(wb, tmp_path):
     assert error.value.code == "build_failed"
     assert any("no field `stops`" in line for line in error.value.detail["errors"])
     assert wb.store.model("route-visits") is None
+    started = wb.start_register(str(root))["build"]
+    deadline = time.monotonic() + 900
+    while wb.build(started["id"])["status"] in ("queued", "building") and time.monotonic() < deadline:
+        time.sleep(0.5)
+    failed = wb.build(started["id"])
+    assert failed["status"] == "failed" and failed["error"]["code"] == "build_failed"
+    assert any("no field `stops`" in line for line in failed["error"]["errors"])
+    assert wb.store.model("route-visits") is None
 
 
 def test_removing_a_custom_model_drops_its_data_and_engine_but_not_the_project(wb, tmp_path):
@@ -273,7 +286,24 @@ def test_the_agent_tools_register_and_remove(wb, tmp_path):
     root = project(tmp_path, "route-visits")
     table = dict((schema["name"], handler) for schema, handler in tools_module.tool_table(lambda: wb))
     answer = json.loads(table["solverforge_workbench_model_register"]({"path": str(root)}))
-    assert answer["ok"] is True and answer["model"]["id"] == "route-visits" and answer["warnings"]
+    assert answer["ok"] is True and answer["model"] is None and answer["warnings"]
+    build = answer["build"]
+    assert build["model_id"] == "route-visits" and build["status"] in ("queued", "building")
+    again = json.loads(table["solverforge_workbench_model_register"]({"path": str(root)}))
+    assert again["build"]["id"] == build["id"], "a second registration follows the running build"
+    seen = set()
+    deadline = time.monotonic() + 900
+    while build["status"] in ("queued", "building") and time.monotonic() < deadline:
+        time.sleep(0.5)
+        build = json.loads(table["solverforge_workbench_model_build"]({"build": build["id"]}))["build"]
+        seen.add(build["phase"])
+    assert build["status"] == "done", build
+    assert build["total"] > 50 and build["compiled"] == build["total"]
+    assert "Compiling" in seen and build["phase"] == "Ready" and build["log"]
+    listed = json.loads(table["solverforge_workbench_model_build"]({"model": "route-visits"}))["builds"]
+    assert [b["id"] for b in listed] == [build["id"]]
+    current = json.loads(table["solverforge_workbench_model_register"]({"path": str(root)}))
+    assert current["build"] is None and current["built"] is False and current["model"]["id"] == "route-visits"
     refused = json.loads(table["solverforge_workbench_model_register"]({"path": str(tmp_path)}))
     assert (refused["ok"], refused["code"]) == (False, "not_a_project")
     assert json.loads(table["solverforge_workbench_model_remove"]({"model": "route-visits"}))["ok"] is True

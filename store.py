@@ -100,6 +100,23 @@ CREATE TABLE IF NOT EXISTS experiments (
     created_at  TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS runs_experiment ON runs(experiment_id);
+CREATE TABLE IF NOT EXISTS builds (
+    id           TEXT PRIMARY KEY,
+    model_id     TEXT NOT NULL,           -- the custom model it registers
+    name         TEXT NOT NULL,
+    path         TEXT NOT NULL,           -- the solverforge-cli project
+    status       TEXT NOT NULL CHECK (status IN ('queued', 'building', 'done', 'failed')),
+    phase        TEXT NOT NULL DEFAULT '',-- what the build is doing now, in words
+    compiled     INTEGER NOT NULL DEFAULT 0,
+    total        INTEGER NOT NULL DEFAULT 0,
+    log          TEXT NOT NULL DEFAULT '',-- the last lines cargo printed
+    error        TEXT,
+    pid          INTEGER,
+    created_at   TEXT NOT NULL,
+    started_at   TEXT,
+    finished_at  TEXT
+);
+CREATE INDEX IF NOT EXISTS builds_model ON builds(model_id, created_at);
 CREATE TABLE IF NOT EXISTS run_points (
     run_id      TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
     elapsed_ms  INTEGER NOT NULL,
@@ -247,6 +264,7 @@ class Store:
             db.execute("DELETE FROM experiments WHERE model_id = ?", (model_id,))
             db.execute("DELETE FROM datasets WHERE model_id = ?", (model_id,))
             db.execute("DELETE FROM profiles WHERE model_id = ?", (model_id,))
+            db.execute("DELETE FROM builds WHERE model_id = ?", (model_id,))
             db.execute("DELETE FROM models WHERE id = ?", (model_id,))
 
     # ---- datasets -----------------------------------------------------------
@@ -446,6 +464,32 @@ class Store:
         with self.tx() as db:
             db.execute("DELETE FROM runs WHERE experiment_id = ?", (experiment_id,))
             db.execute("DELETE FROM experiments WHERE id = ?", (experiment_id,))
+
+    # ---- custom model builds --------------------------------------------------
+
+    def add_build(self, *, model_id: str, name: str, path: str) -> dict[str, Any]:
+        build_id = new_id()
+        with self.tx() as db:
+            db.execute("INSERT INTO builds (id, model_id, name, path, status, phase, created_at)"
+                       " VALUES (?, ?, ?, ?, 'queued', 'Waiting to start', ?)",
+                       (build_id, model_id, name, path, now()))
+        return self.build(build_id)  # type: ignore[return-value]
+
+    def update_build(self, build_id: str, **fields: Any) -> None:
+        if not fields:
+            return
+        names = ", ".join(f"{key} = ?" for key in fields)
+        values = [_dump(v) if k == "error" and v is not None else v for k, v in fields.items()]
+        with self.tx() as db:
+            db.execute(f"UPDATE builds SET {names} WHERE id = ?", (*values, build_id))
+
+    def build(self, build_id: str) -> dict[str, Any] | None:
+        return self.one("SELECT * FROM builds WHERE id = ?", build_id)
+
+    def builds(self, model_id: str | None = None, active: bool = False, limit: int = 20) -> list[dict[str, Any]]:
+        return self.all("SELECT * FROM builds WHERE (? IS NULL OR model_id = ?)"
+                        " AND (? = 0 OR status IN ('queued', 'building')) ORDER BY created_at DESC LIMIT ?",
+                        model_id, model_id, int(active), limit)
 
 
 RUN_SUMMARY_COLUMNS = (

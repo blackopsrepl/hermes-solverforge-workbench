@@ -208,9 +208,9 @@ class Workbench:
         generator = hashlib.sha256(Path(custom.__file__).read_bytes()).hexdigest()
         return hashlib.sha256(f"{custom.tree_hash(project_root)}:{host}:{generator}".encode()).hexdigest()
 
-    def register_custom(self, path: str, model_id: str | None = None, name: str | None = None) -> dict[str, Any]:
-        """Builds a solverforge-cli project's engine and registers it as a model;
-        builds again only when the project or the workbench changed."""
+    def _registration(self, path: str, model_id: str | None, name: str | None):
+        """Reads a project and the id and name it registers under; refuses what cannot be registered.
+        Returns the project, id, name, version and whether the registered engine is already current."""
         try:
             project = custom.inspect(Path(os.path.expanduser(path)))
         except custom.CustomError as exc:
@@ -230,17 +230,70 @@ class Workbench:
         version = self._custom_version(project.root)
         current = (existing is not None and existing["version"] == version and existing["name"] == name
                    and Path(existing["engine"] or "").is_file())
+        return project, model_id, name, version, current
+
+    def register_custom(self, path: str, model_id: str | None = None, name: str | None = None,
+                        report: custom.Report = lambda **_: None) -> dict[str, Any]:
+        """Builds a solverforge-cli project's engine and registers it as a model, waiting for the build;
+        builds again only when the project or the workbench changed."""
+        project, model_id, name, version, current = self._registration(path, model_id, name)
         if not current:
             try:
-                engine = custom.build(project, model_id, name, self.data_dir / "custom")
+                engine = custom.build(project, model_id, name, self.data_dir / "custom", report)
             except custom.CustomError as exc:
                 raise WorkbenchError(exc.code, exc.message, **exc.detail) from exc
+            report(phase="Reading the model")
             description = call(engine, {"command": "describe", "model": model_id}, timeout_s=60)
             self.store.put_model({"id": model_id, "kind": "custom", "name": name, "manifest": description,
                                   "engine": str(engine), "source": str(project.root), "version": version})
             self.ensure_standard_profile(model_id)
             self.changed("models", model=model_id)
         return {"model": self.model(model_id), "built": not current, "warnings": project.warnings}
+
+    def start_register(self, path: str, model_id: str | None = None, name: str | None = None) -> dict[str, Any]:
+        """Registers a project without waiting: a refusal comes at once, a current model comes back as it is,
+        and otherwise a build starts in the background and comes back to be followed with ``build``."""
+        project, model_id, name, _, current = self._registration(path, model_id, name)
+        if current:
+            return {"model": self.model(model_id), "built": False, "build": None, "warnings": project.warnings}
+        self.reap_builds()
+        running = self.store.builds(model_id, active=True)
+        build = running[0] if running else self.store.add_build(model_id=model_id, name=name, path=str(project.root))
+        if not running:
+            process = subprocess.Popen(
+                [sys.executable, str(Path(__file__).parent / "build_worker.py"), str(self.store.path), build["id"],
+                 str(self.engine.override or "")],
+                stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                env=engine_env(), close_fds=True, start_new_session=True)
+            self.store.update_build(build["id"], pid=process.pid)
+            self.changed("build", id=build["id"], model=model_id)
+        return {"model": None, "built": True, "build": self.build(build["id"]), "warnings": project.warnings}
+
+    def reap_builds(self) -> None:
+        """Marks builds whose worker died as failed."""
+        if sys.platform == "win32":
+            return
+        for build in self.store.builds(active=True, limit=100):
+            if not build.get("pid"):
+                continue
+            try:
+                os.kill(build["pid"], 0)
+            except ProcessLookupError:
+                self.store.update_build(build["id"], status="failed", finished_at=_now(), phase="Stopped",
+                                        error={"code": "build_interrupted", "message": "the build stopped before it finished"})
+            except PermissionError:
+                pass
+
+    def build(self, build_id: str) -> dict[str, Any]:
+        self.reap_builds()
+        build = self.store.build(build_id)
+        if build is None:
+            raise WorkbenchError("unknown_build", f"no build has id {build_id!r}")
+        return _build_view(build)
+
+    def builds(self, model_id: str | None = None) -> list[dict[str, Any]]:
+        self.reap_builds()
+        return [_build_view(b) for b in self.store.builds(model_id)]
 
     def remove_custom(self, model_id: str) -> None:
         """Forgets a custom model with its datasets, runs, profiles and engine;
@@ -1027,6 +1080,14 @@ def _cell(dataset_id: str, profile_id: str, runs: list[dict[str, Any]]) -> dict[
 def _awaiting_judge(run: dict[str, Any]) -> bool:
     """A finished plan the judge has not scored yet: it ended after this read's judging pass."""
     return run["status"] in ("completed", "incomplete") and bool(run.get("score")) and not run.get("judged_score")
+
+
+def _build_view(build: dict[str, Any]) -> dict[str, Any]:
+    """A build as the page and the agent read it: what it is doing, how far, and the last lines."""
+    view = {key: build.get(key) for key in ("id", "model_id", "name", "path", "status", "phase", "compiled", "total",
+                                            "error", "created_at", "started_at", "finished_at")}
+    view["log"] = (build.get("log") or "").splitlines()[-30:]
+    return view
 
 
 def _demo_info(description: dict[str, Any]) -> list[dict[str, Any]]:

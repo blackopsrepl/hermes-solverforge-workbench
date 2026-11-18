@@ -26,10 +26,12 @@ its ``Plan`` implements that release's traits or it cannot be hosted.
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import re
 import shutil
 import subprocess
+import threading
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -543,25 +545,97 @@ def cargo() -> str:
     return found
 
 
+Report = Callable[..., None]
+
+
+def _host_triple(env: dict[str, str]) -> str | None:
+    try:
+        done = subprocess.run(["rustc", "-vV"], env=env, capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return next((line.split(":", 1)[1].strip() for line in done.stdout.splitlines() if line.startswith("host:")), None)
+
+
+def _crate_count(manifest: Path, env: dict[str, str]) -> int:
+    """How many packages the build compiles: the resolved graph for this computer's platform.
+    Resolving also fetches the registry index and the sources, so it is the build's first step."""
+    triple = _host_triple(env)
+    command = [cargo(), "metadata", "--format-version", "1", "--manifest-path", str(manifest)]
+    if triple:
+        command += ["--filter-platform", triple]
+    try:
+        done = subprocess.run(command, env=env, capture_output=True, text=True, timeout=BUILD_TIMEOUT_S)
+    except subprocess.TimeoutExpired as exc:
+        raise CustomError("build_timeout", f"resolving the dependencies took longer than {BUILD_TIMEOUT_S // 60} "
+                          "minutes") from exc
+    if done.returncode != 0:
+        raise CustomError("build_failed", "cargo could not resolve the project's dependencies",
+                          errors=[line for line in done.stderr.splitlines() if line.startswith("error")][:40],
+                          log_tail=done.stderr[-4000:])
+    return len(((json.loads(done.stdout).get("resolve") or {}).get("nodes")) or [])
+
+
 def build(project: Project, model_id: str, name: str, custom_dir: Path,
-          log: Callable[[str], None] = lambda _: None) -> Path:
-    """Generates the engine crate for `project` and builds it; returns the engine binary."""
+          report: Report = lambda **_: None) -> Path:
+    """Generates the engine crate for `project` and builds it; returns the engine binary.
+
+    ``report(phase=…, compiled=…, total=…, line=…)`` follows the build: the phase in words,
+    packages compiled (fresh ones count) out of the packages resolved, and each line cargo prints."""
     crate_dir = custom_dir / model_id / "engine"
     (crate_dir / "src").mkdir(parents=True, exist_ok=True)
-    (crate_dir / "Cargo.toml").write_text(render_cargo(project, model_id), encoding="utf-8")
+    manifest = crate_dir / "Cargo.toml"
+    manifest.write_text(render_cargo(project, model_id), encoding="utf-8")
     (crate_dir / "src" / "main.rs").write_text(render_main(project, model_id, name), encoding="utf-8")
     target_dir = custom_dir / "target"
-    log(f"building {model_id} from {project.root}")
     env = {**build_env(), "CARGO_TARGET_DIR": str(target_dir)}
+    report(phase="Fetching dependencies", line=f"building {model_id} from {project.root}")
+    total = _crate_count(manifest, env)
+    report(phase="Compiling", compiled=0, total=total)
+    command = [cargo(), "build", "--release", "--message-format=json-render-diagnostics", "--manifest-path",
+               str(manifest)]
+    process = subprocess.Popen(command, cwd=crate_dir, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               text=True, bufsize=1)
+    stderr: list[str] = []
+
+    def drain_stderr() -> None:
+        assert process.stderr is not None
+        for line in process.stderr:
+            stderr.append(line)
+            report(line=line.rstrip("\n"))
+
+    reader = threading.Thread(target=drain_stderr, daemon=True)
+    reader.start()
+    timed_out = threading.Event()
+
+    def stop() -> None:
+        timed_out.set()
+        process.kill()
+
+    timer = threading.Timer(BUILD_TIMEOUT_S, stop)
+    timer.start()
+    compiled: set[str] = set()
     try:
-        done = subprocess.run([cargo(), "build", "--release", "--manifest-path", str(crate_dir / "Cargo.toml")],
-                              cwd=crate_dir, env=env, capture_output=True, text=True, timeout=BUILD_TIMEOUT_S)
-    except subprocess.TimeoutExpired as exc:
-        raise CustomError("build_timeout", f"building {model_id} took longer than {BUILD_TIMEOUT_S // 60} minutes") from exc
-    if done.returncode != 0:
-        errors = [line for line in done.stderr.splitlines() if line.startswith(("error", "  -->", "warning: unused"))]
+        assert process.stdout is not None
+        for line in process.stdout:
+            try:
+                message = json.loads(line)
+            except ValueError:
+                continue
+            if message.get("reason") == "compiler-artifact" and message.get("package_id") not in compiled:
+                compiled.add(message["package_id"])
+                report(phase="Compiling", compiled=min(len(compiled), total), total=total)
+        returncode = process.wait()
+    finally:
+        timer.cancel()
+        reader.join(timeout=10)
+    if timed_out.is_set():
+        raise CustomError("build_timeout", f"building {model_id} took longer than {BUILD_TIMEOUT_S // 60} minutes")
+    text = "".join(stderr)
+    if returncode != 0:
+        errors = [line for line in text.splitlines() if line.startswith(("error", "  -->", "warning: unused"))]
         raise CustomError("build_failed", f"cargo could not build {model_id}; fix the project and register it again",
-                          errors=errors[:40], log_tail=done.stderr[-4000:])
+                          errors=errors[:40], log_tail=text[-4000:])
+    report(phase="Compiling", compiled=total, total=total)
     suffix = ".exe" if os.name == "nt" else ""
     built = target_dir / "release" / f"{binary_name(model_id)}{suffix}"
     engine = custom_dir / model_id / f"{binary_name(model_id)}{suffix}"
