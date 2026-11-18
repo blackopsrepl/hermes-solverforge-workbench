@@ -19,12 +19,19 @@ for model in $("$engine" --version | jq -r 'select(.event == "version") | .model
   described=$(ask "{\"command\": \"describe\", \"model\": \"$model\"}")
   [[ $(jq -r '.roads' <<<"$described") == true ]] || continue
   for demo in $(jq -r '.demos[]' <<<"$described"); do
-    echo "measuring $model $demo on the roads"
-    answer=$(ask "{\"command\": \"roads\", \"model\": \"$model\", \"demo\": \"$demo\", \"roads\": {\"cache_dir\": \"$cache\"}}")
-    if [[ $(jq -r '.event' <<<"$answer") != roads ]]; then
+    # OpenStreetMap's servers refuse or time out now and then: try a few
+    # times, waiting longer each time, and name each error.
+    for attempt in 1 2 3 4 5; do
+      echo "measuring $model $demo on the roads (attempt $attempt)"
+      answer=$(ask "{\"command\": \"roads\", \"model\": \"$model\", \"demo\": \"$demo\", \"roads\": {\"cache_dir\": \"$cache\"}}") || true
+      [[ $(jq -r '.event' <<<"$answer" 2>/dev/null) == roads ]] && break
+      [[ -n $answer ]] || answer="the engine gave no answer"
       echo "$answer" >&2
-      exit 1
-    fi
+      if (( attempt == 5 )); then
+        exit 1
+      fi
+      sleep $((attempt * 60))
+    done
   done
 done
 
