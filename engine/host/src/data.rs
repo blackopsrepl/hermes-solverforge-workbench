@@ -56,6 +56,17 @@ pub struct Column {
     /// shown, never edited.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub read_only: bool,
+    /// Only read when a sibling field holds one of some values (a break's
+    /// window fields for a floating break): the editor shows it then only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub when: Option<When>,
+}
+
+/// The sibling field and the values that make a column apply.
+#[derive(Debug, Clone, Serialize)]
+pub struct When {
+    pub field: &'static str,
+    pub values: Vec<&'static str>,
 }
 
 /// A column of `kind`.
@@ -87,6 +98,14 @@ impl Column {
     }
     pub fn optional(mut self) -> Self {
         self.optional = true;
+        self
+    }
+    /// Applies only while the sibling `field` is one of `values`.
+    pub fn when(mut self, field: &'static str, values: &[&'static str]) -> Self {
+        self.when = Some(When {
+            field,
+            values: values.to_vec(),
+        });
         self
     }
     /// The solver writes it; the editor shows it.
@@ -519,6 +538,12 @@ mod tests {
             ["window: the data has start, the table does not describe it"]
         );
         let kind = serde_json::to_value(choice("kind", "Kind", &[("A", "a"), ("B", "b")])).unwrap();
+        let only = serde_json::to_value(col("minutes", "Minutes", "minutes").when("kind", &["B"]))
+            .unwrap();
+        assert_eq!(
+            only["when"],
+            serde_json::json!({"field": "kind", "values": ["B"]})
+        );
         assert_eq!(kind["options"][1]["value"], "B");
         // Every column gets a sample; one the model drops (a misspelt key, a
         // field it never reads) is named, down to an object's field.

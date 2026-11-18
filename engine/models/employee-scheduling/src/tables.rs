@@ -50,6 +50,12 @@ const RULE_KINDS: &[(&str, &str)] = &[
     ("disruption", "Changes to the published roster"),
 ];
 
+/// Rule kinds that read run options, shift-run options, pairs and the shifts around.
+const RUNS: &[&str] = &["consecutiveDaysWorked"];
+const SHIFT_RUNS: &[&str] = &["consecutiveShifts"];
+const PAIRS: &[&str] = &["restBetween", "splitShifts"];
+const BEFORE_AFTER: &[&str] = &["nearDayOff", "restBetween", "splitShifts"];
+
 fn texts(name: &'static str, label: &'static str, one: &'static str) -> Column {
     list(name, label, col("item", one, "text"))
 }
@@ -148,43 +154,53 @@ fn rule() -> Vec<Column> {
     rule.extend(range());
     rule.extend([
         flag("wholeShift", "Whole shift inside the window"),
-        weekdays("weekdays", "Weekdays"),
-        texts("categories", "Categories", "Category"),
-        weekdays("startDays", "Runs start on"),
-        minutes("minGapMinutes", "Gap between categories"),
-        flag("compact", "Keep categories together"),
-        minutes("linkMinutes", "Shifts this close are one run"),
-        minutes("restAfterMinutes", "Rest after a run"),
+        weekdays("weekdays", "Weekdays").when("kind", &["daysOff"]),
+        texts("categories", "Categories", "Category")
+            .when("kind", &["consecutiveDaysWorked", "shiftTypes"]),
+        weekdays("startDays", "Runs start on").when("kind", RUNS),
+        minutes("minGapMinutes", "Gap between categories").when("kind", RUNS),
+        flag("compact", "Keep categories together").when("kind", RUNS),
+        minutes("linkMinutes", "Shifts this close are one run").when("kind", SHIFT_RUNS),
+        minutes("restAfterMinutes", "Rest after a run").when("kind", SHIFT_RUNS),
         col("restAfterRunsOf", "Rest after runs of", "integer")
             .unit("shifts")
-            .optional(),
-        choice("stance", "Stance", STANCES).optional(),
-        minutes("withinMinutes", "Pairs within"),
-        filter("paired", "Paired shift"),
+            .optional()
+            .when("kind", SHIFT_RUNS),
+        choice("stance", "Stance", STANCES)
+            .optional()
+            .when("kind", &["nearDayOff"]),
+        minutes("withinMinutes", "Pairs within").when("kind", PAIRS),
+        filter("paired", "Paired shift").when("kind", &["dailyPairing"]),
         col("dayOffset", "Days later", "integer")
             .unit("days")
-            .optional(),
-        filters("steps", "Steps", "Step"),
-        flag("ordered", "Steps in order"),
+            .optional()
+            .when("kind", &["dailyPairing"]),
+        filters("steps", "Steps", "Step").when("kind", &["dayPattern"]),
+        flag("ordered", "Steps in order").when("kind", &["dayPattern"]),
         list(
             "days",
             "Days",
             col("day", "Day", "object").fields(with_filter(vec![flag("work", "Works")])),
-        ),
-        filters("groups", "Groups", "Group"),
+        )
+        .when("kind", &["multiDayPattern"]),
+        filters("groups", "Groups", "Group").when("kind", &["rotation"]),
         choice(
             "cycle",
             "Cycle",
             &[("weekly", "Weekly"), ("blocks", "Blocks of days")],
         )
-        .optional(),
-        texts("tagTypes", "Tag types", "Tag type"),
+        .optional()
+        .when("kind", &["rotation"]),
+        texts("tagTypes", "Tag types", "Tag type").when("kind", &["distinctTags"]),
         col("maxMeters", "Farthest from home", "integer")
             .unit("m")
-            .optional(),
-        minutes("minChangeMinutes", "Time to change place"),
-        col("hourly", "Hourly rate", "number").optional(),
-        minutes("baseMinutes", "Minutes at the base rate"),
+            .optional()
+            .when("kind", &["travel"]),
+        minutes("minChangeMinutes", "Time to change place").when("kind", &["travel"]),
+        col("hourly", "Hourly rate", "number")
+            .optional()
+            .when("kind", &["cost"]),
+        minutes("baseMinutes", "Minutes at the base rate").when("kind", &["cost"]),
         list(
             "overtime",
             "Overtime tiers",
@@ -192,10 +208,11 @@ fn rule() -> Vec<Column> {
                 col("hourly", "Hourly rate", "number"),
                 minutes("minutes", "For"),
             ]),
-        ),
-        texts("keepTags", "Tags to keep", "Tag"),
-        filter("before", "Shift before"),
-        filter("after", "Shift after"),
+        )
+        .when("kind", &["cost"]),
+        texts("keepTags", "Tags to keep", "Tag").when("kind", &["disruption"]),
+        filter("before", "Shift before").when("kind", BEFORE_AFTER),
+        filter("after", "Shift after").when("kind", BEFORE_AFTER),
     ]);
     rule
 }

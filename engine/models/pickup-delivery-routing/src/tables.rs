@@ -53,13 +53,14 @@ fn breaks() -> Column {
                 "Kind",
                 &[("FIXED", "At a set time"), ("FLOATING", "Within a window")],
             ),
-            time("startTime", "Starts (set time)"),
-            time("endTime", "Ends (set time)"),
-            time("minStartTime", "Not before (window)"),
-            time("maxEndTime", "Done by (window)"),
-            col("duration", "Length (window)", "minutes")
+            time("startTime", "Starts").when("type", &["FIXED"]),
+            time("endTime", "Ends").when("type", &["FIXED"]),
+            time("minStartTime", "Not before").when("type", &["FLOATING"]),
+            time("maxEndTime", "Done by").when("type", &["FLOATING"]),
+            col("duration", "Length", "minutes")
                 .unit("minutes")
-                .optional(),
+                .optional()
+                .when("type", &["FLOATING"]),
             col("location", "Place", "location").optional(),
             choice(
                 "policy",
