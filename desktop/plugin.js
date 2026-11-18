@@ -66,7 +66,12 @@ const e = (type, props, ...children) => {
 
 const tone = (color, size = '0.75rem') => ({ color: `var(${color})`, fontSize: size })
 const muted = tone('--ui-text-secondary')
-const faint = tone('--ui-text-tertiary', '0.7rem')
+// Small text stays readable on light themes too: between secondary and tertiary, at AA.
+const faint = { color: 'color-mix(in srgb, var(--ui-text-secondary) 70%, var(--ui-text-tertiary))', fontSize: '0.7rem' }
+// A status colour as text: blended toward the theme's text colour, so it keeps its hue
+// and reads at AA on light and dark backgrounds alike.
+const ink = token => `color-mix(in srgb, var(${token}) 58%, var(--ui-text-primary))`
+const DANGER = ink('--ui-danger, #e5534b')
 const stack = (gap = 8) => ({ display: 'flex', flexDirection: 'column', gap })
 const row = (gap = 8) => ({ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap })
 const card = { border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, padding: 14, minWidth: 0 }
@@ -79,7 +84,7 @@ const cell = { padding: '7px 8px', borderBottom: '1px solid var(--ui-stroke-tert
 const head = { ...cell, ...faint, fontWeight: 600 }
 const num = { ...cell, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }
 const LEVEL_COLOR = { hard: '--ui-danger, #e5534b', medium: '--ui-warning, #d29922', soft: '--ui-text-secondary' }
-const levelColor = level => `var(${LEVEL_COLOR[level] || '--ui-text-secondary'})`
+const levelColor = level => (LEVEL_COLOR[level] && level !== 'soft' ? ink(LEVEL_COLOR[level]) : 'var(--ui-text-secondary)')
 const spacer = () => e('span', { style: { flex: 1 } })
 
 const H1 = ({ children }) => e('h1', { style: { margin: 0, fontSize: '1.15rem', fontWeight: 600 } }, children)
@@ -104,7 +109,7 @@ export function ScoreText({ score }) {
   const parts = parseScore(score)
   if (!parts.length) return e('span', { style: faint }, '—')
   return e('span', { style: { ...row(10), display: 'inline-flex', fontVariantNumeric: 'tabular-nums', fontWeight: 600 } },
-    parts.map(p => e('span', { key: p.level, style: p.value ? { color: levelColor(p.level) } : { color: 'var(--ui-text-tertiary)', fontWeight: 400 } },
+    parts.map(p => e('span', { key: p.level, style: p.value ? { color: levelColor(p.level) } : { color: faint.color, fontWeight: 400 } },
       `${fmt(p.value)} ${p.level}`)))
 }
 
@@ -476,7 +481,7 @@ function TabBar({ tabs, value, onChange }) {
       key: t.id, type: 'button', role: 'tab', 'aria-selected': t.id === value, onClick: () => onChange(t.id),
       style: { background: 'none', border: 0, borderBottom: `2px solid ${t.id === value ? 'var(--ui-accent)' : 'transparent'}`,
         marginBottom: -1, padding: '7px 12px', cursor: 'pointer', fontSize: '0.78rem', whiteSpace: 'nowrap',
-        color: t.id === value ? 'var(--ui-text-primary)' : 'var(--ui-text-tertiary)' }
+        color: t.id === value ? 'var(--ui-text-primary)' : faint.color }
     }, t.label, t.count !== undefined && t.count !== null ? e('span', { style: { ...faint, marginLeft: 5 } }, fmt(t.count)) : null)))
 }
 
@@ -575,6 +580,9 @@ function JsonFileButton({ label, onFile, variant = 'outline' }) {
     }))
 }
 
+// A chart's caption: the start and end stay at the ends, the words between wrap.
+const CAPTION = { ...faint, display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 12, textAlign: 'center' }
+
 /** Score over time: one band per level that changes, each on its own scale, hard on top. */
 export function ScoreChart({ points, width = 520, height = 120 }) {
   if (!points || points.length < 2) return null
@@ -601,7 +609,7 @@ export function ScoreChart({ points, width = 520, height = 120 }) {
           n ? e('line', { x1: 0, x2: width, y1: top, y2: top, stroke: 'var(--ui-stroke-tertiary)', strokeWidth: 1, vectorEffect: 'non-scaling-stroke' }) : null,
           e('path', { d, fill: 'none', stroke: levelColor(level), strokeWidth: 1.5, vectorEffect: 'non-scaling-stroke' }))
       })),
-    e('figcaption', { style: { ...faint, ...row(12), justifyContent: 'space-between' } },
+    e('figcaption', { style: CAPTION },
       e('span', null, '0:00'),
       e('span', null, `Score over time · top to bottom: ${lines.map(([level]) => level).join(', ')}, each on its own scale`),
       e('span', null, duration(end))))
@@ -647,7 +655,18 @@ export function PlanView({ run, dataset, version, kind = 'timeline', onItem }) {
 // A routing plan: the map fills the space beside the list of routes, and the per-vehicle
 // timeline sits below as its own surface. Picking a route in the list focuses it on the map.
 function RoutesPlan({ data, frame, onItem }) {
-  const { docked } = useNav()
+  const { docked: dockedPane } = useNav()
+  // Narrow by its own width, not only when docked: a page squeezed beside the chat
+  // stacks the map over the list the same way.
+  const root = useRef(null)
+  const [width, setWidth] = useState(0)
+  useEffect(() => {
+    if (!root.current || typeof ResizeObserver === 'undefined') return undefined
+    const watch = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width))
+    watch.observe(root.current)
+    return () => watch.disconnect()
+  }, [])
+  const docked = dockedPane || (width > 0 && width < 860)
   const [focus, setFocus] = useState(null)
   const [search, setSearch] = useState('')
   const show = id => {
@@ -678,7 +697,7 @@ function RoutesPlan({ data, frame, onItem }) {
       e('span', null),
       e('span', { style: faint }, r.stats.join(' · ')),
       brokenWords(r) ? e('span', null) : null,
-      brokenWords(r) ? e('span', { style: { ...faint, color: 'var(--ui-danger, #e5534b)' } }, brokenWords(r)) : null))),
+      brokenWords(r) ? e('span', { style: { ...faint, color: DANGER } }, brokenWords(r)) : null))),
     data.unassigned.length
       ? e('div', { key: 'open', style: stack(4) },
           e(Label, null, `${fmt(data.unassigned.length)} unplanned`),
@@ -686,7 +705,7 @@ function RoutesPlan({ data, frame, onItem }) {
             e('span', { style: muted }, u.label),
             onItem ? e(Button, { size: 'xs', variant: 'outline', onClick: () => onItem({ id: String(u.id), label: u.label }) }, 'Find a place') : null)))
       : null)
-  return e('div', { style: stack(12) },
+  return e('div', { ref: root, style: stack(12) },
     data.subtitle ? e('div', { style: muted }, data.subtitle) : null,
     e('div', { style: { display: 'grid', gridTemplateColumns: docked ? '1fr' : 'minmax(0, 1fr) 320px', gap: 12, height: docked ? 'auto' : height } },
       e(SandboxedFrame, {
@@ -774,7 +793,7 @@ export function DeltaText({ from, to }) {
   const parts = scoreDelta(from, to).filter(p => p.value !== 0)
   if (!parts.length) return e('span', { style: faint }, 'no change')
   return e('span', { style: { ...row(8), display: 'inline-flex', fontVariantNumeric: 'tabular-nums', fontWeight: 600 } },
-    parts.map(p => e('span', { key: p.level, style: { color: p.value > 0 ? 'var(--ui-success, #3fb950)' : levelColor(p.level) } },
+    parts.map(p => e('span', { key: p.level, style: { color: p.value > 0 ? ink('--ui-success, #3fb950') : levelColor(p.level) } },
       `${p.value > 0 ? '+' : '−'}${fmt(Math.abs(p.value))} ${p.level}`)))
 }
 
@@ -941,7 +960,7 @@ export function ReplanForm({ model, run, dataset, onDone }) {
           onChange: event => setSeconds(event.target.value ? String(Math.max(1, Math.trunc(Number(event.target.value) || 1))) : '') }),
         e('input', { placeholder: `${(run ? run.dataset_name : dataset.name) || 'Dataset'} (replan)`, value: name, style: { ...input, width: 220 }, 'aria-label': 'Name of the new dataset',
           onChange: event => setName(event.target.value) }))),
-    failure ? e('div', { role: 'alert', style: { color: 'var(--ui-danger, #e5534b)', fontSize: '0.75rem' } }, failure) : null,
+    failure ? e('div', { role: 'alert', style: { color: DANGER, fontSize: '0.75rem' } }, failure) : null,
     e('div', { style: row(8) }, spacer(),
       e(Button, { size: 'xs', disabled: busy || changes.some(c => !byId.has(c.edit)), onClick: submit }, busy ? 'Replanning…' : 'Replan and solve')))
 }
@@ -1098,7 +1117,7 @@ export function BuildProgress({ build, onOpen }) {
           style: { height: 5, borderRadius: 3, background: 'var(--ui-stroke-tertiary)', overflow: 'hidden' } },
           e('div', { style: { height: '100%', width: `${(build.status === 'done' ? 1 : share) * 100}%`, background: 'var(--ui-accent)' } }))
       : null,
-    errors.length ? e('pre', { role: 'alert', style: { ...faint, color: 'var(--ui-danger, #e5534b)', whiteSpace: 'pre-wrap', margin: 0 } }, errors.join('\n')) : null,
+    errors.length ? e('pre', { role: 'alert', style: { ...faint, color: DANGER, whiteSpace: 'pre-wrap', margin: 0 } }, errors.join('\n')) : null,
     (build.log || []).length
       ? e('pre', { 'aria-label': 'Build log', style: { ...faint, fontFamily: 'var(--font-mono, monospace)', whiteSpace: 'pre-wrap', maxHeight: 180, overflow: 'auto', margin: 0,
           background: 'var(--ui-bg-tertiary)', borderRadius: 6, padding: 8 } }, build.log.slice(-12).join('\n'))
@@ -1261,7 +1280,7 @@ export function CheckResult({ checked }) {
   if (!checked.valid) {
     return e('div', { style: stack(6), role: 'alert' },
       e('div', { style: row(8) }, e(Badge, { variant: 'destructive' }, 'Cannot be read'), e('span', { style: muted }, sizeText(checked.size))),
-      list(errors.length ? errors : checked.issues || [], 'var(--ui-danger, #e5534b)'))
+      list(errors.length ? errors : checked.issues || [], DANGER))
   }
   return e('div', { style: stack(8) },
     e('div', { style: row(8) },
@@ -1809,7 +1828,7 @@ function RunPage({ model, id }) {
       e(LineageStrip, { model: model.id, lineage: run.lineage, here: run.dataset_name || 'this dataset' }),
       e(Card, null,
         e('div', { style: row(10) },
-          e('strong', { style: { fontSize: '0.95rem', color: hard < 0 || run.status === 'failed' || run.status === 'invalid' ? 'var(--ui-danger, #e5534b)' : undefined } }, verdictText(run)),
+          e('strong', { style: { fontSize: '0.95rem', color: hard < 0 || run.status === 'failed' || run.status === 'invalid' ? DANGER : undefined } }, verdictText(run)),
           spacer(), e(Status, { status: run.status })),
         e('div', { style: row(10) },
           e(ScoreText, { score: run.score }),
@@ -1963,7 +1982,7 @@ function JsonCell({ param, value, onChange, ring }) {
         } catch { setBad(true) }
       }
     }),
-    bad ? e('span', { style: { ...faint, color: 'var(--ui-danger, #e5534b)' } }, param.kind === 'json' ? 'Write JSON.' : param.kind === 'array' ? 'Write a JSON list.' : 'Write a JSON object.') : null)
+    bad ? e('span', { style: { ...faint, color: DANGER } }, param.kind === 'json' ? 'Write JSON.' : param.kind === 'array' ? 'Write a JSON list.' : 'Write a JSON object.') : null)
 }
 
 /** A setting's value in words: its option's label, its unit, an object's fields, a list's items. */
@@ -2264,7 +2283,7 @@ export function TrendLine({ kpi, solves = [], model, width = 520, height = 72 })
           ...(open ? { tabIndex: 0, role: 'link', 'aria-label': `Open the run: ${words}`,
             onKeyDown: event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open() } } } : {}) }, e('title', null, words))
       })),
-    e('figcaption', { style: { ...faint, ...row(12), justifyContent: 'space-between' } },
+    e('figcaption', { style: CAPTION },
       e('span', null, `${ago(kpi.points[0][0])} · ${fmt(values[0])}`),
       e('span', null, `${kpi.label} · ${count(values.length, 'solve')} · range ${fmt(low)}–${fmt(high)} ${kpi.unit || ''}`),
       e('span', null, `${fmt(values[values.length - 1])} · ${ago(kpi.points[kpi.points.length - 1][0])}`)))
