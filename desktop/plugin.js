@@ -231,6 +231,16 @@ const ERRORS = {
   invalid_profile: 'That file is not an exported profile.',
   invalid_patch: 'That change does not fit this dataset.'
 }
+/** A refused request's own answer: the host throws "404: {json}" for a status that is not ok. */
+export function refusal(error) {
+  const text = String((error && error.message) || error || '')
+  const body = text.indexOf('{')
+  if (body >= 0) {
+    try { return JSON.parse(text.slice(body)) } catch { /* not the workbench's answer */ }
+  }
+  return text ? { error: text } : null
+}
+
 export function errorText(result, fallback = 'Something went wrong.') {
   if (!result) return fallback
   if (ERRORS[result.code]) return ERRORS[result.code]
@@ -363,7 +373,7 @@ function useAction(action, onDone) {
       if (result && result.ok === false) host.notify({ kind: 'error', message: errorText(result) })
       else if (onDone) onDone(result)
     },
-    onError: error => host.notify({ kind: 'error', message: errorText({ error: error && error.message }, 'The SolverForge Workbench did not answer.') })
+    onError: error => host.notify({ kind: 'error', message: errorText(refusal(error), 'The SolverForge Workbench did not answer.') })
   })
 }
 
@@ -385,7 +395,7 @@ function Loading({ query, children, lines = 3 }) {
   }
   if (!query.data || query.data.ok === false) {
     return e(ErrorState, {
-      title: errorText(query.data, 'The SolverForge Workbench did not answer.'),
+      title: errorText(query.data || refusal(query.error), 'The SolverForge Workbench did not answer.'),
       children: e(Button, { size: 'xs', variant: 'outline', onClick: () => query.refetch && query.refetch() }, 'Try again')
     })
   }
@@ -554,7 +564,7 @@ async function exportJson(action, args, name) {
   const path = await os.pickSavePath({ defaultPath: `${fileName(name)}.json`, title: 'Export', filters: [{ name: 'JSON', extensions: ['json'] }] })
   if (!path) return
   const result = await rest(`/actions/${action}`, { method: 'POST', body: { ...args, path: path.endsWith('.json') ? path : `${path}.json` } })
-    .catch(error => ({ ok: false, error: error && error.message }))
+    .catch(error => ({ ok: false, ...refusal(error) }))
   host.notify(result && result.ok ? { kind: 'success', message: `Saved to ${result.path}` } : { kind: 'error', message: errorText(result) })
 }
 
@@ -745,7 +755,7 @@ function Matches({ item }) {
 export function FillPanel({ run, dataset, profile, model, open = false, items, onClear }) {
   const { go } = useNav()
   const [asked, setAsked] = useState(open)
-  const query = useRead('fill', { run, dataset, profile, top: 3, items: items && items.length ? items.join(',') : undefined }, { enabled: asked || Boolean(items && items.length) })
+  const query = useRead('fill', { run, dataset, solve_profile: profile, top: 3, items: items && items.length ? items.join(',') : undefined }, { enabled: asked || Boolean(items && items.length) })
   const apply = useAction('fill_apply', r => r.dataset && go(placeOf(model || r.dataset.model_id, 'datasets', r.dataset.id)))
   if (!asked && !(items && items.length)) {
     return e('div', null, e(Button, { size: 'xs', variant: 'outline', onClick: () => setAsked(true) }, 'Find places for open items'))
@@ -926,7 +936,7 @@ export function ReplanForm({ model, run, dataset, onDone }) {
       if (onDone) onDone()
       go(placeOf(model.id, 'runs', started.run.id))
     } catch (error) {
-      setFailure(errorText({ error: error && error.message }))
+      setFailure(errorText(refusal(error)))
     } finally {
       setBusy(false)
     }
@@ -1323,7 +1333,7 @@ export function ImportDataset({ model }) {
       }
       go(placeOf(model.id, 'datasets', made.dataset.id))
     } catch (error) {
-      host.notify({ kind: 'error', message: errorText({ error: error && error.message }) })
+      host.notify({ kind: 'error', message: errorText(refusal(error)) })
     } finally {
       queryClient.invalidateQueries({ queryKey: [ID] })
       setBusy(false)

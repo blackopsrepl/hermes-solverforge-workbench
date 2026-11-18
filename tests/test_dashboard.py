@@ -47,6 +47,15 @@ def test_reads_and_button_actions_reach_the_workbench(client):
     assert client.get("/dataset", params={"dataset": dataset}).json()["dataset"]["runs"][0]["id"] == run["id"]
 
 
+def test_fill_reads_its_workbench_profile_apart_from_the_hosts_profile(client):
+    # The Desktop adds ?profile=<Hermes profile> to every plugin request.
+    dataset = client.post("/actions/dataset_create", json={"model": "toy", "demo": ""}).json()["dataset"]["id"]
+    got = client.get("/fill", params={"dataset": dataset, "top": 2, "profile": "default"})
+    assert got.status_code == 200 and got.json()["ok"] and got.json()["items"]
+    refused = client.get("/fill", params={"dataset": dataset, "solve_profile": "nope", "profile": "default"}).json()
+    assert refused["code"] == "unknown_profile"
+
+
 def test_refusals_keep_their_code_and_a_fitting_status(client):
     missing = client.get("/run", params={"run": "nope"})
     assert missing.status_code == 404 and missing.json()["code"] == "unknown_run"

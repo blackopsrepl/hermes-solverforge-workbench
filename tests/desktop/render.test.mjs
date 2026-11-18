@@ -16,7 +16,7 @@ mkdirSync(join(here, '.build'), { recursive: true })
 cpSync(join(here, '../../desktop/plugin.js'), join(here, '.build/plugin.mjs'))
 const {
   default: plugin, Workbench, ScoreChart, StatusChip, FillPanel, TrendLine, parseScore, openBeside, openPage,
-  parseAt, placeOf, hrefOf, runName, ago, duration, count, errorText, madeFrom, CheckResult, BuildProgress, parseTags, profileLabel, ImportDataset, CopyDataset,
+  parseAt, placeOf, hrefOf, runName, ago, duration, count, errorText, refusal, madeFrom, CheckResult, BuildProgress, parseTags, profileLabel, ImportDataset, CopyDataset,
   ReplanForm, scoreDelta, verdictText, editArgs, ParamCell, paramText, profileChanges,
   DataEditor, tableRows, inferTables, cellText, stagedOperations
 } = await import('./.build/plugin.mjs')
@@ -640,4 +640,12 @@ test('rows and trend points that open something are reachable from the keyboard'
   assert.match(runs, /<tr style="cursor:pointer" tabindex="0">/)
   const trends = at(placeOf('toy', 'trends'))
   assert.equal((trends.match(/<circle [^>]*tabindex="0" role="link" aria-label="Open the run: /g) || []).length, 5)
+})
+
+test('a refused request shows the workbench\'s own reason, not "did not answer"', () => {
+  const thrown = new Error('Error invoking remote method \'hermes:api\': Error: 404: {"ok":false,"code":"unknown_profile","error":"model m has no profile \'x\'"}')
+  assert.equal(refusal(thrown).code, 'unknown_profile')
+  assert.equal(errorText(refusal(thrown)), 'This profile no longer exists.')
+  assert.equal(errorText(refusal(new Error('network down'))), 'Network down.')
+  assert.equal(refusal(null), null)
 })

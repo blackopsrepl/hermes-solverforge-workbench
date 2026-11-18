@@ -143,8 +143,10 @@ def confirm(action: str, model: str = "", dataset: str = "", profile: str = "", 
 
 @router.get("/{action}")
 def read(action: str, model: str = "", dataset: str = "", run: str = "", runs: str = "", experiment: str = "",
-         items: str = "", top: int = 5, profile: str = "", include_plan: bool = False,
+         items: str = "", top: int = 5, solve_profile: str = "", include_plan: bool = False,
          max_matches: int = 10, build: str = "") -> JSONResponse:
+    # `profile` is the host's own parameter: the Desktop adds the Hermes profile it routes to on
+    # every request, so the workbench profile a read is scored with travels as `solve_profile`.
     if action not in READS:
         return JSONResponse({"ok": False, "code": "unknown_action", "error": f"no read named {action!r}"},
                             status_code=404)
@@ -161,7 +163,7 @@ def read(action: str, model: str = "", dataset: str = "", run: str = "", runs: s
         args = {"build": build or None, "model": model or None}
     if action == "fill":
         args = {"run": run or None, "dataset": dataset or None, "top": max(1, min(top, 50)),
-                "profile": profile or None, "items": [i for i in items.split(",") if i] or None}
+                "profile": solve_profile or None, "items": [i for i in items.split(",") if i] or None}
     return _call(READS[action], {k: v for k, v in args.items() if v is not None})
 
 
