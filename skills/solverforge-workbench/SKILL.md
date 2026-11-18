@@ -31,8 +31,10 @@ invent one; read it from a tool result.
 2. `solverforge_workbench_models`, then `solverforge_workbench_model` for the one that fits. Read the
    constraint list before promising what the model can express.
 3. Create a dataset with `solverforge_workbench_dataset_create`: a demo (`demo: ""` for the
-   default) to show the model, or the user's data as `plan` or `path`. To learn
-   a model's JSON format, create its demo dataset and read it with
+   default) to show the model, or the user's data as `plan` or `path`. Check the user's
+   data first with `solverforge_workbench_dataset_check`: it stores nothing and says
+   whether the model reads it, its size, every issue and its score as it stands. To
+   learn a model's JSON format, create its demo dataset and read it with
    `solverforge_workbench_dataset` and `include_plan: true`.
 4. Solve with `solverforge_workbench_solve`. It returns at once; follow the run with
    `solverforge_workbench_run` until its status is no longer queued or solving. Report the

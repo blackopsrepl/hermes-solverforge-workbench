@@ -60,6 +60,8 @@ WRITES = {
     "profile_import": "solverforge_workbench_profile_import",
     "experiment_delete": "solverforge_workbench_experiment_delete",
     "model_remove": "solverforge_workbench_model_remove",
+    # Stores nothing, but carries a whole plan: a POST like the writes.
+    "dataset_check": "solverforge_workbench_dataset_check",
 }
 # Writes that delete: refused unless the body carries confirm: true.
 CONFIRMED = {"dataset_delete", "profile_delete", "experiment_delete", "model_remove"}

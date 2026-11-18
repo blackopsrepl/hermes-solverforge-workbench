@@ -78,6 +78,14 @@ SCHEMAS: list[dict[str, Any]] = [
            "settings": {**SETTINGS, "description": "Settings carried by the dataset itself; they win over "
                                                    "every profile. " + SETTINGS["description"]}},
           ["model"]),
+    _tool("solverforge_workbench_dataset_check",
+          "Check a planning problem before saving it as a dataset, without storing anything: whether the model "
+          "reads it, its size in the model's words, every issue (errors refuse it, warnings note it), and its "
+          "score as it stands under the model's default profile with the rules that cost score.",
+          {"model": {"type": "string"},
+           "plan": {"type": "object", "description": "The problem as JSON in the model's format"},
+           "path": {"type": "string", "description": "Path to a JSON file holding the problem"}},
+          ["model"]),
     _tool("solverforge_workbench_datasets",
           "List datasets, newest first, with each one's latest run. Filter by model, name/id text or tag.",
           {"model": {"type": "string"}, "query": {"type": "string"}, "tag": {"type": "string"}}),

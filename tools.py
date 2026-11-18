@@ -59,6 +59,11 @@ class Tools:
                                          config=args.get("settings"))
         return ok(dataset=dataset)
 
+    def dataset_check(self, args: dict) -> str:
+        if ("plan" in args) == ("path" in args):
+            raise WorkbenchError("one_source", "give exactly one of plan or path")
+        return ok(**self.wb.check_dataset(args["model"], plan=args.get("plan"), path=args.get("path")))
+
     def datasets(self, args: dict) -> str:
         return ok(datasets=self.wb.datasets(args.get("model"), args.get("query", ""), args.get("tag", "")))
 

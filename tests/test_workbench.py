@@ -129,6 +129,23 @@ def test_cancelling_a_solve_keeps_the_best_plan(wb):
     assert wb.run(run["id"], with_plan=True)["plan"]["shifts"]
 
 
+def test_a_check_reads_scores_and_lists_issues_without_storing_anything(wb):
+    plan = wb.create_dataset(model_id="toy", demo="")
+    good = wb.dataset(plan["id"], with_plan=True)["plan"]
+    datasets, runs = len(wb.datasets()), len(wb.runs())
+    checked = wb.check_dataset("toy", plan=good)
+    assert checked["valid"] and checked["size"] == [{"label": "nurses", "count": 3}, {"label": "shifts", "count": 6}]
+    assert checked["score"] == "-6hard/0soft" and not checked["feasible"] and checked["profile"] == "Standard"
+    assert [c["name"] for c in checked["costing"]] == ["Unassigned shift"]
+    broken = wb.check_dataset("toy", plan={"nurses": [{"id": 0, "name": "solo"}],
+                                           "shifts": [{"id": 0, "day": 0, "nurse_idx": 4}]})
+    assert not broken["valid"] and broken["issues"][0]["severity"] == "error"
+    unread = wb.check_dataset("toy", plan={"nurses": "three"})
+    assert not unread["valid"] and unread["issues"][0]["code"] == "invalid_plan"
+    assert not wb.check_dataset("toy", plan=[1, 2])["valid"]
+    assert (len(wb.datasets()), len(wb.runs())) == (datasets, runs)
+
+
 def test_a_dataset_error_marks_the_solve_invalid_with_the_engines_issues(wb):
     dataset = wb.create_dataset(model_id="toy", plan={
         "nurses": [{"id": 0, "name": "solo"}],

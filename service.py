@@ -285,6 +285,31 @@ class Workbench:
         self.changed("dataset", id=dataset["id"])
         return self.dataset_view(dataset)
 
+    def check_dataset(self, model_id: str, plan: Any = None, path: str | None = None) -> dict[str, Any]:
+        """Whether the model reads ``plan`` and how it scores as it stands, without storing anything.
+        What was checked is what create_dataset saves: the same JSON, read the same way."""
+        self.model_record(model_id)
+        if path is not None:
+            plan = self._read_json(path)
+        if not isinstance(plan, dict):
+            return {"valid": False, "size": [], "issues": [
+                {"severity": "error", "code": "invalid_plan", "message": "a dataset is a JSON object"}]}
+        size = self.size_of(model_id, plan)
+        profile = self.profile_record(model_id, None)
+        settings = self.effective_settings({"parent_id": None, "config": {}}, profile, None)
+        try:
+            answer = self._call(model_id, self._request("evaluate", model_id, plan, settings, max_matches=3))
+        except WorkbenchError as exc:
+            if exc.code not in ("invalid_plan", "invalid_dataset", "missing_plan"):
+                raise
+            issues = exc.detail.get("issues") or [{"severity": "error", "code": exc.code, "message": exc.message}]
+            return {"valid": False, "size": size, "issues": issues}
+        costing = [{key: c.get(key) for key in ("name", "level", "score", "match_count")}
+                   for c in answer.get("analysis") or [] if c.get("score") and not _zero(c["score"])]
+        return {"valid": True, "size": size, "issues": answer.get("issues") or [], "score": answer["score"],
+                "feasible": bool(answer.get("feasible")), "kpis": answer.get("kpis") or [],
+                "costing": costing, "profile": (profile or {}).get("name")}
+
     def _read_json(self, path: str) -> Any:
         file = Path(os.path.expanduser(path))
         if not file.is_file():

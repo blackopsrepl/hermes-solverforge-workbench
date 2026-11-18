@@ -21,6 +21,7 @@ provides_tools:
   - solverforge_workbench_model_register
   - solverforge_workbench_model_remove
   - solverforge_workbench_dataset_create
+  - solverforge_workbench_dataset_check
   - solverforge_workbench_datasets
   - solverforge_workbench_dataset
   - solverforge_workbench_dataset_update
