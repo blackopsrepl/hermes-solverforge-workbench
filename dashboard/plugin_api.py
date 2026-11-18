@@ -91,6 +91,8 @@ def _package():
                 sys.modules.pop(_PACKAGE, None)
                 raise
             _LOADED.append(module)
+            # This process serves the Desktop: follow live solves and builds here and push them to it.
+            module.watcher.start()
     return _LOADED[0]
 
 

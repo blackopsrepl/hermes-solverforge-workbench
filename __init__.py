@@ -16,6 +16,7 @@ from .engine_bin import StockEngine
 from .service import Workbench
 from .store import Store
 from .tools import tool_table
+from .watch import Watcher
 
 NAME = "solverforge-workbench"
 TOOLSET = "solverforge-workbench"
@@ -40,6 +41,17 @@ def broadcast(what: str, detail: dict) -> None:
     from hermes_cli.plugin_events import broadcast_plugin_event
 
     broadcast_plugin_event(NAME, "changed", {"what": what, **detail})
+
+
+def emit(event: str, payload: dict) -> None:
+    """Push one event (run_progress, build, changed) to the Desktop half."""
+    from hermes_cli.plugin_events import broadcast_plugin_event
+
+    broadcast_plugin_event(NAME, event, payload)
+
+
+# Started by the page backend, which runs in the process the Desktop is connected to.
+watcher = Watcher(lambda: [found.store for found in list(_workbenches.values())], emit)
 
 
 def workbench(get_config=None) -> Workbench:
