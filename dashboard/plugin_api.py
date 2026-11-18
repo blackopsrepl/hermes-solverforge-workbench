@@ -44,6 +44,7 @@ WRITES = {
     "solve": "solverforge_workbench_solve",
     "evaluate": "solverforge_workbench_evaluate",
     "cancel": "solverforge_workbench_cancel",
+    "run_update": "solverforge_workbench_run_update",
     "profile_save": "solverforge_workbench_profile_save",
     "profile_default": "solverforge_workbench_profile_default",
     "dataset_create": "solverforge_workbench_dataset_create",

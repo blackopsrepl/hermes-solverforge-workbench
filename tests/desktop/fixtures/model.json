@@ -6,8 +6,17 @@
   "name": "Toy roster",
   "version": "0.0.0-testkit",
   "source": null,
+  "changed": null,
+  "summary": "",
   "demos": [
    "WEEK"
+  ],
+  "demo_info": [
+   {
+    "id": "WEEK",
+    "name": "Week",
+    "summary": ""
+   }
   ],
   "weights": true,
   "parameters": [],
@@ -48,10 +57,10 @@
     "is_default": 0,
     "read_only": 1,
     "revision": 1,
-    "updated_at": "2026-11-15T17:48:08.650+00:00"
+    "updated_at": "2026-11-18T10:41:36.673+00:00"
    },
    {
-    "id": "ae7f37cf1637",
+    "id": "ee741dfed475",
     "model_id": "toy",
     "name": "Blind",
     "description": "",
@@ -63,10 +72,10 @@
     "is_default": 0,
     "read_only": 0,
     "revision": 1,
-    "updated_at": "2026-11-15T17:48:10.910+00:00"
+    "updated_at": "2026-11-18T10:41:38.932+00:00"
    },
    {
-    "id": "cb8ce54301fb",
+    "id": "4d09d17d5d2c",
     "model_id": "toy",
     "name": "Lenient",
     "description": "",
@@ -78,7 +87,7 @@
     "is_default": 0,
     "read_only": 0,
     "revision": 1,
-    "updated_at": "2026-11-15T17:48:08.664+00:00"
+    "updated_at": "2026-11-18T10:41:36.686+00:00"
    }
   ],
   "default_profile": "toy-standard"

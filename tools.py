@@ -112,6 +112,9 @@ class Tools:
     def runs(self, args: dict) -> str:
         return ok(runs=self.wb.runs(args.get("dataset"), args.get("model"), args.get("status")))
 
+    def run_update(self, args: dict) -> str:
+        return ok(run=self.wb.rename_run(args["run"], args.get("label", "")))
+
     def cancel(self, args: dict) -> str:
         return ok(run=self.wb.cancel(args["run"]))
 

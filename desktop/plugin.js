@@ -173,7 +173,7 @@ function Loading({ query, children }) {
 }
 
 const levels = counts => ['hard', 'medium', 'soft'].filter(l => counts[l]).map(l => `${counts[l]} ${l}`).join(' · ')
-const size = sizes => Object.entries(sizes || {}).map(([k, v]) => `${v} ${k}`).join(' · ')
+const size = sizes => (Array.isArray(sizes) ? sizes : []).map(s => `${s.count.toLocaleString()} ${s.label}`).join(' · ')
 const when = stamp => (stamp ? String(stamp).replace('T', ' ').slice(0, 16) : '')
 
 // ---- views ---------------------------------------------------------------------

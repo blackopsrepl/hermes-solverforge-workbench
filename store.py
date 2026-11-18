@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS datasets (
     plan        TEXT NOT NULL,           -- the problem, JSON
     config      TEXT NOT NULL DEFAULT '{}', -- settings carried by the dataset itself
     patch       TEXT,                    -- the JSON Patch that produced it, if any
+    size        TEXT,                    -- [{label, count}], counted once when it is stored
     created_at  TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS datasets_model ON datasets(model_id, created_at);
@@ -79,6 +80,7 @@ CREATE TABLE IF NOT EXISTS runs (
     experiment_id    TEXT REFERENCES experiments(id) ON DELETE CASCADE,
     judged_score     TEXT,                    -- experiments: the plan scored under the judge profile
     judged_feasible  INTEGER,
+    label            TEXT,                    -- a name the user gave the run
     created_at       TEXT NOT NULL,
     started_at       TEXT,
     finished_at      TEXT
@@ -107,7 +109,7 @@ CREATE TABLE IF NOT EXISTS run_points (
 
 JSON_COLUMNS = {
     "manifest", "tags", "plan", "config", "patch", "weights", "params", "solve",
-    "overrides", "analysis", "kpis", "issues", "telemetry", "error", "datasets", "profiles",
+    "overrides", "analysis", "kpis", "issues", "telemetry", "error", "datasets", "profiles", "size",
 }
 
 
@@ -131,6 +133,10 @@ def _row(row: sqlite3.Row | None) -> dict[str, Any] | None:
         value = row[key]
         out[key] = json.loads(value) if key in JSON_COLUMNS and isinstance(value, str) else value
     return out
+
+
+def _columns(db: sqlite3.Connection, table: str) -> set[str]:
+    return {row["name"] for row in db.execute(f"PRAGMA table_info({table})").fetchall()}
 
 
 def _dump(value: Any) -> str:
@@ -200,6 +206,10 @@ class Store:
             db.execute("ALTER TABLE runs ADD COLUMN experiment_id TEXT REFERENCES experiments(id) ON DELETE CASCADE")
             db.execute("ALTER TABLE runs ADD COLUMN judged_score TEXT")
             db.execute("ALTER TABLE runs ADD COLUMN judged_feasible INTEGER")
+        if "datasets" in sql and "size" not in _columns(db, "datasets"):
+            db.execute("ALTER TABLE datasets ADD COLUMN size TEXT")
+        if "runs" in sql and "label" not in _columns(db, "runs"):
+            db.execute("ALTER TABLE runs ADD COLUMN label TEXT")
 
     def one(self, sql: str, *args: Any) -> dict[str, Any] | None:
         return _row(self._db().execute(sql, args).fetchone())
@@ -239,14 +249,16 @@ class Store:
 
     def add_dataset(self, *, model_id: str, name: str, plan: Any, origin: str,
                     tags: list[str] | None = None, parent_id: str | None = None,
-                    config: dict | None = None, patch: Any = None) -> dict[str, Any]:
+                    config: dict | None = None, patch: Any = None,
+                    size: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         dataset_id = new_id()
         with self.tx() as db:
             db.execute(
-                "INSERT INTO datasets (id, model_id, name, tags, origin, parent_id, plan, config, patch, created_at)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO datasets (id, model_id, name, tags, origin, parent_id, plan, config, patch, size,"
+                " created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (dataset_id, model_id, name, _dump(tags or []), origin, parent_id, _dump(plan),
-                 _dump(config or {}), None if patch is None else _dump(patch), now()),
+                 _dump(config or {}), None if patch is None else _dump(patch),
+                 None if size is None else _dump(size), now()),
             )
         return self.dataset(dataset_id)  # type: ignore[return-value]
 
@@ -255,13 +267,18 @@ class Store:
 
     def datasets(self, model_id: str | None = None, query: str = "", tag: str = "",
                  limit: int = 100) -> list[dict[str, Any]]:
-        sql = ("SELECT id, model_id, name, tags, origin, parent_id, config, created_at FROM datasets"
-               " WHERE (? = '' OR model_id = ?) AND (? = '' OR name LIKE ? OR id LIKE ?)"
-               " AND (? = '' OR EXISTS (SELECT 1 FROM json_each(datasets.tags) WHERE value = ?))"
-               " ORDER BY created_at DESC LIMIT ?")
+        sql = ("SELECT d.id, d.model_id, d.name, d.tags, d.origin, d.parent_id, d.config, d.size, d.created_at,"
+               " p.name AS parent_name FROM datasets d LEFT JOIN datasets p ON p.id = d.parent_id"
+               " WHERE (? = '' OR d.model_id = ?) AND (? = '' OR d.name LIKE ? OR d.id LIKE ?)"
+               " AND (? = '' OR EXISTS (SELECT 1 FROM json_each(d.tags) WHERE value = ?))"
+               " ORDER BY d.created_at DESC LIMIT ?")
         like = f"%{query}%"
         model = model_id or ""
         return self.all(sql, model, model, query, like, f"{query}%", tag, tag, limit)
+
+    def set_dataset_size(self, dataset_id: str, size: list[dict[str, Any]]) -> None:
+        with self.tx() as db:
+            db.execute("UPDATE datasets SET size = ? WHERE id = ?", (_dump(size), dataset_id))
 
     def update_dataset(self, dataset_id: str, *, name: str | None = None,
                        tags: list[str] | None = None) -> dict[str, Any] | None:
@@ -344,17 +361,18 @@ class Store:
         return self.run(run_id)  # type: ignore[return-value]
 
     def run(self, run_id: str, with_plan: bool = True) -> dict[str, Any] | None:
-        columns = "*" if with_plan else ", ".join(c for c in RUN_SUMMARY_COLUMNS)
-        return self.one(f"SELECT {columns} FROM runs WHERE id = ?", run_id)
+        columns = "r.*" if with_plan else ", ".join(f"r.{c}" for c in RUN_SUMMARY_COLUMNS)
+        return self.one(f"SELECT {columns}, {RUN_NAMES} FROM runs r {RUN_JOINS} WHERE r.id = ?", run_id)
 
     def runs(self, *, dataset_id: str | None = None, model_id: str | None = None,
              status: str | None = None, experiment_id: str | None = None,
              limit: int | None = 100) -> list[dict[str, Any]]:
-        columns = ", ".join(RUN_SUMMARY_COLUMNS)
+        columns = ", ".join(f"r.{c}" for c in RUN_SUMMARY_COLUMNS)
         return self.all(
-            f"SELECT {columns} FROM runs WHERE (? IS NULL OR dataset_id = ?) AND (? IS NULL OR model_id = ?)"
-            " AND (? IS NULL OR status = ?) AND (? IS NULL OR experiment_id = ?)"
-            " ORDER BY created_at DESC LIMIT ?",
+            f"SELECT {columns}, {RUN_NAMES} FROM runs r {RUN_JOINS}"
+            " WHERE (? IS NULL OR r.dataset_id = ?) AND (? IS NULL OR r.model_id = ?)"
+            " AND (? IS NULL OR r.status = ?) AND (? IS NULL OR r.experiment_id = ?)"
+            " ORDER BY r.created_at DESC LIMIT ?",
             dataset_id, dataset_id, model_id, model_id, status, status, experiment_id, experiment_id,
             -1 if limit is None else limit,
         )
@@ -429,5 +447,8 @@ class Store:
 RUN_SUMMARY_COLUMNS = (
     "id", "dataset_id", "model_id", "kind", "profile_id", "overrides", "config", "priority", "status",
     "cancel_requested", "pid", "initial_score", "score", "feasible", "kpis", "issues", "telemetry", "error",
-    "experiment_id", "judged_score", "judged_feasible", "created_at", "started_at", "finished_at",
+    "experiment_id", "judged_score", "judged_feasible", "label", "created_at", "started_at", "finished_at",
 )
+# Names shown beside a run: its profile's and its dataset's.
+RUN_NAMES = "p.name AS profile_name, d.name AS dataset_name"
+RUN_JOINS = "LEFT JOIN profiles p ON p.id = r.profile_id LEFT JOIN datasets d ON d.id = r.dataset_id"

@@ -1,16 +1,16 @@
 {
  "ok": true,
  "experiment": {
-  "id": "84531df7eec8",
+  "id": "905dc543de3c",
   "model_id": "toy",
   "name": "Experiment 1",
   "datasets": [
-   "5a8c2a1e6a13",
-   "1701c4d2c54b"
+   "c14757d960aa",
+   "215bd795f88e"
   ],
   "profiles": [
    "toy-standard",
-   "ae7f37cf1637"
+   "ee741dfed475"
   ],
   "judge": "toy-standard",
   "repeats": 1,
@@ -22,15 +22,15 @@
     "best_score": "0hard/0soft"
    }
   },
-  "created_at": "2026-11-15T17:48:10.917+00:00",
+  "created_at": "2026-11-18T10:41:38.939+00:00",
   "judge_name": "Standard",
   "dataset_names": {
-   "5a8c2a1e6a13": "Demo Week",
-   "1701c4d2c54b": "Demo Week B"
+   "c14757d960aa": "Demo Week",
+   "215bd795f88e": "Demo Week B"
   },
   "profile_names": {
    "toy-standard": "Standard",
-   "ae7f37cf1637": "Blind"
+   "ee741dfed475": "Blind"
   },
   "statuses": {
    "completed": 4
@@ -38,34 +38,13 @@
   "done": true,
   "cells": [
    {
-    "dataset_id": "5a8c2a1e6a13",
+    "dataset_id": "c14757d960aa",
     "profile_id": "toy-standard",
     "runs": 1,
     "finished": 1,
     "feasible": 1,
     "best": {
-     "run_id": "036b73a65e1c",
-     "score": "0hard/0soft",
-     "feasible": true
-    },
-    "median": "0hard/0soft",
-    "worst": "0hard/0soft",
-    "mean_elapsed_ms": 1259,
-    "kpis": {
-     "assigned": 6.0
-    },
-    "run_ids": [
-     "036b73a65e1c"
-    ]
-   },
-   {
-    "dataset_id": "5a8c2a1e6a13",
-    "profile_id": "ae7f37cf1637",
-    "runs": 1,
-    "finished": 1,
-    "feasible": 1,
-    "best": {
-     "run_id": "d97f04e0fb06",
+     "run_id": "a2057ebe537e",
      "score": "0hard/0soft",
      "feasible": true
     },
@@ -76,38 +55,17 @@
      "assigned": 6.0
     },
     "run_ids": [
-     "d97f04e0fb06"
+     "a2057ebe537e"
     ]
    },
    {
-    "dataset_id": "1701c4d2c54b",
-    "profile_id": "toy-standard",
+    "dataset_id": "c14757d960aa",
+    "profile_id": "ee741dfed475",
     "runs": 1,
     "finished": 1,
     "feasible": 1,
     "best": {
-     "run_id": "c74c17962b5e",
-     "score": "0hard/0soft",
-     "feasible": true
-    },
-    "median": "0hard/0soft",
-    "worst": "0hard/0soft",
-    "mean_elapsed_ms": 1138,
-    "kpis": {
-     "assigned": 6.0
-    },
-    "run_ids": [
-     "c74c17962b5e"
-    ]
-   },
-   {
-    "dataset_id": "1701c4d2c54b",
-    "profile_id": "ae7f37cf1637",
-    "runs": 1,
-    "finished": 1,
-    "feasible": 1,
-    "best": {
-     "run_id": "fb51b2b3faf3",
+     "run_id": "45615205c828",
      "score": "0hard/0soft",
      "feasible": true
     },
@@ -118,7 +76,49 @@
      "assigned": 6.0
     },
     "run_ids": [
-     "fb51b2b3faf3"
+     "45615205c828"
+    ]
+   },
+   {
+    "dataset_id": "215bd795f88e",
+    "profile_id": "toy-standard",
+    "runs": 1,
+    "finished": 1,
+    "feasible": 1,
+    "best": {
+     "run_id": "77cd048082b0",
+     "score": "0hard/0soft",
+     "feasible": true
+    },
+    "median": "0hard/0soft",
+    "worst": "0hard/0soft",
+    "mean_elapsed_ms": 2,
+    "kpis": {
+     "assigned": 6.0
+    },
+    "run_ids": [
+     "77cd048082b0"
+    ]
+   },
+   {
+    "dataset_id": "215bd795f88e",
+    "profile_id": "ee741dfed475",
+    "runs": 1,
+    "finished": 1,
+    "feasible": 1,
+    "best": {
+     "run_id": "d5c2e32fbba3",
+     "score": "0hard/0soft",
+     "feasible": true
+    },
+    "median": "0hard/0soft",
+    "worst": "0hard/0soft",
+    "mean_elapsed_ms": 0,
+    "kpis": {
+     "assigned": 6.0
+    },
+    "run_ids": [
+     "d5c2e32fbba3"
     ]
    }
   ],
@@ -133,7 +133,7 @@
     "place": 1
    },
    {
-    "profile_id": "ae7f37cf1637",
+    "profile_id": "ee741dfed475",
     "profile": "Blind",
     "finished": 2,
     "feasible": 2,

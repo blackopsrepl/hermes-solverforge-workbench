@@ -35,6 +35,7 @@ provides_tools:
   - solverforge_workbench_evaluate
   - solverforge_workbench_run
   - solverforge_workbench_runs
+  - solverforge_workbench_run_update
   - solverforge_workbench_cancel
   - solverforge_workbench_explain
   - solverforge_workbench_fill

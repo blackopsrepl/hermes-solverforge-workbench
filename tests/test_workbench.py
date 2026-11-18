@@ -66,7 +66,7 @@ def test_the_engines_models_join_the_catalog_with_a_read_only_standard_profile(w
 def test_a_demo_dataset_is_stored_with_its_size(wb):
     dataset = demo(wb, tags=["week", "demo"])
     assert dataset["origin"] == "demo"
-    assert dataset["size"] == {"nurses": 3, "shifts": 6}
+    assert dataset["size"] == [{"label": "nurses", "count": 3}, {"label": "shifts", "count": 6}]
     assert wb.datasets(model_id="toy", tag="week")[0]["id"] == dataset["id"]
     assert wb.datasets(query="nothing-like-this") == []
 
@@ -148,7 +148,7 @@ def test_a_patch_makes_a_child_dataset_and_leaves_the_parent_alone(wb):
         {"op": "remove", "path": "/shifts/[id=5]"},
     ], name="Pinned Monday")
     assert child["parent_id"] == parent["id"]
-    assert child["size"]["shifts"] == 5
+    assert {s["label"]: s["count"] for s in child["size"]}["shifts"] == 5
     assert wb.dataset(parent["id"])["children"] == [child["id"]]
     assert wb.dataset_record(parent["id"])["plan"]["shifts"][0]["nurse_idx"] is None
     with pytest.raises(WorkbenchError) as error:
@@ -196,7 +196,7 @@ def test_tools_return_codes_and_messages_the_agent_can_act_on(wb):
     answer = json.loads(table["solverforge_workbench_model"]({"model": "nope"}))
     assert answer == {"ok": False, "code": "unknown_model", "error": "no model is named 'nope'", "models": ["toy"]}
     created = json.loads(table["solverforge_workbench_dataset_create"]({"model": "toy", "demo": ""}))
-    assert created["ok"] and created["dataset"]["size"]["shifts"] == 6
+    assert created["ok"] and {s["label"]: s["count"] for s in created["dataset"]["size"]}["shifts"] == 6
     missing = json.loads(table["solverforge_workbench_solve"]({}))
     assert missing["code"] == "missing_argument"
 
@@ -346,7 +346,44 @@ def test_a_v0_1_database_migrates_keeping_its_records(tmp_path):
     store = Store(path)
     assert store.dataset("d1")["name"] == "Old"
     assert store.run("r1")["experiment_id"] is None
+    assert store.dataset("d1")["size"] is None and store.run("r1")["label"] is None
     child = store.add_dataset(model_id="toy", name="Filled", plan={}, origin="fill", parent_id="d1")
     assert child["origin"] == "fill"
     store.delete_dataset("d1")  # the rebuilt table keeps its cascade to runs
     assert store.run("r1") is None
+
+
+def test_a_run_is_named_with_its_dataset_and_profile_and_can_be_renamed(wb):
+    dataset = demo(wb, name="Small week")
+    run = wait_for(wb, wb.solve(dataset["id"], overrides={"solve": {"seconds": 2}})["id"])
+    brief = wb.runs(dataset_id=dataset["id"])[0]
+    assert (brief["dataset_name"], brief["profile_name"], brief["label"]) == ("Small week", "Standard", None)
+    assert isinstance(brief["elapsed_ms"], int)
+    assert wb.rename_run(run["id"], "  First try ")["label"] == "First try"
+    assert wb.run(run["id"])["label"] == "First try"
+    assert wb.rename_run(run["id"], "")["label"] is None
+    with pytest.raises(WorkbenchError):
+        wb.rename_run(run["id"], "x" * 121)
+
+
+def test_a_dataset_reads_its_size_and_its_parent_by_name(wb):
+    dataset = demo(wb, name="Small week")
+    child = wb.patch_dataset(dataset["id"], [], name="Small week, again")
+    listed = {d["id"]: d for d in wb.datasets()}
+    assert listed[child["id"]]["parent_name"] == "Small week"
+    assert listed[child["id"]]["size"] == listed[dataset["id"]]["size"]
+    assert wb.dataset(child["id"])["parent_name"] == "Small week"
+    # A dataset stored before sizes were kept is counted once on its first read.
+    wb.store._db().execute("UPDATE datasets SET size = NULL WHERE id = ?", (dataset["id"],))
+    assert {d["id"]: d for d in wb.datasets()}[dataset["id"]]["size"] == listed[dataset["id"]]["size"]
+    assert wb.store.dataset(dataset["id"])["size"] == listed[dataset["id"]]["size"]
+
+
+def test_a_model_card_carries_its_summary_demos_and_latest_solve(wb):
+    card = next(m for m in wb.models() if m["id"] == "toy")
+    assert card["latest_run"] is None
+    assert [d["id"] for d in card["demo_info"]] == card["demos"]
+    dataset = demo(wb)
+    run = wait_for(wb, wb.solve(dataset["id"], overrides={"solve": {"seconds": 2}})["id"])
+    card = next(m for m in wb.models() if m["id"] == "toy")
+    assert card["latest_run"]["id"] == run["id"]

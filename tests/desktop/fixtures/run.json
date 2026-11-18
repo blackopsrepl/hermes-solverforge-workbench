@@ -1,8 +1,8 @@
 {
  "ok": true,
  "run": {
-  "id": "cf7fc7204f88",
-  "dataset_id": "5a8c2a1e6a13",
+  "id": "f97d21b95e33",
+  "dataset_id": "c14757d960aa",
   "model_id": "toy",
   "kind": "solve",
   "status": "completed",
@@ -12,10 +12,14 @@
   "initial_score": "-6hard/0soft",
   "score": "0hard/0soft",
   "feasible": 1,
-  "created_at": "2026-11-15T17:48:08.685+00:00",
-  "started_at": "2026-11-15T17:48:08.782+00:00",
-  "finished_at": "2026-11-15T17:48:10.814+00:00",
+  "label": null,
+  "profile_name": "Standard",
+  "dataset_name": "Demo Week",
+  "created_at": "2026-11-18T10:41:36.706+00:00",
+  "started_at": "2026-11-18T10:41:36.772+00:00",
+  "finished_at": "2026-11-18T10:41:38.800+00:00",
   "error": null,
+  "elapsed_ms": 2000,
   "config": {
    "weights": {},
    "params": {},
@@ -40,9 +44,9 @@
   "issues": [],
   "telemetry": {
    "elapsed_ms": 2000,
-   "moves_accepted": 186798,
-   "moves_evaluated": 300449,
-   "steps": 186809
+   "moves_accepted": 238286,
+   "moves_evaluated": 512278,
+   "steps": 238917
   },
   "points": [
    {
@@ -51,10 +55,6 @@
    },
    {
     "elapsed_ms": 1000,
-    "score": "0hard/-1soft"
-   },
-   {
-    "elapsed_ms": 1452,
     "score": "0hard/0soft"
    },
    {

@@ -167,6 +167,8 @@ class Workbench:
             out.append({
                 "id": model["id"], "kind": model["kind"], "name": model["name"], "version": model["version"],
                 "source": model.get("source"), "changed": self._changed_since_registration(model),
+                "summary": description.get("summary") or "", "demo_info": _demo_info(description),
+                "latest_run": self._latest_run(model["id"]),
                 "view": description.get("view"), "constraints": len(constraints),
                 "levels": {level: sum(1 for c in constraints if c.get("level") == level)
                            for level in ("hard", "medium", "soft")},
@@ -176,12 +178,19 @@ class Workbench:
             })
         return out
 
+    def _latest_run(self, model_id: str) -> dict[str, Any] | None:
+        """The model's newest finished solve, for its card."""
+        rows = [r for r in self.store.runs(model_id=model_id, limit=20)
+                if r["kind"] == "solve" and r["status"] in ("completed", "incomplete")]
+        return self.run_brief(rows[0]) if rows else None
+
     def model(self, model_id: str) -> dict[str, Any]:
         model = self.model_record(model_id)
         description = model["manifest"]
         return {"id": model["id"], "kind": model["kind"], "name": model["name"], "version": model["version"],
                 "source": model.get("source"), "changed": self._changed_since_registration(model),
-                "demos": description.get("demos", []),
+                "summary": description.get("summary") or "",
+                "demos": description.get("demos", []), "demo_info": _demo_info(description),
                 "weights": description.get("weights", False),
                 "parameters": description.get("parameters", []),
                 "kpis": description.get("kpis", []),
@@ -271,7 +280,8 @@ class Workbench:
         if not isinstance(plan, dict):
             raise WorkbenchError("invalid_plan", "a dataset is a JSON object")
         dataset = self.store.add_dataset(model_id=model_id, name=name or "Dataset", plan=plan, origin=origin,
-                                         tags=_tags(tags), config=check_settings(config))
+                                         tags=_tags(tags), config=check_settings(config),
+                                         size=self.size_of(model_id, plan))
         self.changed("dataset", id=dataset["id"])
         return self.dataset_view(dataset)
 
@@ -292,14 +302,31 @@ class Workbench:
             raise WorkbenchError("unknown_dataset", f"no dataset has id {dataset_id!r}")
         return dataset
 
+    def size_of(self, model_id: str, plan: Any) -> list[dict[str, Any]]:
+        """How big a plan is, in the model's words: [{label, count}]."""
+        if not isinstance(plan, dict):
+            return []
+        fields = (self.model_record(model_id)["manifest"].get("size") or [])
+        if not fields:
+            return [{"label": _words(key), "count": len(value)} for key, value in plan.items()
+                    if isinstance(value, list) and value]
+        return [{"label": f["label"], "count": _count(plan, f["path"])} for f in fields]
+
     def dataset_view(self, dataset: dict[str, Any], with_plan: bool = False) -> dict[str, Any]:
         view = {key: dataset[key] for key in
-                ("id", "model_id", "name", "tags", "origin", "parent_id", "config", "created_at") if key in dataset}
+                ("id", "model_id", "name", "tags", "origin", "parent_id", "parent_name", "config", "created_at")
+                if key in dataset}
+        size = dataset.get("size")
         plan = dataset.get("plan")
-        if isinstance(plan, dict):
-            view["size"] = {key: len(value) for key, value in plan.items() if isinstance(value, list)}
-            if with_plan:
-                view["plan"] = plan
+        if size is None:
+            # Datasets stored before sizes were kept: count once, keep it.
+            if not isinstance(plan, dict):
+                plan = (self.store.dataset(dataset["id"]) or {}).get("plan")
+            size = self.size_of(dataset["model_id"], plan)
+            self.store.set_dataset_size(dataset["id"], size)
+        view["size"] = size
+        if isinstance(plan, dict) and with_plan:
+            view["plan"] = plan
         if dataset.get("patch") is not None:
             view["patch"] = dataset["patch"]
         return view
@@ -316,6 +343,8 @@ class Workbench:
     def dataset(self, dataset_id: str, with_plan: bool = False) -> dict[str, Any]:
         dataset = self.dataset_record(dataset_id)
         view = self.dataset_view(dataset, with_plan)
+        if dataset.get("parent_id"):
+            view["parent_name"] = (self.store.dataset(dataset["parent_id"]) or {}).get("name")
         view["runs"] = [self.run_brief(run) for run in self.store.runs(dataset_id=dataset_id)]
         view["children"] = [d["id"] for d in self.store.all("SELECT id FROM datasets WHERE parent_id = ?",
                                                             dataset_id)]
@@ -338,7 +367,7 @@ class Workbench:
         dataset = self.store.add_dataset(
             model_id=parent["model_id"], name=name or f"{parent['name']} (revised)", plan=plan,
             origin="patch" if operations else "run", tags=parent["tags"], parent_id=dataset_id,
-            config=parent["config"], patch=operations or None)
+            config=parent["config"], patch=operations or None, size=self.size_of(parent["model_id"], plan))
         self.changed("dataset", id=dataset["id"])
         return self.dataset_view(dataset)
 
@@ -567,9 +596,21 @@ class Workbench:
         return run
 
     def run_brief(self, run: dict[str, Any]) -> dict[str, Any]:
-        return {key: run.get(key) for key in ("id", "dataset_id", "model_id", "kind", "status", "priority",
-                                              "profile_id", "experiment_id", "initial_score", "score", "feasible",
-                                              "created_at", "started_at", "finished_at", "error")}
+        brief = {key: run.get(key) for key in ("id", "dataset_id", "model_id", "kind", "status", "priority",
+                                               "profile_id", "experiment_id", "initial_score", "score", "feasible",
+                                               "label", "profile_name", "dataset_name",
+                                               "created_at", "started_at", "finished_at", "error")}
+        brief["elapsed_ms"] = (run.get("telemetry") or {}).get("elapsed_ms")
+        return brief
+
+    def rename_run(self, run_id: str, label: str) -> dict[str, Any]:
+        """Names a run; an empty label goes back to naming it by its time."""
+        self.run_record(run_id)
+        if not isinstance(label, str) or len(label) > 120:
+            raise WorkbenchError("invalid_label", "a run's name is text of at most 120 characters")
+        self.store.update_run(run_id, label=label.strip() or None)
+        self.changed("run", id=run_id)
+        return self.run_brief(self.store.run(run_id, with_plan=False))  # type: ignore[arg-type]
 
     def run(self, run_id: str, with_plan: bool = False, max_matches: int = 3) -> dict[str, Any]:
         self.reap()
@@ -637,7 +678,8 @@ class Workbench:
         child = self.store.add_dataset(
             model_id=dataset["model_id"], name=name or f"{dataset['name']} (filled)", plan=answer["plan"],
             origin="fill", tags=dataset["tags"], parent_id=dataset["id"], config=dataset["config"],
-            patch=[{"op": "fill", "item": item, "value": value, **({"from_run": run_id} if run_id else {})}])
+            patch=[{"op": "fill", "item": item, "value": value, **({"from_run": run_id} if run_id else {})}],
+            size=self.size_of(dataset["model_id"], answer["plan"]))
         self.changed("dataset", id=child["id"])
         return self.dataset_view(child)
 
@@ -956,6 +998,31 @@ def _cell(dataset_id: str, profile_id: str, runs: list[dict[str, Any]]) -> dict[
 def _awaiting_judge(run: dict[str, Any]) -> bool:
     """A finished plan the judge has not scored yet: it ended after this read's judging pass."""
     return run["status"] in ("completed", "incomplete") and bool(run.get("score")) and not run.get("judged_score")
+
+
+def _demo_info(description: dict[str, Any]) -> list[dict[str, Any]]:
+    """Each demo with a name and summary; an older engine lists bare ids."""
+    info = description.get("demo_info")
+    if info:
+        return info
+    return [{"id": d, "name": d.replace("_", " ").capitalize(), "summary": ""} for d in description.get("demos", [])]
+
+
+def _words(key: str) -> str:
+    """A wire key read as words: visitGroups -> visit groups."""
+    return re.sub(r"(?<=[a-z0-9])([A-Z])", r" \1", key).replace("_", " ").lower()
+
+
+def _count(plan: dict[str, Any], path: str) -> int:
+    """Items at ``list`` or ``list.nested`` (summed over the outer list) in a plan."""
+    outer, _, inner = path.partition(".")
+    items = plan.get(outer)
+    if not isinstance(items, list):
+        return 0
+    if not inner:
+        return len(items)
+    return sum(len(item.get(inner) or []) for item in items
+               if isinstance(item, dict) and isinstance(item.get(inner), list))
 
 
 def _tags(tags: list[str] | None) -> list[str]:

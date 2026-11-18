@@ -3,12 +3,12 @@
  "model_id": "toy",
  "solves": [
   {
-   "run_id": "cf7fc7204f88",
-   "dataset_id": "5a8c2a1e6a13",
+   "run_id": "f97d21b95e33",
+   "dataset_id": "c14757d960aa",
    "dataset": "Demo Week",
    "profile_id": "toy-standard",
    "experiment_id": null,
-   "finished_at": "2026-11-15T17:48:10.814+00:00",
+   "finished_at": "2026-11-18T10:41:38.800+00:00",
    "score": "0hard/0soft",
    "feasible": true,
    "kpis": {
@@ -16,25 +16,12 @@
    }
   },
   {
-   "run_id": "d97f04e0fb06",
-   "dataset_id": "5a8c2a1e6a13",
-   "dataset": "Demo Week",
-   "profile_id": "ae7f37cf1637",
-   "experiment_id": "84531df7eec8",
-   "finished_at": "2026-11-15T17:48:11.131+00:00",
-   "score": "0hard/0soft",
-   "feasible": true,
-   "kpis": {
-    "assigned": 6.0
-   }
-  },
-  {
-   "run_id": "036b73a65e1c",
-   "dataset_id": "5a8c2a1e6a13",
+   "run_id": "a2057ebe537e",
+   "dataset_id": "c14757d960aa",
    "dataset": "Demo Week",
    "profile_id": "toy-standard",
-   "experiment_id": "84531df7eec8",
-   "finished_at": "2026-11-15T17:48:12.327+00:00",
+   "experiment_id": "905dc543de3c",
+   "finished_at": "2026-11-18T10:41:39.065+00:00",
    "score": "0hard/0soft",
    "feasible": true,
    "kpis": {
@@ -42,12 +29,12 @@
    }
   },
   {
-   "run_id": "c74c17962b5e",
-   "dataset_id": "1701c4d2c54b",
+   "run_id": "77cd048082b0",
+   "dataset_id": "215bd795f88e",
    "dataset": "Demo Week B",
    "profile_id": "toy-standard",
-   "experiment_id": "84531df7eec8",
-   "finished_at": "2026-11-15T17:48:12.347+00:00",
+   "experiment_id": "905dc543de3c",
+   "finished_at": "2026-11-18T10:41:39.121+00:00",
    "score": "0hard/0soft",
    "feasible": true,
    "kpis": {
@@ -55,12 +42,25 @@
    }
   },
   {
-   "run_id": "fb51b2b3faf3",
-   "dataset_id": "1701c4d2c54b",
+   "run_id": "d5c2e32fbba3",
+   "dataset_id": "215bd795f88e",
    "dataset": "Demo Week B",
-   "profile_id": "ae7f37cf1637",
-   "experiment_id": "84531df7eec8",
-   "finished_at": "2026-11-15T17:48:12.417+00:00",
+   "profile_id": "ee741dfed475",
+   "experiment_id": "905dc543de3c",
+   "finished_at": "2026-11-18T10:41:39.170+00:00",
+   "score": "0hard/0soft",
+   "feasible": true,
+   "kpis": {
+    "assigned": 6.0
+   }
+  },
+  {
+   "run_id": "45615205c828",
+   "dataset_id": "c14757d960aa",
+   "dataset": "Demo Week",
+   "profile_id": "ee741dfed475",
+   "experiment_id": "905dc543de3c",
+   "finished_at": "2026-11-18T10:41:39.248+00:00",
    "score": "0hard/0soft",
    "feasible": true,
    "kpis": {
@@ -75,29 +75,29 @@
    "unit": "shifts",
    "points": [
     [
-     "2026-11-15T17:48:10.814+00:00",
+     "2026-11-18T10:41:38.800+00:00",
      6.0,
-     "cf7fc7204f88"
+     "f97d21b95e33"
     ],
     [
-     "2026-11-15T17:48:11.131+00:00",
+     "2026-11-18T10:41:39.065+00:00",
      6.0,
-     "d97f04e0fb06"
+     "a2057ebe537e"
     ],
     [
-     "2026-11-15T17:48:12.327+00:00",
+     "2026-11-18T10:41:39.121+00:00",
      6.0,
-     "036b73a65e1c"
+     "77cd048082b0"
     ],
     [
-     "2026-11-15T17:48:12.347+00:00",
+     "2026-11-18T10:41:39.170+00:00",
      6.0,
-     "c74c17962b5e"
+     "d5c2e32fbba3"
     ],
     [
-     "2026-11-15T17:48:12.417+00:00",
+     "2026-11-18T10:41:39.248+00:00",
      6.0,
-     "fb51b2b3faf3"
+     "45615205c828"
     ]
    ]
   }

@@ -1,8 +1,8 @@
 {
  "ok": true,
  "run": {
-  "id": "326ca88b4210",
-  "dataset_id": "5a8c2a1e6a13",
+  "id": "67d11d6c7158",
+  "dataset_id": "c14757d960aa",
   "model_id": "toy",
   "kind": "evaluate",
   "status": "completed",
@@ -12,10 +12,14 @@
   "initial_score": "-6hard/0soft",
   "score": "-6hard/0soft",
   "feasible": 0,
-  "created_at": "2026-11-15T17:48:08.670+00:00",
+  "label": null,
+  "profile_name": "Standard",
+  "dataset_name": "Demo Week",
+  "created_at": "2026-11-18T10:41:36.692+00:00",
   "started_at": null,
-  "finished_at": "2026-11-15T17:48:08.678+00:00",
+  "finished_at": "2026-11-18T10:41:36.699+00:00",
   "error": null,
+  "elapsed_ms": null,
   "config": {
    "weights": {},
    "params": {},

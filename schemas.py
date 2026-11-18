@@ -142,6 +142,10 @@ SCHEMAS: list[dict[str, Any]] = [
           {"dataset": {"type": "string"}, "model": {"type": "string"},
            "status": {"type": "string",
                       "enum": ["queued", "solving", "completed", "incomplete", "failed", "invalid"]}}),
+    _tool("solverforge_workbench_run_update",
+          "Name a run (\"Overtime-light, 5 min\"); an empty label goes back to naming it by the time it "
+          "started.",
+          {"run": {"type": "string"}, "label": {"type": "string", "maxLength": 120}}, ["run", "label"]),
     _tool("solverforge_workbench_cancel",
           "Stop a queued or running solve. A running solve keeps the best plan it found (status incomplete).",
           {"run": {"type": "string"}}, ["run"]),

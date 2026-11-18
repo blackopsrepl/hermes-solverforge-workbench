@@ -6,6 +6,37 @@
    "kind": "stock",
    "name": "Toy roster",
    "version": "0.0.0-testkit",
+   "source": null,
+   "changed": null,
+   "summary": "",
+   "demo_info": [
+    {
+     "id": "WEEK",
+     "name": "Week",
+     "summary": ""
+    }
+   ],
+   "latest_run": {
+    "id": "d5c2e32fbba3",
+    "dataset_id": "215bd795f88e",
+    "model_id": "toy",
+    "kind": "solve",
+    "status": "completed",
+    "priority": 3,
+    "profile_id": "ee741dfed475",
+    "experiment_id": "905dc543de3c",
+    "initial_score": "-6hard/0soft",
+    "score": "0hard/0soft",
+    "feasible": 1,
+    "label": null,
+    "profile_name": "Blind",
+    "dataset_name": "Demo Week B",
+    "created_at": "2026-11-18T10:41:38.961+00:00",
+    "started_at": "2026-11-18T10:41:39.127+00:00",
+    "finished_at": "2026-11-18T10:41:39.170+00:00",
+    "error": null,
+    "elapsed_ms": 0
+   },
    "view": null,
    "constraints": 3,
    "levels": {
