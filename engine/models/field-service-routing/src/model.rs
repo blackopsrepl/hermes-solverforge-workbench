@@ -4,7 +4,8 @@ use solverforge::{ConstraintSet, ConstraintWeights, HardMediumSoftScore, SolverM
 use solverforge_workbench_host::fill::{FillAnswer, FillRequest};
 use solverforge_workbench_host::view::View;
 use solverforge_workbench_host::{
-    Analysis, ConstraintInfo, EngineError, EntityName, Issue, Kpi, Model, ParameterInfo,
+    Analysis, ConstraintInfo, DemoInfo, EngineError, EntityName, Issue, Kpi, Model, ParameterInfo,
+    SizeField,
 };
 
 use crate::domain::Plan;
@@ -22,6 +23,34 @@ impl Model for FieldServiceRouting {
     }
     fn name() -> &'static str {
         "Field service routing"
+    }
+    fn summary() -> &'static str {
+        "Routes technicians and their vans through customer visits over several days: skills, time windows, linked and multi-technician visits, breaks and overtime."
+    }
+    fn demo_info() -> Vec<DemoInfo> {
+        vec![
+            DemoInfo {
+                id: "TURIN_TWO_DAYS",
+                name: "Turin, two days".into(),
+                summary: "30 technicians on 60 shifts and 223 visits around Turin and Aosta, with linked visits, lunch breaks and a two-day lift job in the Aosta valley.".into(),
+            },
+        ]
+    }
+    fn size_fields() -> Vec<SizeField> {
+        vec![
+            SizeField {
+                path: "visits",
+                label: "visits",
+            },
+            SizeField {
+                path: "vehicles",
+                label: "technicians",
+            },
+            SizeField {
+                path: "vehicles.shifts",
+                label: "shifts",
+            },
+        ]
     }
     fn constraints() -> impl ConstraintSet<Plan, HardMediumSoftScore> {
         crate::constraints::define_constraints()

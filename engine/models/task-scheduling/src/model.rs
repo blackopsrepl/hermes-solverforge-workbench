@@ -4,7 +4,8 @@ use solverforge::{ConstraintSet, ConstraintWeights, HardMediumSoftScore, SolverM
 use solverforge_workbench_host::fill::{FillAnswer, FillRequest};
 use solverforge_workbench_host::view::View;
 use solverforge_workbench_host::{
-    Analysis, ConstraintInfo, EngineError, EntityName, Issue, Kpi, Model, ParameterInfo,
+    Analysis, ConstraintInfo, DemoInfo, EngineError, EntityName, Issue, Kpi, Model, ParameterInfo,
+    SizeField,
 };
 
 use crate::domain::Plan;
@@ -22,6 +23,30 @@ impl Model for TaskScheduling {
     }
     fn name() -> &'static str {
         "Task scheduling"
+    }
+    fn summary() -> &'static str {
+        "Orders jobs on machines and people: dependencies, skills, changeovers, availability, due dates and the length of the schedule."
+    }
+    fn demo_info() -> Vec<DemoInfo> {
+        vec![
+            DemoInfo {
+                id: "FACTORY",
+                name: "Factory week".into(),
+                summary: "409 tasks on 24 machines and people over a week in March 2027, with changeovers and due dates.".into(),
+            },
+        ]
+    }
+    fn size_fields() -> Vec<SizeField> {
+        vec![
+            SizeField {
+                path: "tasks",
+                label: "tasks",
+            },
+            SizeField {
+                path: "resources",
+                label: "machines and people",
+            },
+        ]
     }
     fn constraints() -> impl ConstraintSet<Plan, HardMediumSoftScore> {
         crate::constraints::define_constraints()

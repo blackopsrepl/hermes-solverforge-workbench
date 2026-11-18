@@ -74,3 +74,26 @@ fn present_writes_assignments_back_by_id() {
     assert_eq!(json["shifts"][0]["employee"], "bob");
     assert_eq!(json["shifts"][0]["start"], "2027-03-01T07:00");
 }
+
+#[test]
+fn each_demo_summary_states_the_size_the_demo_has() {
+    use solverforge_workbench_host::Model;
+    type M = solverforge_workbench_employee_scheduling::EmployeeScheduling;
+    for demo in M::demo_info() {
+        let plan = M::present(&M::demo(demo.id).expect("the demo builds"));
+        for field in M::size_fields() {
+            let count = field.count(&plan);
+            assert!(
+                count > 0
+                    && demo.summary.contains(&format!(
+                        "{count} {}",
+                        field.label.split(' ').next().unwrap()
+                    )),
+                "{}: {count} {} not in {:?}",
+                demo.id,
+                field.label,
+                demo.summary
+            );
+        }
+    }
+}

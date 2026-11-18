@@ -18,7 +18,8 @@ pub mod view;
 
 pub use analysis::{Analysis, ConstraintReport, EntityReport, MatchReport};
 pub use model::{
-    ConstraintInfo, EntityName, Issue, Kpi, Level, Model, ParameterInfo, ScoreOf, Severity,
+    demo_name, ConstraintInfo, DemoInfo, EntityName, Issue, Kpi, Level, Model, ParameterInfo,
+    ScoreOf, Severity, SizeField,
 };
 pub use protocol::{Command, EngineError, Request, Termination};
 pub use run::{entry, run, run_io, Entry};

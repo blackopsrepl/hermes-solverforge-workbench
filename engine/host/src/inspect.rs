@@ -40,7 +40,10 @@ pub fn describe<M: Model, W: Write>(out: &mut Output<W>) {
         json!({
             "model": M::id(),
             "name": M::name(),
+            "summary": M::summary(),
             "demos": M::demos(),
+            "demo_info": M::demo_info(),
+            "size": M::size_fields(),
             "weights": has_weights,
             "parameters": M::parameters(),
             "view": M::view_kind(),

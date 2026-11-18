@@ -26,6 +26,10 @@ pub trait Model: 'static + Sized {
     fn id() -> &'static str;
     /// Display name.
     fn name() -> &'static str;
+    /// What the model plans, in one sentence a planner reads first.
+    fn summary() -> &'static str {
+        ""
+    }
     /// Builds the constraint set the plan is scored against.
     fn constraints() -> impl ConstraintSet<Self::Plan, ScoreOf<Self>>;
     /// The model's retained-job manager; one `static` per model.
@@ -36,6 +40,24 @@ pub trait Model: 'static + Sized {
     fn demo(id: &str) -> Option<Self::Plan>;
     /// The planning descriptor the macros generate: `Plan::descriptor()`.
     fn descriptor() -> SolutionDescriptor;
+
+    /// Each demo by id with a name and a one-line summary, default first. The
+    /// default names a demo after its id (`TURIN_TWO_DAYS` -> `Turin two days`).
+    fn demo_info() -> Vec<DemoInfo> {
+        Self::demos()
+            .into_iter()
+            .map(|id| DemoInfo {
+                id,
+                name: demo_name(id),
+                summary: String::new(),
+            })
+            .collect()
+    }
+    /// How a dataset's size reads: which lists of the plan's wire JSON to count
+    /// and what to call them. Empty counts every top-level list by its key.
+    fn size_fields() -> Vec<SizeField> {
+        Vec::new()
+    }
 
     /// Checks a plan and fills its derived fields before it is scored or solved.
     ///
@@ -103,6 +125,51 @@ pub trait Model: 'static + Sized {
             "freeze_unsupported",
             format!("model {} has no notion of time to freeze", Self::id()),
         ))
+    }
+}
+
+/// A demo dataset as a planner picks it.
+#[derive(Debug, Clone, Serialize)]
+pub struct DemoInfo {
+    pub id: &'static str,
+    pub name: String,
+    pub summary: String,
+}
+
+/// One count in a dataset's size: the items at `path` in the plan's wire JSON,
+/// a list key or `list.nested` (summed over the outer list), called `label`.
+#[derive(Debug, Clone, Serialize)]
+pub struct SizeField {
+    pub path: &'static str,
+    pub label: &'static str,
+}
+
+impl SizeField {
+    /// How many items sit at this field's path in a plan's wire JSON.
+    pub fn count(&self, plan: &serde_json::Value) -> usize {
+        let mut parts = self.path.splitn(2, '.');
+        let outer = parts.next().unwrap_or_default();
+        let Some(items) = plan.get(outer).and_then(|v| v.as_array()) else {
+            return 0;
+        };
+        match parts.next() {
+            None => items.len(),
+            Some(inner) => items
+                .iter()
+                .filter_map(|item| item.get(inner).and_then(|v| v.as_array()))
+                .map(Vec::len)
+                .sum(),
+        }
+    }
+}
+
+/// `TURIN_TWO_DAYS` -> `Turin two days`.
+pub fn demo_name(id: &str) -> String {
+    let words = id.to_lowercase().replace('_', " ");
+    let mut chars = words.chars();
+    match chars.next() {
+        Some(first) => first.to_uppercase().chain(chars).collect(),
+        None => String::new(),
     }
 }
 
@@ -184,4 +251,24 @@ impl Issue {
 pub enum Severity {
     Error,
     Warning,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_demo_is_named_after_its_id() {
+        assert_eq!(demo_name("TURIN_TWO_DAYS"), "Turin two days");
+        assert_eq!(demo_name(""), "");
+    }
+
+    #[test]
+    fn a_size_field_counts_a_list_or_a_nested_list() {
+        let plan = serde_json::json!({"vehicles": [{"shifts": [1, 2]}, {"shifts": [3]}, {}]});
+        let count = |path| SizeField { path, label: "x" }.count(&plan);
+        assert_eq!(count("vehicles"), 3);
+        assert_eq!(count("vehicles.shifts"), 3);
+        assert_eq!(count("visits"), 0);
+    }
 }

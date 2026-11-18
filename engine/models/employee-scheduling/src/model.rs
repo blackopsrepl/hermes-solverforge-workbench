@@ -3,7 +3,7 @@
 use solverforge::{ConstraintSet, ConstraintWeights, HardMediumSoftScore, SolverManager};
 use solverforge_workbench_host::view::View;
 use solverforge_workbench_host::{
-    Analysis, ConstraintInfo, EngineError, EntityName, Issue, Kpi, Model,
+    Analysis, ConstraintInfo, DemoInfo, EngineError, EntityName, Issue, Kpi, Model, SizeField,
 };
 
 use crate::domain::Plan;
@@ -21,6 +21,30 @@ impl Model for EmployeeScheduling {
     }
     fn name() -> &'static str {
         "Employee scheduling"
+    }
+    fn summary() -> &'static str {
+        "Assigns employees to shifts across a roster: skills, availability, rest between shifts, contracts, fairness and preferences."
+    }
+    fn demo_info() -> Vec<DemoInfo> {
+        vec![
+            DemoInfo {
+                id: "LARGE_MONTH",
+                name: "A month of shifts".into(),
+                summary: "50 employees and 536 shifts from 28 February to 29 March 2027, under three contracts.".into(),
+            },
+        ]
+    }
+    fn size_fields() -> Vec<SizeField> {
+        vec![
+            SizeField {
+                path: "employees",
+                label: "employees",
+            },
+            SizeField {
+                path: "shifts",
+                label: "shifts",
+            },
+        ]
     }
     fn constraints() -> impl ConstraintSet<Plan, HardMediumSoftScore> {
         crate::constraints::define_constraints()

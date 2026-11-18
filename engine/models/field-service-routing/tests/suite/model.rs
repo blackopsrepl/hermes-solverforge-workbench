@@ -538,3 +538,26 @@ fn parameters_change_straight_line_travel() {
     assert!(slow > 0);
     assert!((quick * 2 - slow).abs() <= 2, "{quick} vs {slow}");
 }
+
+#[test]
+fn each_demo_summary_states_the_size_the_demo_has() {
+    use solverforge_workbench_host::Model;
+    type M = solverforge_workbench_field_service_routing::FieldServiceRouting;
+    for demo in M::demo_info() {
+        let plan = M::present(&M::demo(demo.id).expect("the demo builds"));
+        for field in M::size_fields() {
+            let count = field.count(&plan);
+            assert!(
+                count > 0
+                    && demo.summary.contains(&format!(
+                        "{count} {}",
+                        field.label.split(' ').next().unwrap()
+                    )),
+                "{}: {count} {} not in {:?}",
+                demo.id,
+                field.label,
+                demo.summary
+            );
+        }
+    }
+}

@@ -4,7 +4,8 @@ use solverforge::{ConstraintSet, ConstraintWeights, HardMediumSoftScore, SolverM
 use solverforge_workbench_host::fill::{FillAnswer, FillRequest};
 use solverforge_workbench_host::view::View;
 use solverforge_workbench_host::{
-    Analysis, ConstraintInfo, EngineError, EntityName, Issue, Kpi, Model, ParameterInfo,
+    Analysis, ConstraintInfo, DemoInfo, EngineError, EntityName, Issue, Kpi, Model, ParameterInfo,
+    SizeField,
 };
 
 use crate::domain::Plan;
@@ -22,6 +23,33 @@ impl Model for PickupDeliveryRouting {
     }
     fn name() -> &'static str {
         "Pick-up and delivery routing"
+    }
+    fn summary() -> &'static str {
+        "Routes drivers through pick-ups and drop-offs made in pairs: vehicle capacity, time windows, skills, shift limits and breaks."
+    }
+    fn demo_info() -> Vec<DemoInfo> {
+        vec![DemoInfo {
+            id: "MILAN_TWO_DAYS",
+            name: "Milan, two days".into(),
+            summary: "15 drivers on 30 shifts and 155 jobs around Milan over two days, each job a pick-up and a drop-off."
+                .into(),
+        }]
+    }
+    fn size_fields() -> Vec<SizeField> {
+        vec![
+            SizeField {
+                path: "jobs",
+                label: "jobs",
+            },
+            SizeField {
+                path: "drivers",
+                label: "drivers",
+            },
+            SizeField {
+                path: "drivers.shifts",
+                label: "shifts",
+            },
+        ]
     }
     fn constraints() -> impl ConstraintSet<Plan, HardMediumSoftScore> {
         crate::constraints::define_constraints()

@@ -286,3 +286,26 @@ fn fill_offers_only_the_resources_a_task_may_run_on() {
         .collect();
     assert_eq!(ids, ["M2@0"]);
 }
+
+#[test]
+fn each_demo_summary_states_the_size_the_demo_has() {
+    use solverforge_workbench_host::Model;
+    type M = solverforge_workbench_task_scheduling::TaskScheduling;
+    for demo in M::demo_info() {
+        let plan = M::present(&M::demo(demo.id).expect("the demo builds"));
+        for field in M::size_fields() {
+            let count = field.count(&plan);
+            assert!(
+                count > 0
+                    && demo.summary.contains(&format!(
+                        "{count} {}",
+                        field.label.split(' ').next().unwrap()
+                    )),
+                "{}: {count} {} not in {:?}",
+                demo.id,
+                field.label,
+                demo.summary
+            );
+        }
+    }
+}
