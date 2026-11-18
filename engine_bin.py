@@ -27,18 +27,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
-ENGINE_VERSION = "0.1.0"
+ENGINE_VERSION = "0.2.0"
 REPO = "blackopsrepl/hermes-solverforge-workbench"
 RELEASE_URL = f"https://github.com/{REPO}/releases/download/engine-v{ENGINE_VERSION}"
 # SHA-256 of each engine-v{ENGINE_VERSION} release asset, copied from the
 # release's SHA256SUMS after verifying each binary's build attestation.
-CHECKSUMS: dict[str, str] = {
-    "x86_64-unknown-linux-musl": "63cd52eae1628592f969d7ff64da24b2a434e3b8b9c5f559ced27f15fcac4272",
-    "aarch64-unknown-linux-musl": "fd122cc56b931c040ce488f2e10a1fc495baa237283468b03ef53351d3d75e9e",
-    "x86_64-apple-darwin": "d57c4c02a858f9e1604648ef0eaf7ece6cb43faa11e418e38044541ce18780e9",
-    "aarch64-apple-darwin": "284fdcd586a63ffaea56f725182dfad8eb98729b9d72d24f8483d5d02948265e",
-    "x86_64-pc-windows-gnu": "06b393dd16c79982e7bff68eec38691bd1bf52e5a59a3296b162b222de038b4b",
-}
+CHECKSUMS: dict[str, str] = {}
 # The road networks the demos run on, fetched from OpenStreetMap by the engine
 # release and published beside the binaries as `roads-<file>.gz`: the cache
 # file each becomes, and the SHA-256 of its download. Installed with the engine,
