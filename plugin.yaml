@@ -1,6 +1,6 @@
 manifest_version: 2
 name: solverforge-workbench
-version: 0.2.1
+version: 0.2.2
 label: SolverForge Workbench
 description: >
   Optimization models you can configure, solve and build, on your own machine.
