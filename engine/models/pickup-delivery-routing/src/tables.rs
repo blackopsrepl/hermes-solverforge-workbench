@@ -4,14 +4,18 @@ use solverforge_workbench_host::data::{col, list, windows, Column, Table};
 use solverforge_workbench_host::priority_options;
 
 fn skills(name: &'static str, label: &'static str, level: &'static str) -> Column {
-    list(
-        name,
-        label,
-        col("skill", "Skill", "object").fields(vec![
-            col("name", "Skill", "text"),
-            col(level, "Level", "integer").optional(),
-        ]),
-    )
+    let mut fields = vec![
+        col("name", "Skill", "text"),
+        col(level, "Level", "integer").optional(),
+    ];
+    if level == "level" {
+        fields.push(
+            col("multiplier", "Service time", "number")
+                .unit("×")
+                .optional(),
+        );
+    }
+    list(name, label, col("skill", "Skill", "object").fields(fields))
 }
 
 pub fn tables() -> Vec<Table> {

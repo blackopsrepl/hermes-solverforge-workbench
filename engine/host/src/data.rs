@@ -162,9 +162,53 @@ pub fn mismatches(plan: &serde_json::Value, tables: &[Table]) -> Vec<String> {
             if present == 0 {
                 out.push(format!("{}.{}: no row has it", table.id, column.name));
             }
+            let values: Vec<&serde_json::Value> =
+                found.iter().filter_map(|r| r.get(column.name)).collect();
+            undescribed(
+                &format!("{}.{}", table.id, column.name),
+                column,
+                &values,
+                &mut out,
+            );
         }
     }
     out
+}
+
+/// Keys the data carries inside an object or a list of objects that `column` does
+/// not describe: the editor would show them nowhere.
+fn undescribed(at: &str, column: &Column, values: &[&serde_json::Value], out: &mut Vec<String>) {
+    let (shape, objects): (&Column, Vec<&serde_json::Value>) = match column.kind {
+        "object" => (column, values.to_vec()),
+        "list" => match column.fields.first() {
+            Some(item) if item.kind == "object" => (
+                item,
+                values
+                    .iter()
+                    .flat_map(|v| v.as_array().into_iter().flatten())
+                    .collect(),
+            ),
+            _ => return,
+        },
+        _ => return,
+    };
+    let mut missing: Vec<&str> = objects
+        .iter()
+        .flat_map(|o| o.as_object().into_iter().flatten().map(|(k, _)| k.as_str()))
+        .filter(|k| !shape.fields.iter().any(|f| f.name == *k))
+        .collect();
+    missing.sort_unstable();
+    missing.dedup();
+    for key in missing {
+        out.push(format!(
+            "{at}: the data has {key}, the table does not describe it"
+        ));
+    }
+    for field in &shape.fields {
+        let inner: Vec<&serde_json::Value> =
+            objects.iter().filter_map(|o| o.get(field.name)).collect();
+        undescribed(&format!("{at}.{}", field.name), field, &inner, out);
+    }
 }
 
 #[cfg(test)]
@@ -207,6 +251,27 @@ mod tests {
                 "shifts.day: missing from 1 rows",
                 "shifts.night: no row has it"
             ]
+        );
+        let plan = serde_json::json!({"crew": [{"id": "a", "skills": [{"name": "x", "level": 1, "speed": 2}]}]});
+        let table = Table {
+            id: "crew",
+            label: "Crew",
+            one: "member",
+            path: "crew",
+            parent: "",
+            title: "",
+            columns: vec![list(
+                "skills",
+                "Skills",
+                col("skill", "Skill", "object").fields(vec![
+                    col("name", "Name", "text"),
+                    col("level", "Level", "integer"),
+                ]),
+            )],
+        };
+        assert_eq!(
+            mismatches(&plan, &[table]),
+            ["crew.skills: the data has speed, the table does not describe it"]
         );
         let window = windows("timeWindows", "Time windows", &[("minStartTime", "From")]);
         assert_eq!(
