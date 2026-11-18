@@ -518,6 +518,19 @@ fn the_engine_describes_the_model() {
     assert_eq!(model["demos"], json!(["TURIN_TWO_DAYS"]));
     assert_eq!(model["constraints"].as_array().unwrap().len(), 64);
     assert_eq!(model["parameters"].as_array().unwrap().len(), 11);
+    for p in model["parameters"].as_array().unwrap() {
+        assert!(!p["label"].as_str().unwrap().is_empty(), "{p}");
+        if ["number", "integer", "duration"].contains(&p["kind"].as_str().unwrap()) {
+            assert!(p["unit"].is_string(), "{p} has a unit");
+        }
+        if let Some(options) = p["options"].as_array() {
+            assert!(
+                options.iter().any(|o| o["value"] == p["default"]),
+                "{p}: its default is an option"
+            );
+        }
+    }
+
     assert_eq!(model["roads"], true);
 }
 

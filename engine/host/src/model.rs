@@ -213,10 +213,64 @@ pub fn demo_name(id: &str) -> String {
 #[derive(Debug, Clone, Serialize)]
 pub struct ParameterInfo {
     pub name: &'static str,
-    /// `integer`, `number`, `boolean`, `string` or `duration` (minutes).
+    /// What a person calls it: `Default priority`.
+    pub label: &'static str,
+    /// `integer`, `number`, `boolean`, `string`, `duration` (minutes), `date`
+    /// (`YYYY-MM-DD`), `object` (its `fields`) or `array` (of `fields[0]`).
     pub kind: &'static str,
+    /// What the number counts, for numbers: `minutes`, `meters`, `points`...
+    #[serde(skip_serializing_if = "str::is_empty")]
+    pub unit: &'static str,
     pub default: serde_json::Value,
     pub description: &'static str,
+    /// The values a string may take, with their words; any value when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub options: Vec<ParameterOption>,
+    /// An object's fields, or an array's item as its one field.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub fields: Vec<ParameterInfo>,
+}
+
+/// One value a string parameter may take.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct ParameterOption {
+    pub value: String,
+    pub label: String,
+}
+
+impl ParameterOption {
+    pub fn new(value: impl Into<String>, label: impl Into<String>) -> Self {
+        Self {
+            value: value.into(),
+            label: label.into(),
+        }
+    }
+}
+
+impl Default for ParameterInfo {
+    fn default() -> Self {
+        Self {
+            name: "",
+            label: "",
+            kind: "string",
+            unit: "",
+            default: serde_json::Value::Null,
+            description: "",
+            options: Vec::new(),
+            fields: Vec::new(),
+        }
+    }
+}
+
+/// The priorities routing models use: 1 to 10 mandatory, opt-1 to opt-10 optional.
+pub fn priority_options() -> Vec<ParameterOption> {
+    (1..=10)
+        .map(|n| ParameterOption::new(n.to_string(), format!("{n} (mandatory)")))
+        .chain(
+            (1..=10)
+                .map(|n| ParameterOption::new(format!("opt-{n}"), format!("opt-{n} (optional)"))),
+        )
+        .collect()
 }
 
 /// An entity named in a constraint match, as the caller shows it.
