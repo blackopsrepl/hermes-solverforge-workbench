@@ -15,7 +15,7 @@ hermes plugins install blackopsrepl/hermes-solverforge-workbench --enable
 hermes solverforge-workbench install
 ```
 
-The second command downloads the engine for your computer (6 to 8 MB) and
+The second command downloads the engine for your computer (22 to 28 MB) and
 checks it against a fingerprint pinned in the plugin. There is nothing else to
 install: no Rust, no database, no account.
 
@@ -54,9 +54,10 @@ visits).
 The two routing models travel on real roads: each dataset's travel times and
 distances are measured along the OpenStreetMap road network with
 [solverforge-maps](https://crates.io/crates/solverforge-maps), at each road's
-own speed, and the map draws every route along the roads. The demos' networks
-come with the engine; a dataset in a new area fetches its roads once and keeps
-them. A dataset may bring its own travel matrix instead.
+own speed, and the map draws every route along the roads. A demo's network is
+downloaded from the engine release the first time that demo is opened; any
+other dataset fetches its area's roads once and keeps them. A dataset may bring
+its own travel matrix instead. Road data © OpenStreetMap contributors, ODbL.
 
 ### Your own models
 
@@ -151,7 +152,7 @@ Under **Settings → Plugins → SolverForge Workbench**
 
 - **The engine.** `hermes solverforge-workbench install` or
   `/solverforge-workbench install` downloads `solverforge-workbench-<platform>`
-  from this repository's `engine-v0.1.0` release and refuses it unless its
+  from this repository's `engine-v0.2.0` release and refuses it unless its
   SHA-256 matches the value pinned in [`engine_bin.py`](engine_bin.py). Each
   binary carries a build attestation:
   `gh attestation verify solverforge-workbench-<platform> --repo blackopsrepl/hermes-solverforge-workbench`.

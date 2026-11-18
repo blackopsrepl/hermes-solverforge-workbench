@@ -120,6 +120,12 @@ model and its data (it asks the user) and leaves the project's files.
   before creating one. Places far from a road come back as dataset issues. A
   dataset that brings its own `travelMatrix` keeps it. There is no speed or
   detour setting.
+- The road cache belongs to the engine. Never write, copy, rename or delete
+  files in it, never hand a dataset a network or a travel matrix made from a
+  stock demo's roads, and never stand a demo in for a real area: a real
+  dataset's roads come from the engine fetching its own area, or from a
+  `travelMatrix` the user supplies. The stock routing demos' pinned networks
+  serve those demos only.
 - Solve settings: `seconds` (time limit), `unimproved_seconds` (stop when no
   better plan was found for this long), step limits, `best_score`,
   `freeze_before`.
