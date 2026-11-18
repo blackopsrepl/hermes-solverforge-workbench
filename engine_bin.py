@@ -59,6 +59,11 @@ def engine_env() -> dict[str, str]:
 class EngineError(Exception):
     """A refusal or failure from an engine, carrying its machine-readable code."""
 
+def roads_config(data_dir: Path) -> dict[str, str]:
+    """Where engines keep road networks: fetched from OpenStreetMap once per area, then read."""
+    return {"cache_dir": str(Path(data_dir) / "roads")}
+
+
     def __init__(self, code: str, message: str, **detail: Any):
         super().__init__(f"{code}: {message}")
         self.code = code

@@ -20,11 +20,14 @@ from pathlib import Path
 from typing import Any, Callable
 
 from . import custom
-from .engine_bin import ENGINE_VERSION, EngineError, StockEngine, call, engine_env
+from .engine_bin import ENGINE_VERSION, EngineError, StockEngine, call, engine_env, roads_config
 from .patching import PatchError, apply_patch
 from .store import Store, new_id
 
 MAX_DATASET_BYTES = 200 * 1024 * 1024
+# Longest wait for a plan's roads: fetching a region the size of Turin to Aosta
+# from OpenStreetMap the first time takes minutes.
+ROADS_TIMEOUT_S = 1800
 SECTIONS = ("weights", "params", "solve")
 SOLVE_KEYS = ("seconds", "unimproved_seconds", "step_count", "unimproved_step_count", "best_score",
               "freeze_before")
@@ -332,6 +335,7 @@ class Workbench:
             plan = self._read_json(path)
         if not isinstance(plan, dict):
             raise WorkbenchError("invalid_plan", "a dataset is a JSON object")
+        plan = self._on_roads(model_id, plan)
         dataset = self.store.add_dataset(model_id=model_id, name=name or "Dataset", plan=plan, origin=origin,
                                          tags=_tags(tags), config=check_settings(config),
                                          size=self.size_of(model_id, plan))
@@ -380,6 +384,24 @@ class Workbench:
             raise WorkbenchError("unknown_dataset", f"no dataset has id {dataset_id!r}")
         return dataset
 
+    def _roads(self, model_id: str) -> dict[str, Any]:
+        """The road network cache, for requests to a model that travels on roads."""
+        if self.model_record(model_id)["manifest"].get("roads"):
+            return {"roads": roads_config(self.data_dir)}
+        return {}
+
+    def _on_roads(self, model_id: str, plan: Any) -> Any:
+        """The plan with its travel measured along the roads, for a model that travels.
+
+        Measured once when the dataset is made and kept with it, so a solve reads
+        travel instead of the road network. The first plan in an area fetches that
+        area's roads from OpenStreetMap; every later one reads them from disk.
+        """
+        if not (isinstance(plan, dict) and self.model_record(model_id)["manifest"].get("roads")):
+            return plan
+        return self._call(model_id, {"command": "roads", "model": model_id, "plan": plan},
+                          timeout_s=ROADS_TIMEOUT_S)["plan"]
+
     def size_of(self, model_id: str, plan: Any) -> list[dict[str, Any]]:
         """How big a plan is, in the model's words: [{label, count}]."""
         if not isinstance(plan, dict):
@@ -404,6 +426,9 @@ class Workbench:
             size = self.size_of(dataset["model_id"], plan)
             self.store.set_dataset_size(dataset["id"], size)
         view["size"] = size
+        if isinstance(plan, dict) and isinstance(plan.get("travelMatrix"), dict):
+            # Which travel the plan runs on: measured along the roads, or the dataset's own.
+            view["travel"] = "roads" if plan["travelMatrix"].get("source") == "roads" else "dataset"
         if isinstance(plan, dict) and with_plan:
             view["plan"] = plan
         if dataset.get("patch") is not None:
@@ -443,6 +468,7 @@ class Workbench:
             plan = apply_patch(base, operations) if operations else base
         except PatchError as exc:
             raise WorkbenchError("invalid_patch", str(exc)) from exc
+        plan = self._on_roads(parent["model_id"], plan)
         origin = "patch" if operations else "run" if from_run else "copy"
         default_name = {"patch": f"{parent['name']} (revised)", "run": f"{parent['name']} (replan)",
                         "copy": f"{parent['name']} (copy)"}[origin]
@@ -585,7 +611,7 @@ class Workbench:
 
     def _call(self, model_id: str, request: dict[str, Any], timeout_s: float = 600) -> dict[str, Any]:
         try:
-            return call(self.engine_for(model_id), request, timeout_s=timeout_s)
+            return call(self.engine_for(model_id), {**self._roads(model_id), **request}, timeout_s=timeout_s)
         except EngineError as exc:
             raise WorkbenchError(exc.code, exc.message, **exc.detail) from exc
 
@@ -596,7 +622,7 @@ class Workbench:
         settings = self.effective_settings(dataset, profile, check_settings(overrides))
         self._check_weight_names(model_id, settings["weights"])
         self._check_params(model_id, settings["params"])
-        config = {**settings, "engine": str(self.engine_for(model_id))}
+        config = {**settings, "engine": str(self.engine_for(model_id)), **self._roads(model_id)}
         return dataset, profile, config
 
     def _request(self, command: str, model_id: str, plan: dict[str, Any], config: dict[str, Any],

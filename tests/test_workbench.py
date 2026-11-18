@@ -129,6 +129,34 @@ def test_cancelling_a_solve_keeps_the_best_plan(wb):
     assert wb.run(run["id"], with_plan=True)["plan"]["shifts"]
 
 
+def test_a_model_that_travels_keeps_each_dataset_measured_on_the_roads(wb, monkeypatch):
+    toy = wb.model_record("toy")
+    wb.store.put_model({**toy, "manifest": {**toy["manifest"], "roads": True}})
+    asked: list[dict] = []
+    real_call = wb._call
+
+    def call(model_id, request, timeout_s=600):
+        asked.append(request)
+        if request["command"] == "roads" and "travelMatrix" in request["plan"]:
+            return {"plan": request["plan"], "issues": []}  # a dataset's own travel is kept
+        if request["command"] == "roads":
+            matrix = {"locations": [[45.0, 7.6]], "seconds": [[0]], "meters": [[0]], "source": "roads"}
+            return {"plan": {**request["plan"], "travelMatrix": matrix}, "issues": []}
+        return real_call(model_id, request, timeout_s)
+
+    monkeypatch.setattr(wb, "_call", call)
+    made = wb.create_dataset(model_id="toy", demo="")
+    roads = [r for r in asked if r["command"] == "roads"]
+    assert len(roads) == 1 and wb._roads("toy") == {"roads": {"cache_dir": str(wb.data_dir / "roads")}}
+    stored = wb.dataset(made["id"], with_plan=True)
+    assert stored["travel"] == "roads" and stored["plan"]["travelMatrix"]["source"] == "roads"
+    copied = wb.patch_dataset(made["id"], [])
+    assert len([r for r in asked if r["command"] == "roads"]) == 2
+    assert wb.dataset(copied["id"])["travel"] == "roads"
+    given = wb.create_dataset(model_id="toy", plan={**stored["plan"], "travelMatrix": {"locations": []}})
+    assert wb.dataset(given["id"])["travel"] == "dataset"
+
+
 def test_a_check_reads_scores_and_lists_issues_without_storing_anything(wb):
     plan = wb.create_dataset(model_id="toy", demo="")
     good = wb.dataset(plan["id"], with_plan=True)["plan"]

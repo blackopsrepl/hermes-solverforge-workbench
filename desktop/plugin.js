@@ -172,6 +172,12 @@ export const count = (n, noun) => `${fmt(n)} ${n === 1 ? noun : plural(noun)}`
 export const sizeText = sizes => (Array.isArray(sizes) ? sizes : []).map(s => `${fmt(s.count)} ${s.count === 1 && s.one ? s.one : s.label}`).join(' · ')
 
 /** Where a dataset came from, in words. */
+// Which travel a plan runs on.
+const TRAVEL = {
+  roads: 'travel along the roads (OpenStreetMap)',
+  dataset: 'travel times from the dataset',
+}
+
 export function madeFrom(dataset) {
   const parent = dataset.parent_name || 'another dataset'
   return {
@@ -1169,7 +1175,8 @@ function DatasetPage({ model, id }) {
         ? e('span', null, `${madeFrom({ ...dataset, parent_name: '' }).replace(/ another dataset$/, '')} `,
             e(Link, { to: placeOf(model.id, 'datasets', dataset.parent_id), style: { textDecoration: 'underline' } }, dataset.parent_name || 'its parent'))
         : e('span', null, madeFrom(dataset)),
-      e('span', { style: faint }, `· ${ago(dataset.created_at)}`)),
+      e('span', { style: faint }, `· ${ago(dataset.created_at)}`),
+      dataset.travel ? e('span', { style: faint }, `· ${TRAVEL[dataset.travel]}`) : null),
     dataset.origin === 'fill' && dataset.patch ? e('div', { style: faint }, dataset.patch.map(p => `placed ${p.item} at ${p.value}`).join(' · ')) : null,
     e(Card, null,
       e('div', { style: row(8) },

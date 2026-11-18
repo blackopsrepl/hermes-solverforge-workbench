@@ -129,6 +129,15 @@ test('a dataset says what it holds and where it came from, solves, checks, keeps
   assert.match(html, /data-c="CopyButton" data-text="[0-9a-f]{12}" aria-label="Copy the dataset&#x27;s id"/)
 })
 
+test('a dataset names the travel its plan runs on', () => {
+  for (const [travel, words] of [['roads', 'travel along the roads \\(OpenStreetMap\\)'], ['dataset', 'travel times from the dataset']]) {
+    const dataset = structuredClone(real.dataset)
+    dataset.dataset.travel = travel
+    assert.match(text(at(placeOf('toy', 'datasets', datasetId), { ...real, dataset })), new RegExp(`just now · ${words}`))
+  }
+  assert.doesNotMatch(text(at(placeOf('toy', 'datasets', datasetId))), /travel/)
+})
+
 test('a replanned dataset links to the one it came from', () => {
   const dataset = structuredClone(real.dataset)
   Object.assign(dataset.dataset, { origin: 'run', parent_id: 'parent', parent_name: 'Demo Week' })
