@@ -48,7 +48,8 @@ in the model's page or ask Hermes about. Each model ships one large demo that
 uses its rules: a hospital month (50 employees, 536 shifts, three wards on two
 sites), a factory week (24 machines and people, 409 operations), two days of
 Milan patient transport and medical courier work (15 drivers, 155 jobs), and
-two days of Turin building services (30 technicians, 238 visits).
+two days of Turin building services (30 technicians, 223 visits and 8 joint
+visits).
 
 The two routing models travel on real roads: each dataset's travel times and
 distances are measured along the OpenStreetMap road network with
@@ -116,8 +117,10 @@ list has a fuzzy search (`rst btwn` finds *Rest between shifts*).
 - **Rosters and schedules** show one lane per employee or machine: red marks
   an assignment that breaks a hard rule, rose a medium one, grey is time off.
 - **A dataset's data** opens as one grid per table (technicians, shifts,
-  visits) with typed cell editors. Changes are staged, checked by the engine
-  and saved as a new dataset, or in place while no run has used it.
+  visits, breaks, contracts, calendars...) with typed cell editors for every
+  field the model reads: working hours, lunch breaks, limits and costs
+  included. Changes are staged, checked by the engine and saved as a new
+  dataset, or in place while no run has used it.
 
   ![The data editor](docs/screenshots/data.png)
 

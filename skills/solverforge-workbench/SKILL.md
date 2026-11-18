@@ -136,8 +136,12 @@ When the user would rather click than chat, point to the place:
 - A dataset: Solve (with profile, time limit, "keep everything before"),
   "Change and solve…" for the model's own changes, "Compare profiles…" for an
   experiment, and the Plan, Data and Runs tabs. Data is a searchable grid per
-  table (technicians, shifts, visits...) with an editor per field; changes
-  stay staged and save as a new dataset or in place.
+  table (technicians, shifts, visits, breaks, contracts, calendars...) with an
+  editor for every field the model reads, working hours and lunch breaks
+  included; what the solver writes (routes, totals) is shown, not edited.
+  Changes stay staged and save as a new dataset or in place. The model read
+  (`solverforge_workbench_model`) lists the same tables: their paths, columns,
+  kinds and options tell which JSON Patch paths and values a field takes.
 - A run: the verdict, the score against the plan as given and the run before,
   what moved, the plan, and Replan (key `r`).
 - A profile: weights and typed settings, what differs from Standard, and
