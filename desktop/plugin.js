@@ -804,8 +804,12 @@ export function FillPanel({ run, dataset, profile, model, open = false, items, o
               rows: item.options.map(option => ({
                 key: option.id || option.label,
                 place: e('div', null, option.label, option.feasible ? null : e('span', { style: faint }, ' · breaks a hard rule')),
-                delta: e(ScoreText, { score: option.delta }),
-                why: e('span', { style: faint }, option.changes.map(c => `${c.constraint} ${c.delta}`).join(' · ') || 'no rule changes'),
+                delta: e(DeltaText, { from: '0hard/0medium/0soft', to: option.delta }),
+                why: option.changes.length
+                  ? e('div', { style: { ...stack(2), ...faint } },
+                      option.changes.slice(0, 4).map(c => e('div', { key: c.constraint }, `${c.constraint} `, e(DeltaText, { from: '0hard/0medium/0soft', to: c.delta }))),
+                      option.changes.length > 4 ? e('div', null, `… ${count(option.changes.length - 4, 'more rule')}`) : null)
+                  : e('span', { style: faint }, 'no rule changes'),
                 act: e(Button, { size: 'xs', disabled: apply.isPending,
                   onClick: () => apply.mutate({ ...(run ? { run } : { dataset }), item: item.id, value: option.id, ...(profile ? { profile } : {}) }) }, 'Apply')
               }))

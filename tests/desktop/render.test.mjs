@@ -318,7 +318,7 @@ test('fill ranks places for every open item, each with its score change and an a
   const first = real.fill.items[0]
   assert.match(page, /Fill · 6 open/)
   assert.match(page, new RegExp(`${first.label} Place Change Rules it moves`))
-  assert.match(page, new RegExp(`${first.options[0].label} · breaks a hard rule 1 hard 0 soft Unassigned shift 1hard/0soft Apply`))
+  assert.match(page, new RegExp(`${first.options[0].label} · breaks a hard rule \\+1 hard Unassigned shift \\+1 hard Apply`))
   assert.equal((render(h(FillPanel, { dataset: datasetId, open: true })).match(/<button/g) || []).length, 18)
   assert.equal(text(render(h(FillPanel, { dataset: datasetId }))), 'Find places for open items')
 })
