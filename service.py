@@ -359,7 +359,7 @@ class Workbench:
             demo_name = next((d["name"] for d in _demo_info(self.model_record(model_id)["manifest"])
                               if d.get("id") == answer["id"]), None)
             plan, origin, demo_id = answer["plan"], "demo", answer["id"]
-            name = name or demo_name or demo_id.replace("_", " ").capitalize()
+            name = name or demo_name or f'{demo_id.replace("_", " ").capitalize()} demo'
         elif path is not None:
             plan = self._read_json(path)
         if not isinstance(plan, dict):
@@ -1279,7 +1279,7 @@ def _demo_info(description: dict[str, Any]) -> list[dict[str, Any]]:
     info = description.get("demo_info")
     if info:
         return info
-    return [{"id": d, "name": d.replace("_", " ").capitalize(), "summary": ""} for d in description.get("demos", [])]
+    return [{"id": d, "name": f'{d.replace("_", " ").capitalize()} demo', "summary": ""} for d in description.get("demos", [])]
 
 
 def _words(key: str) -> str:
