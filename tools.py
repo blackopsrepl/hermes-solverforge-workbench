@@ -85,7 +85,8 @@ class Tools:
         if not (args.get("operations") or args.get("edits") or args.get("from_run")):
             raise WorkbenchError("no_change", "give edits, operations or from_run")
         return ok(dataset=self.wb.patch_dataset(args["dataset"], args.get("operations") or [],
-                                                args.get("name", ""), args.get("from_run"), args.get("edits")))
+                                                args.get("name", ""), args.get("from_run"), args.get("edits"),
+                                                in_place=bool(args.get("in_place"))))
 
     def changes(self, args: dict) -> str:
         return ok(changes=self.wb.changes(args["run"]))

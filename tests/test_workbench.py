@@ -201,6 +201,25 @@ def test_a_patch_makes_a_child_dataset_and_leaves_the_parent_alone(wb):
     assert error.value.code == "invalid_patch"
 
 
+def test_an_edit_is_checked_before_it_is_saved_and_changes_in_place_only_before_any_run(wb):
+    dataset = demo(wb)
+    with pytest.raises(WorkbenchError) as error:
+        wb.patch_dataset(dataset["id"], [{"op": "replace", "path": "/shifts/[id=0]/nurse_idx", "value": "nobody"}])
+    assert error.value.code == "invalid_plan" and error.value.detail["issues"]
+    assert len(wb.datasets(model_id="toy")) == 1
+    same = wb.patch_dataset(dataset["id"], [{"op": "replace", "path": "/shifts/[id=0]/pinned", "value": True}],
+                            in_place=True)
+    assert same["id"] == dataset["id"] and same["parent_id"] is None
+    record = wb.dataset_record(dataset["id"])
+    assert record["plan"]["shifts"][0]["pinned"] is True
+    assert record["patch"] == [{"op": "replace", "path": "/shifts/[id=0]/pinned", "value": True}]
+    wait_for(wb, wb.solve(dataset["id"], overrides={"solve": {"seconds": 1}})["id"])
+    with pytest.raises(WorkbenchError) as error:
+        wb.patch_dataset(dataset["id"], [{"op": "replace", "path": "/shifts/[id=0]/pinned", "value": False}],
+                         in_place=True)
+    assert error.value.code == "has_runs"
+
+
 def test_replanning_starts_from_a_solved_run(wb):
     dataset = demo(wb)
     run = wait_for(wb, wb.solve(dataset["id"], overrides={"solve": {"seconds": 1}})["id"])

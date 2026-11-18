@@ -120,13 +120,16 @@ SCHEMAS: list[dict[str, Any]] = [
           "operations (add, remove, replace) whose paths may address records by id, e.g. "
           "/shifts/[id=S12]/employee or /employees/[id=E3]/unavailable/-, applied after the edits. from_run "
           "starts from that run's solved plan instead of the dataset's input (replanning with the published "
-          "assignments). The original stays unchanged and the new dataset records it as its parent.",
+          "assignments). The original stays unchanged and the new dataset records it as its parent. "
+          "Operations are checked by the engine before anything is saved. in_place changes the dataset "
+          "itself instead, allowed only while no run has used it.",
           {"dataset": {"type": "string"},
            "edits": {"type": "array", "items": {"type": "object", "properties": {
                "edit": {"type": "string"}, "args": {"type": "object"}}, "required": ["edit"]}},
            "operations": {"type": "array", "items": {"type": "object"}},
            "from_run": {"type": "string"},
-           "name": {"type": "string"}},
+           "name": {"type": "string"},
+           "in_place": {"type": "boolean"}},
           ["dataset"]),
     _tool("solverforge_workbench_dataset_delete", "Delete a dataset and all its runs. Asks the user first.",
           {"dataset": {"type": "string"}}, ["dataset"]),

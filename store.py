@@ -303,12 +303,17 @@ class Store:
             db.execute("UPDATE datasets SET size = ? WHERE id = ?", (_dump(size), dataset_id))
 
     def update_dataset(self, dataset_id: str, *, name: str | None = None,
-                       tags: list[str] | None = None) -> dict[str, Any] | None:
+                       tags: list[str] | None = None, plan: dict | None = None,
+                       patch: list | None = None, size: list | None = None) -> dict[str, Any] | None:
         with self.tx() as db:
             if name is not None:
                 db.execute("UPDATE datasets SET name = ? WHERE id = ?", (name, dataset_id))
             if tags is not None:
                 db.execute("UPDATE datasets SET tags = ? WHERE id = ?", (_dump(tags), dataset_id))
+            if plan is not None:
+                db.execute("UPDATE datasets SET plan = ?, patch = ?, size = ? WHERE id = ?",
+                           (_dump(plan), None if patch is None else _dump(patch),
+                            None if size is None else _dump(size), dataset_id))
         return self.dataset(dataset_id)
 
     def delete_dataset(self, dataset_id: str) -> None:

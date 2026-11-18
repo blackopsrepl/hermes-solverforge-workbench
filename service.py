@@ -196,6 +196,7 @@ class Workbench:
                 "demos": description.get("demos", []), "demo_info": _demo_info(description),
                 "weights": description.get("weights", False),
                 "parameters": description.get("parameters", []),
+                "tables": description.get("tables", []),
                 "kpis": description.get("kpis", []),
                 "view": description.get("view"),
                 "constraints": description.get("constraints", []),
@@ -481,10 +482,18 @@ class Workbench:
         return operations, records
 
     def patch_dataset(self, dataset_id: str, operations: list[dict] | None = None, name: str = "",
-                      from_run: str | None = None, edits: list[dict] | None = None) -> dict[str, Any]:
+                      from_run: str | None = None, edits: list[dict] | None = None,
+                      in_place: bool = False) -> dict[str, Any]:
         """A new dataset: the parent (or a run's best plan) with the model's ``edits`` and then
-        ``operations`` applied."""
+        ``operations`` applied. Hand-written ``operations`` are checked by the engine before
+        anything is saved. ``in_place`` changes the dataset itself instead, which only a dataset
+        no run has used may do."""
         parent = self.dataset_record(dataset_id)
+        if in_place:
+            if from_run:
+                raise WorkbenchError("in_place", "a replan from a run is always a new dataset")
+            if self.store.runs(dataset_id=dataset_id, limit=1):
+                raise WorkbenchError("has_runs", f"dataset {dataset_id} has runs; save the change as a new dataset")
         base = parent["plan"]
         if from_run:
             run = self.run_record(from_run)
@@ -500,7 +509,19 @@ class Workbench:
         except PatchError as exc:
             raise WorkbenchError("invalid_patch", str(exc)) from exc
         plan = self._on_roads(parent["model_id"], plan)
+        if operations:
+            check = self.check_dataset(parent["model_id"], plan)
+            if not check["valid"]:
+                first = (check["issues"] or [{}])[0].get("message", "the model cannot read it")
+                raise WorkbenchError("invalid_plan", f"the changed dataset does not read: {first}",
+                                     issues=check["issues"])
         changed = bool(compiled or operations)
+        if in_place:
+            dataset = self.store.update_dataset(
+                dataset_id, name=name or None, plan=plan, size=self.size_of(parent["model_id"], plan),
+                patch=((parent.get("patch") or []) + records + operations) or None)
+            self.changed("dataset", id=dataset_id)
+            return self.dataset_view(dataset)  # type: ignore[arg-type]
         origin = "run" if from_run else "patch" if changed else "copy"
         default_name = {"patch": f"{parent['name']} (revised)", "run": f"{parent['name']} (replan)",
                         "copy": f"{parent['name']} (copy)"}[origin]
