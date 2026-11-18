@@ -1,7 +1,14 @@
 # SolverForge Workbench for Hermes — Makefile
 # Engine (Rust) + Hermes plugin (Python) + Desktop half, with colorized output.
 
+SHELL       := bash
+.SHELLFLAGS := -o pipefail -c
+
 # ============== Colors & Symbols ==============
+# Colour only on a terminal (stderr, since $(shell) captures stdout) and without
+# NO_COLOR, so CI logs and redirected runs stay plain text.
+COLOR := $(if $(NO_COLOR),,$(shell [ -t 2 ] && echo 1))
+ifeq ($(COLOR),1)
 GREEN   := \033[92m
 EMERALD := \033[38;2;16;185;129m
 CYAN    := \033[96m
@@ -10,6 +17,7 @@ RED     := \033[91m
 GRAY    := \033[90m
 BOLD    := \033[1m
 RESET   := \033[0m
+endif
 
 CHECK    := ✓
 CROSS    := ✗
@@ -20,6 +28,8 @@ PROGRESS := →
 VERSION        := $(shell grep -m1 '^version:' plugin.yaml | cut -d' ' -f2)
 ENGINE_VERSION := $(shell grep -m1 '^version' engine/app/Cargo.toml | cut -d'"' -f2)
 ENGINE_BIN     := engine/target/release/solverforge-workbench
+CHROMIUM       ?= chromium
+SHOT           := $(CHROMIUM) --headless=new --no-sandbox --hide-scrollbars --virtual-time-budget=2000
 TESTKIT_BIN    := engine/target/release/workbench-testkit
 TARGETS        := x86_64-unknown-linux-musl aarch64-unknown-linux-musl \
                   x86_64-apple-darwin aarch64-apple-darwin x86_64-pc-windows-gnu
@@ -30,18 +40,21 @@ PYTEST         := env -u PYTHONPATH -u PYTHONHOME uv run --no-project --python $
 
 # ============== Phony Targets ==============
 .PHONY: banner help setup engine test test-engine test-plugin test-desktop lint fmt fmt-check clippy \
-        validate check dist dist-all install-dev uninstall-dev version clean
+        validate check images dist dist-all install-dev uninstall-dev version clean
 
 .DEFAULT_GOAL := help
 
 # ============== Banner ==============
+# Drawn once per run: a sub-make is passed NO_BANNER=1.
 banner:
+ifeq ($(NO_BANNER),)
 	@if command -v figlet >/dev/null 2>&1; then \
 		figlet -f small "SF Workbench" | { printf "$(EMERALD)$(BOLD)"; cat; printf "$(RESET)"; }; \
 	else \
 		printf "$(EMERALD)$(BOLD)SolverForge Workbench$(RESET)\n"; \
 	fi
 	@printf "  $(GRAY)plugin v$(VERSION) · engine v$(ENGINE_VERSION)$(RESET) $(EMERALD)for Hermes Agent$(RESET)\n\n"
+endif
 
 # ============== Help ==============
 help: banner
@@ -62,6 +75,7 @@ help: banner
 	@printf "$(CYAN)$(BOLD)Release$(RESET)\n"
 	@printf "  $(ARROW) $(BOLD)dist$(RESET)          Cross-build one release binary: TARGET=<triple>\n"
 	@printf "  $(ARROW) $(BOLD)dist-all$(RESET)      Cross-build every release target into dist/\n"
+	@printf "  $(ARROW) $(BOLD)images$(RESET)        Render docs/banner.png and docs/architecture.png (Chromium)\n"
 	@printf "  $(ARROW) $(BOLD)version$(RESET)       Print plugin and engine versions\n"
 	@printf "  $(ARROW) $(BOLD)clean$(RESET)         Remove build output\n\n"
 	@printf "$(GRAY)Targets: $(TARGETS)$(RESET)\n"
@@ -77,7 +91,7 @@ setup: banner
 		printf "  $(GREEN)$(CHECK)$(RESET) uv      $(GRAY)%s$(RESET)\n" "$$(uv --version)"; \
 	else printf "  $(RED)$(CROSS)$(RESET) uv      $(GRAY)install from https://docs.astral.sh/uv$(RESET)\n"; fail=1; fi; \
 	if command -v hermes >/dev/null 2>&1; then \
-		printf "  $(GREEN)$(CHECK)$(RESET) hermes  $(GRAY)%s$(RESET)\n" "$$(hermes --version 2>/dev/null | head -1)"; \
+		printf "  $(GREEN)$(CHECK)$(RESET) hermes  $(GRAY)%s$(RESET)\n" "$$(hermes --version 2>/dev/null | sed -n 1p)"; \
 	else printf "  $(YELLOW)!$(RESET) hermes  $(GRAY)optional: needed for validate and install-dev$(RESET)\n"; fi; \
 	if command -v cargo-zigbuild >/dev/null 2>&1; then \
 		printf "  $(GREEN)$(CHECK)$(RESET) zigbuild $(GRAY)%s$(RESET)\n" "$$(cargo-zigbuild --version)"; \
@@ -175,6 +189,15 @@ dist-all: banner
 	done
 	@cd dist && sha256sum solverforge-workbench-* > SHA256SUMS && \
 		printf "$(GREEN)$(CHECK) dist/SHA256SUMS$(RESET)\n"
+
+images: banner
+	@printf "$(PROGRESS) $(BOLD)Rendering docs images...$(RESET)\n"
+	@$(SHOT) --window-size=1200,600 --screenshot="$(CURDIR)/docs/banner.png" \
+		"file://$(CURDIR)/docs/assets/banner/banner.html" 2>/dev/null && \
+	$(SHOT) --force-device-scale-factor=2 --window-size=1600,1000 --screenshot="$(CURDIR)/docs/architecture.png" \
+		"file://$(CURDIR)/docs/assets/architecture/architecture.html" 2>/dev/null && \
+		printf "$(GREEN)$(CHECK) docs/banner.png, docs/architecture.png$(RESET)\n" || \
+		{ printf "$(RED)$(CROSS) Rendering failed (set CHROMIUM=<path>)$(RESET)\n"; exit 1; }
 
 version:
 	@printf "plugin $(VERSION)\nengine $(ENGINE_VERSION)\n"
