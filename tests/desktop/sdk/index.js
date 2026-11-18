@@ -18,9 +18,14 @@ export const Badge = ({ children, variant }) => h('span', { 'data-c': 'Badge', '
 export const EmptyState = box('EmptyState')
 export const SandboxedFrame = ({ src, title }) => h('iframe', { title, 'data-length': src.length })
 export const Button = ({ children, disabled }) => h('button', { disabled }, children)
-export const SegmentedControl = ({ options, value }) =>
-  h('nav', null, options.map(o => h('b', { key: o.id, 'data-on': o.id === value }, o.label)))
+export const ErrorState = box('ErrorState')
+export const Skeleton = () => h('div', { 'data-c': 'Skeleton' })
+export const CopyButton = ({ text, label }) => h('button', { 'data-c': 'CopyButton', 'data-text': text, 'aria-label': label })
+export const SearchField = ({ placeholder, value }) => h('input', { placeholder, value, readOnly: true })
+export const ConfirmDialog = ({ open, title, description, confirmLabel }) =>
+  open ? h('div', { 'data-c': 'ConfirmDialog' }, title, description, confirmLabel) : null
 
+export const KEYBINDS_AREA = 'keybinds'
 export const PALETTE_AREA = 'palette'
 export const ROUTES_AREA = 'routes'
 export const SIDEBAR_NAV_AREA = 'sidebar'
@@ -30,6 +35,7 @@ export const STATUSBAR_AREAS = { right: 'statusbar-right' }
 export const queryClient = { invalidateQueries() {} }
 export const useMutation = () => ({ mutate() {}, isPending: false })
 export const host = {
+  state: { profile: { get: () => 'default' } },
   notify() {},
   navigate: path => navigated.push(path),
   openWorkspace: (id, options) => {
