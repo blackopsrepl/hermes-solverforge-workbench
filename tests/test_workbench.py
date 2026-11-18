@@ -242,6 +242,12 @@ def test_a_replan_applies_the_models_own_changes_and_records_each_in_words(wb):
     assert [s["id"] for s in stored["plan"]["shifts"]] == [2, 3, 4, 5]
     assert [p.get("summary") for p in stored["patch"] if p["op"] == "edit"] == [
         "Shift 0 on day 0 is cancelled.", "Shift 1 on day 0 is cancelled."]
+    replanned = wait_for(wb, wb.solve(child["id"], overrides={"solve": {"seconds": 1}})["id"])
+    changes = wb.changes(replanned["id"])
+    assert changes["against"]["id"] == run["id"]
+    assert sorted(r["id"].split(":")[-1] for r in changes["removed"]) == ["0", "1"]
+    assert changes["stayed"] + len(changes["moved"]) == 4 and not changes["added"]
+    assert wb.changes(run["id"]) == {"against": None}
     with pytest.raises(WorkbenchError) as error:
         wb.patch_dataset(dataset["id"], edits=[{"edit": "shift_cancelled", "args": {"shift": "9"}}])
     assert error.value.code == "invalid_edit"
@@ -351,9 +357,13 @@ def test_freezing_needs_a_date_time_and_a_model_with_time(wb):
     assert error.value.code == "freeze_unsupported"
 
 
-def test_a_model_without_a_plan_view_says_so(wb):
+def test_a_plan_is_drawn_as_boards_and_a_model_without_a_view_says_so(wb):
     dataset = demo(wb)
-    assert wb.model("toy")["view"] is None
+    assert wb.model("toy")["view"] == "assignments"
+    [board] = wb.view(dataset_id=dataset["id"])["boards"]
+    assert len(board["unassigned"]) == 6 and [lane["label"] for lane in board["lanes"]] == ["nurse-0", "nurse-1", "nurse-2"]
+    toy = wb.model_record("toy")
+    wb.store.put_model({**toy, "manifest": {**toy["manifest"], "view": None}})
     with pytest.raises(WorkbenchError) as error:
         wb.view(dataset_id=dataset["id"])
     assert error.value.code == "no_view"

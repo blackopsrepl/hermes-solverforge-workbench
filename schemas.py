@@ -103,6 +103,11 @@ SCHEMAS: list[dict[str, Any]] = [
     _tool("solverforge_workbench_dataset_update", "Rename a dataset or replace its tags.",
           {"dataset": {"type": "string"}, "name": {"type": "string"},
            "tags": {"type": "array", "items": {"type": "string"}}}, ["dataset"]),
+    _tool("solverforge_workbench_changes",
+          "What a solve changed: against the run it replans (a dataset made with from_run) or else the previous "
+          "solve of its dataset, how many items stayed with their holder, and which moved, were added, were "
+          "left open or were removed. against is null when there is nothing to compare with.",
+          {"run": {"type": "string"}}, ["run"]),
     _tool("solverforge_workbench_edits",
           "The changes a model offers for replanning a plan (a technician off for a day, a new visit, an "
           "employee off, a machine down...), each with its fields and, for choices, the options read from "

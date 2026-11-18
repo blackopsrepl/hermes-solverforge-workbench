@@ -493,6 +493,8 @@ class Workbench:
             base = run["plan"]
         operations = list(operations or [])
         compiled, records = self._compile(parent["model_id"], base, edits or [])
+        if from_run:
+            records.insert(0, {"op": "replan", "from_run": from_run})
         try:
             plan = apply_patch(base, compiled + operations) if compiled or operations else base
         except PatchError as exc:
@@ -818,6 +820,34 @@ class Workbench:
         # The stored plan of a run already carries its parameters; a frozen solve's pins are in the plan.
         config = {**config, "solve": {k: v for k, v in (config.get("solve") or {}).items() if k != "freeze_before"}}
         return self._call(model_id, self._request("view", model_id, plan, config))["view"]
+
+    def changes(self, run_id: str) -> dict[str, Any]:
+        """What a solve changed against the plan it replans (or the previous solve of its dataset):
+        items that stayed with their holder, moved to another, were added, left open or removed."""
+        run = self.run_record(run_id)
+        dataset = self.dataset_record(run["dataset_id"])
+        source = next((p["from_run"] for p in (dataset.get("patch") or []) if p.get("op") == "replan"), None)
+        against = self.store.run(source, with_plan=False) if source else None
+        if against is None:
+            previous = self._previous_run(run)
+            against = self.store.run(previous["id"], with_plan=False) if previous else None
+        if against is None or not run.get("plan") or not self.model_record(run["model_id"])["manifest"].get("view"):
+            return {"against": None}
+        before, after = _holders(self.view(run_id=against["id"])), _holders(self.view(run_id=run_id))
+        out: dict[str, Any] = {"against": self.run_brief(against), "stayed": 0, "moved": [], "added": [],
+                               "opened": [], "removed": []}
+        for item, (label, holder) in after.items():
+            if item not in before:
+                out["added"].append({"id": item, "label": label, "to": holder})
+            elif holder is None and before[item][1] is not None:
+                out["opened"].append({"id": item, "label": label, "from": before[item][1]})
+            elif holder == before[item][1]:
+                out["stayed"] += 1
+            else:
+                out["moved"].append({"id": item, "label": label, "from": before[item][1], "to": holder})
+        out["removed"] = [{"id": item, "label": label, "from": holder}
+                          for item, (label, holder) in before.items() if item not in after]
+        return out
 
     def fill(self, run_id: str | None = None, dataset_id: str | None = None, items: list[str] | None = None,
              top: int = 5, profile: str | None = None) -> dict[str, Any]:
@@ -1233,3 +1263,32 @@ def _zero(score: str) -> bool:
 def _now() -> str:
     from .store import now
     return now()
+
+
+# Lanes a timeline keeps for what is not assigned to anyone.
+OPEN_LANES = {"open", "unplanned", "unscheduled", "unassigned"}
+
+
+def _holders(view: dict[str, Any]) -> dict[str, tuple[str, str | None]]:
+    """Every item of a plan view: its label and who holds it (None when open)."""
+    out: dict[str, tuple[str, str | None]] = {}
+    kind = view.get("kind")
+    if kind == "routes":
+        for route in view.get("vehicles", []):
+            for stop in route.get("stops", []):
+                out[str(stop["id"])] = (stop.get("label") or str(stop["id"]), route.get("label"))
+        for stop in view.get("unassigned", []):
+            out[str(stop["id"])] = (stop.get("label") or str(stop["id"]), None)
+    elif kind == "assignments":
+        for board in view.get("boards", []):
+            for lane in board.get("lanes", []):
+                for item in lane.get("items", []):
+                    out[f"{board.get('title')}:{item['id']}"] = (item.get("label") or str(item["id"]), lane.get("label"))
+            for item in board.get("unassigned", []):
+                out[f"{board.get('title')}:{item['id']}"] = (item.get("label") or str(item["id"]), None)
+    else:
+        for lane in (view.get("model") or {}).get("lanes", []):
+            holder = None if lane.get("id") in OPEN_LANES else lane.get("label")
+            for item in lane.get("items", []):
+                out[str(item["id"])] = (item.get("label") or str(item["id"]), holder)
+    return out

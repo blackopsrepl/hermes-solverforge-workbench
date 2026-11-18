@@ -28,6 +28,7 @@ provides_tools:
   - solverforge_workbench_dataset_update
   - solverforge_workbench_dataset_patch
   - solverforge_workbench_edits
+  - solverforge_workbench_changes
   - solverforge_workbench_dataset_delete
   - solverforge_workbench_profile_save
   - solverforge_workbench_profile_default

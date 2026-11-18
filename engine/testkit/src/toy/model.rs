@@ -3,7 +3,8 @@
 use serde_json::{json, Value};
 use solverforge::{ConstraintSet, ConstraintWeights, HardSoftScore, SolverManager};
 use solverforge_workbench_host::edit::{self, Args, Choice, Compiled, Edit, Field};
-use solverforge_workbench_host::{ConstraintInfo, EngineError, Issue, Kpi, Level, Model};
+use solverforge_workbench_host::view::{Assignments, Board, Item, Lane, View};
+use solverforge_workbench_host::{Analysis, ConstraintInfo, EngineError, Issue, Kpi, Level, Model};
 
 use super::domain::{self, Nurse, Roster, Shift};
 
@@ -79,6 +80,47 @@ impl Model for Toy {
             ],
             summary: format!("{label} is cancelled."),
         })
+    }
+    fn view_kind() -> Option<&'static str> {
+        Some("assignments")
+    }
+    fn view(plan: &Roster, _analysis: &Analysis) -> Option<View> {
+        let item = |s: &Shift| Item {
+            id: s.id.to_string(),
+            label: format!("Shift {} on day {}", s.id, s.day),
+            broken: Vec::new(),
+        };
+        Some(View::Assignments(Assignments {
+            title: "Roster".into(),
+            subtitle: format!("{} nurses, {} shifts", plan.nurses.len(), plan.shifts.len()),
+            boards: vec![Board {
+                title: "Shifts".into(),
+                item: "Shift".into(),
+                lane: "Nurse".into(),
+                lanes: plan
+                    .nurses
+                    .iter()
+                    .enumerate()
+                    .map(|(n, nurse)| Lane {
+                        id: nurse.id.to_string(),
+                        label: nurse.name.clone(),
+                        items: plan
+                            .shifts
+                            .iter()
+                            .filter(|s| s.nurse_idx == Some(n))
+                            .map(item)
+                            .collect(),
+                        broken: Vec::new(),
+                    })
+                    .collect(),
+                unassigned: plan
+                    .shifts
+                    .iter()
+                    .filter(|s| s.nurse_idx.is_none())
+                    .map(item)
+                    .collect(),
+            }],
+        }))
     }
     fn weights_mut(plan: &mut Roster) -> Option<&mut ConstraintWeights> {
         Some(&mut plan.weights)

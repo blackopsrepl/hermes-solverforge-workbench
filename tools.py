@@ -87,6 +87,9 @@ class Tools:
         return ok(dataset=self.wb.patch_dataset(args["dataset"], args.get("operations") or [],
                                                 args.get("name", ""), args.get("from_run"), args.get("edits")))
 
+    def changes(self, args: dict) -> str:
+        return ok(changes=self.wb.changes(args["run"]))
+
     def edits(self, args: dict) -> str:
         return ok(edits=self.wb.edits(args.get("dataset"), args.get("run")))
 

@@ -41,6 +41,7 @@ READS = {
     "trends": "solverforge_workbench_trends",
     "model_build": "solverforge_workbench_model_build",
     "edits": "solverforge_workbench_edits",
+    "changes": "solverforge_workbench_changes",
 }
 WRITES = {
     "solve": "solverforge_workbench_solve",
