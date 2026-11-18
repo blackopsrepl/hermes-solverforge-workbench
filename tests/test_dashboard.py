@@ -53,8 +53,40 @@ def test_refusals_keep_their_code_and_a_fitting_status(client):
     assert client.get("/model", params={"model": "nope"}).status_code == 404
 
 
-def test_the_page_cannot_delete_or_call_unknown_actions(client):
-    assert client.post("/actions/dataset_delete", json={"dataset": "x"}).status_code == 404
-    assert client.post("/actions/profile_delete", json={"model": "toy", "profile": "x"}).status_code == 404
+def test_the_page_deletes_only_after_its_confirm_dialog_asked(client):
+    dataset = client.post("/actions/dataset_create", json={"model": "toy", "demo": "", "name": "Week"}).json()["dataset"]
+    client.post("/actions/evaluate", json={"dataset": dataset["id"]})
+    asked = client.get("/confirm", params={"action": "dataset_delete", "dataset": dataset["id"]}).json()
+    assert asked["text"] == "Delete the dataset “Week” and its 1 run?"
+    refused = client.post("/actions/dataset_delete", json={"dataset": dataset["id"]})
+    assert refused.status_code == 400 and refused.json()["code"] == "confirm_required"
+    assert client.get("/dataset", params={"dataset": dataset["id"]}).status_code == 200
+    assert client.post("/actions/dataset_delete", json={"dataset": dataset["id"], "confirm": "yes"}).status_code == 400
+    assert client.post("/actions/dataset_delete", json={"dataset": dataset["id"], "confirm": True}).json()["ok"]
+    assert client.get("/dataset", params={"dataset": dataset["id"]}).status_code == 404
+    assert client.get("/confirm", params={"action": "solve"}).status_code == 404
+
+
+def test_the_page_renames_exports_and_imports(client, tmp_path):
+    dataset = client.post("/actions/dataset_create", json={"model": "toy", "demo": ""}).json()["dataset"]
+    renamed = client.post("/actions/dataset_update", json={"dataset": dataset["id"], "name": "Spring", "tags": ["a"]}).json()
+    assert renamed["dataset"]["name"] == "Spring" and renamed["dataset"]["tags"] == ["a"]
+    target = tmp_path / "spring.json"
+    assert client.post("/actions/export", json={"dataset": dataset["id"], "path": str(target)}).json()["path"] == str(target)
+    assert "shifts" in target.read_text()
+    saved = client.post("/actions/profile_save", json={"model": "toy", "name": "Lenient",
+                                                       "settings": {"weights": {"Unassigned shift": 0}}}).json()["profile"]
+    exported = tmp_path / "lenient.json"
+    client.post("/actions/profile_export", json={"model": "toy", "profile": saved["id"], "path": str(exported)})
+    import json
+    document = json.loads(exported.read_text())
+    copy = client.post("/actions/profile_import", json={"document": document, "name": "Lenient copy"}).json()["profile"]
+    assert copy["weights"] == {"Unassigned shift": 0}
+    both = client.post("/actions/profile_import", json={"document": document, "path": str(exported)})
+    assert both.json()["code"] == "one_source"
+
+
+def test_unknown_actions_and_bodies_are_refused(client):
+    assert client.post("/actions/nope", json={}).status_code == 404
     assert client.get("/export").status_code == 404
     assert client.post("/actions/solve", json=["not", "an", "object"]).status_code == 400

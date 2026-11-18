@@ -96,7 +96,9 @@ class Tools:
         return ok(path=path)
 
     def profile_import(self, args: dict) -> str:
-        document = self.wb._read_json(args["path"])
+        if ("path" in args) == ("document" in args):
+            raise WorkbenchError("one_source", "give exactly one of path or document")
+        document = self.wb._read_json(args["path"]) if "path" in args else args["document"]
         return ok(profile=self.wb.import_profile(document, args.get("name")))
 
     def solve(self, args: dict) -> str:

@@ -1,10 +1,10 @@
 """Backend for the Desktop half: /api/plugins/solverforge-workbench/*.
 
 Reads go through the same tool handlers the agent uses, so the page and the
-chat see one store and one set of refusals. The writes (solve, evaluate,
-cancel, save a profile, make a profile the default, a dataset from a demo,
-apply a fill option, start or stop an experiment) are reachable only from a
-button the user clicks; that click is the decision. Nothing here deletes.
+chat see one store and one set of refusals. Every write is reachable only from
+a button the user clicks; that click is the decision. A deletion also needs
+`confirm: true` in its body, which only the page's confirm dialog sends, and
+that dialog shows the same sentence the agent's approval prompt shows.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ _PACKAGE = "hermes_solverforge_workbench_dashboard_pkg"
 _LOCK = threading.Lock()
 _LOADED: list = []
 
-# Tool names the page may call, by route action. Deletions stay with the agent's approval prompt.
+# Tool names the page may call, by route action.
 READS = {
     "status": "solverforge_workbench_status",
     "models": "solverforge_workbench_models",
@@ -51,7 +51,18 @@ WRITES = {
     "fill_apply": "solverforge_workbench_fill_apply",
     "experiment_create": "solverforge_workbench_experiment_create",
     "experiment_cancel": "solverforge_workbench_experiment_cancel",
+    "dataset_update": "solverforge_workbench_dataset_update",
+    "dataset_patch": "solverforge_workbench_dataset_patch",
+    "dataset_delete": "solverforge_workbench_dataset_delete",
+    "export": "solverforge_workbench_export",
+    "profile_delete": "solverforge_workbench_profile_delete",
+    "profile_export": "solverforge_workbench_profile_export",
+    "profile_import": "solverforge_workbench_profile_import",
+    "experiment_delete": "solverforge_workbench_experiment_delete",
+    "model_remove": "solverforge_workbench_model_remove",
 }
+# Writes that delete: refused unless the body carries confirm: true.
+CONFIRMED = {"dataset_delete", "profile_delete", "experiment_delete", "model_remove"}
 STATUS = {"unknown_model": 404, "unknown_dataset": 404, "unknown_run": 404, "unknown_profile": 404,
           "unknown_experiment": 404,
           "no_view": 404, "stale": 409, "busy": 409, "engine_missing": 503, "storage_error": 503}
@@ -112,6 +123,16 @@ def view(run: str = "", dataset: str = "") -> JSONResponse:
     return JSONResponse({"ok": True, "kind": drawn.get("kind"), "document": views.document(drawn)})
 
 
+@router.get("/confirm")
+def confirm(action: str, model: str = "", dataset: str = "", profile: str = "", experiment: str = "") -> JSONResponse:
+    """The sentence a deletion asks before it happens, the same one the agent's approval prompt shows."""
+    if action not in CONFIRMED:
+        return JSONResponse({"ok": False, "code": "unknown_action", "error": f"{action!r} asks nothing"}, status_code=404)
+    package = _package()
+    args = {k: v for k, v in {"model": model, "dataset": dataset, "profile": profile, "experiment": experiment}.items() if v}
+    return JSONResponse({"ok": True, "text": package.approval_text(package.workbench(_config), WRITES[action], args)})
+
+
 @router.get("/{action}")
 def read(action: str, model: str = "", dataset: str = "", run: str = "", runs: str = "", experiment: str = "",
          items: str = "", top: int = 5, profile: str = "", include_plan: bool = False,
@@ -141,4 +162,9 @@ def write(action: str, body: Any = Body(default=None)) -> JSONResponse:
                             status_code=404)
     if not isinstance(body, dict):
         return JSONResponse({"ok": False, "code": "invalid_body", "error": "send a JSON object"}, status_code=400)
+    body = dict(body)
+    confirmed = body.pop("confirm", None) is True
+    if action in CONFIRMED and not confirmed:
+        return JSONResponse({"ok": False, "code": "confirm_required", "error": "a deletion needs confirm: true"},
+                            status_code=400)
     return _call(WRITES[action], body)

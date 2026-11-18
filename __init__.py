@@ -64,24 +64,31 @@ def workbench(get_config=None) -> Workbench:
         return found
 
 
+def _count(n: int, noun: str) -> str:
+    return f"{n} {noun}" if n == 1 else f"{n} {noun}s"
+
+
 def approval_text(wb: Workbench, tool_name: str, args: dict) -> str:
+    """The sentence a deletion asks first: the agent's approval prompt and the page's confirm dialog."""
     if tool_name == "solverforge_workbench_model_remove":
         model_id = args.get("model", "")
         model = wb.store.model(model_id) or {}
         datasets = len(wb.store.datasets(model_id))
-        return (f"Remove the custom model “{model.get('name', model_id)}” with its {datasets} dataset(s) and "
-                "their runs? The project's files stay.")
+        return (f"Remove the custom model “{model.get('name', model_id)}” with its {_count(datasets, 'dataset')} "
+                "and their runs? The project's files stay.")
     if tool_name == "solverforge_workbench_dataset_delete":
         dataset = wb.store.dataset(args.get("dataset", "")) or {}
-        runs = len(wb.store.runs(dataset_id=args.get("dataset", "")))
-        return f"Delete dataset “{dataset.get('name', args.get('dataset'))}” and its {runs} run(s)?"
+        runs = len(wb.store.runs(dataset_id=args.get("dataset", ""), limit=None))
+        return f"Delete the dataset “{dataset.get('name', args.get('dataset'))}” and its {_count(runs, 'run')}?"
     if tool_name == "solverforge_workbench_experiment_delete":
         experiment = wb.store.experiment(args.get("experiment", "")) or {}
         runs = len(wb.store.runs(experiment_id=args.get("experiment", ""), limit=None))
-        return f"Delete experiment “{experiment.get('name', args.get('experiment'))}” and its {runs} run(s)?"
+        return f"Delete the experiment “{experiment.get('name', args.get('experiment'))}” and its {_count(runs, 'run')}?"
+    model = wb.store.model(args.get("model", "")) or {}
     profile = wb.store.profile(args.get("profile", "")) or wb.store.profile_named(
         args.get("model", ""), args.get("profile", "")) or {}
-    return f"Delete profile “{profile.get('name', args.get('profile'))}” of {args.get('model')}?"
+    return (f"Delete the profile “{profile.get('name', args.get('profile'))}” of "
+            f"{model.get('name', args.get('model'))}? Runs made with it keep their results.")
 
 
 def register(ctx) -> None:

@@ -117,8 +117,9 @@ SCHEMAS: list[dict[str, Any]] = [
     _tool("solverforge_workbench_profile_export", "Write a profile to a JSON file that can be imported again.",
           {"model": {"type": "string"}, "profile": {"type": "string"}, "path": {"type": "string"}},
           ["model", "profile", "path"]),
-    _tool("solverforge_workbench_profile_import", "Create a profile from an exported profile JSON file.",
-          {"path": {"type": "string"}, "name": {"type": "string"}}, ["path"]),
+    _tool("solverforge_workbench_profile_import",
+          "Create a profile from an exported profile: a JSON file at path, or the exported document itself.",
+          {"path": {"type": "string"}, "document": {"type": "object"}, "name": {"type": "string"}}, []),
     _tool("solverforge_workbench_solve",
           "Queue a solve of a dataset and return at once with the run id. The solve runs in the background; "
           "follow it with solverforge_workbench_run. Settings apply in this order, later winning: model defaults, parent "
