@@ -67,13 +67,14 @@ class _Download:
         return self.body[:limit]
 
 
-def test_demo_road_networks_install_verified_unpacked_and_once(tmp_path, monkeypatch):
+def test_a_demo_road_network_installs_for_its_demo_only_verified_unpacked_and_once(tmp_path, monkeypatch):
     import gzip
     import hashlib
 
     network = b'{"version": 3, "nodes": [], "edges": []}'
     body = gzip.compress(network)
-    monkeypatch.setattr(engine_bin, "DEMO_ROADS", {"45.0_7.0_45.1_7.1.json": hashlib.sha256(body).hexdigest()})
+    name = "45.0_7.0_45.1_7.1.json"
+    monkeypatch.setattr(engine_bin, "DEMO_ROADS", {"routes/CITY": (name, hashlib.sha256(body).hexdigest())})
     asked: list[str] = []
 
     def urlopen(request, timeout):
@@ -82,14 +83,17 @@ def test_demo_road_networks_install_verified_unpacked_and_once(tmp_path, monkeyp
 
     monkeypatch.setattr(engine_bin.urllib.request, "urlopen", urlopen)
     engine = StockEngine(tmp_path)
-    [path] = engine.install_roads(log=lambda _: None)
-    assert path == tmp_path / "roads" / "45.0_7.0_45.1_7.1.json" and path.read_bytes() == network
-    assert asked == [f"{engine_bin.RELEASE_URL}/roads-45.0_7.0_45.1_7.1.json.gz"]
-    assert engine.install_roads(log=lambda _: None) == [] and len(asked) == 1
+    # Another demo, or another model's demo of the same name, downloads nothing.
+    assert engine.install_demo_roads("routes", "OTHER", log=lambda _: None) == []
+    assert engine.install_demo_roads("other", "CITY", log=lambda _: None) == [] and asked == []
+    [path] = engine.install_demo_roads("routes", "CITY", log=lambda _: None)
+    assert path == tmp_path / "roads" / name and path.read_bytes() == network
+    assert asked == [f"{engine_bin.RELEASE_URL}/roads-{name}.gz"]
+    assert engine.install_demo_roads("routes", "CITY", log=lambda _: None) == [] and len(asked) == 1
     path.unlink()
-    monkeypatch.setattr(engine_bin, "DEMO_ROADS", {"45.0_7.0_45.1_7.1.json": "0" * 64})
+    monkeypatch.setattr(engine_bin, "DEMO_ROADS", {"routes/CITY": (name, "0" * 64)})
     with pytest.raises(EngineError) as error:
-        engine.install_roads(log=lambda _: None)
+        engine.install_demo_roads("routes", "CITY", log=lambda _: None)
     assert error.value.code == "checksum_mismatch" and not path.exists()
 
 

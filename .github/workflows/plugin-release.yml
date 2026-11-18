@@ -41,15 +41,18 @@ jobs:
           python3 - <<'PY'
           import ast, pathlib
           tree = ast.parse(pathlib.Path("engine_bin.py").read_text())
-          pinned = next(ast.literal_eval(n.value) for n in tree.body
-                        if isinstance(n, ast.AnnAssign) and getattr(n.target, "id", "") == "CHECKSUMS")
+          pin = lambda name: next(ast.literal_eval(n.value) for n in tree.body
+                                  if isinstance(n, ast.AnnAssign) and getattr(n.target, "id", "") == name)
+          pinned, roads = pin("CHECKSUMS"), pin("DEMO_ROADS")
           published = {}
           for line in pathlib.Path("SHA256SUMS").read_text().splitlines():
               digest, name = line.split()
               published[name.lstrip("*")] = digest
           pinned_by_asset = {f"solverforge-workbench-{t}{'.exe' if 'windows' in t else ''}": d for t, d in pinned.items()}
+          # The demos' road networks ship beside the binaries and are pinned too.
+          pinned_by_asset |= {f"roads-{name}.gz": d for name, d in roads.values()}
           assert pinned_by_asset == published, f"pinned {pinned_by_asset} != released {published}"
-          print(f"{len(pinned)} pinned checksums match")
+          print(f"{len(pinned)} engines and {len(roads)} road networks match their pins")
           PY
       - uses: softprops/action-gh-release@v2
         with:

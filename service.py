@@ -332,6 +332,7 @@ class Workbench:
         if demo is not None:
             answer = self._call(model_id, {"command": "demo", "model": model_id, "demo": demo or None})
             plan, origin, name = answer["plan"], "demo", name or f"Demo {answer['id'].title()}"
+            self._demo_roads(model_id, answer["id"])
         elif path is not None:
             plan = self._read_json(path)
         if not isinstance(plan, dict):
@@ -390,6 +391,18 @@ class Workbench:
         if self.model_record(model_id)["manifest"].get("roads"):
             return {"roads": roads_config(self.data_dir)}
         return {}
+
+    def _demo_roads(self, model_id: str, demo: str) -> None:
+        """The pinned road network of a stock routing demo, downloaded the first time
+        that demo is opened. A download that fails leaves the engine to fetch the area
+        from OpenStreetMap itself; a file that does not match its pin is refused."""
+        if self.model_record(model_id)["kind"] != "stock":
+            return
+        try:
+            self.engine.install_demo_roads(model_id, demo, log=lambda _: None)
+        except EngineError as exc:
+            if exc.code != "download_failed":
+                raise WorkbenchError(exc.code, exc.message) from exc
 
     def _on_roads(self, model_id: str, plan: Any) -> Any:
         """The plan with its travel measured along the roads, for a model that travels.

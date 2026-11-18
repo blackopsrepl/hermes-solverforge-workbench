@@ -50,6 +50,23 @@ def demo(wb: Workbench, **kwargs) -> dict:
     return wb.create_dataset(model_id="toy", demo="", **kwargs)
 
 
+def test_opening_a_stock_demo_downloads_that_demos_pinned_roads_only(wb, monkeypatch):
+    asked: list[tuple[str, str]] = []
+
+    def install_demo_roads(self, model_id, demo, log=print):
+        asked.append((model_id, demo))
+        return []
+
+    monkeypatch.setattr(StockEngine, "install_demo_roads", install_demo_roads)
+    made = demo(wb)
+    # Asked by the demo's own id, as the engine names it.
+    [(model, opened)] = asked
+    assert model == "toy" and opened and made["name"] == f"Demo {opened.title()}"
+    # A dataset from JSON never touches the demos' networks.
+    wb.create_dataset(model_id="toy", plan=wb.dataset_record(made["id"])["plan"])
+    assert len(asked) == 1
+
+
 def test_the_engines_models_join_the_catalog_with_a_read_only_standard_profile(wb):
     models = wb.models()
     assert [m["id"] for m in models] == ["toy"]

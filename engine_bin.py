@@ -32,12 +32,25 @@ REPO = "blackopsrepl/hermes-solverforge-workbench"
 RELEASE_URL = f"https://github.com/{REPO}/releases/download/engine-v{ENGINE_VERSION}"
 # SHA-256 of each engine-v{ENGINE_VERSION} release asset, copied from the
 # release's SHA256SUMS after verifying each binary's build attestation.
-CHECKSUMS: dict[str, str] = {}
-# The road networks the demos run on, fetched from OpenStreetMap by the engine
-# release and published beside the binaries as `roads-<file>.gz`: the cache
-# file each becomes, and the SHA-256 of its download. Installed with the engine,
-# so a demo opens without fetching a city first.
-DEMO_ROADS: dict[str, str] = {}
+CHECKSUMS: dict[str, str] = {
+    "x86_64-unknown-linux-musl": "76a5fd45a9a16797b9cc20f8ea25480b9658d01f5f3d3aaf4588ce010039123c",
+    "aarch64-unknown-linux-musl": "007c06aac6c5f521bb19f9849fe978e788808b0e70b4ec8678f284fdc6af36d7",
+    "x86_64-apple-darwin": "c1bd6667cc7b8e14daf65da1c8e4c41d9cebfc9de1c65e275be8b4706fd8a360",
+    "aarch64-apple-darwin": "595f0f6eb7ccaa5ac91ff84c1bb5557899844c5e96e936abb3c5da9341c2f650",
+    "x86_64-pc-windows-gnu": "5f2fc9ed596b82b4abb0094da6dfb665cfa7d17e0a332ac29b56f31a89a666bb",
+}
+# The road network each stock routing demo runs on, fetched from OpenStreetMap
+# by the engine release and published beside the binaries as `roads-<file>.gz`:
+# by "<model>/<demo>", the cache file it becomes and the SHA-256 of its download.
+# Downloaded the first time that demo is opened, so the demo neither waits on
+# OpenStreetMap nor drifts as the map changes. Only for these demos: every
+# other dataset's area is fetched by the engine itself.
+DEMO_ROADS: dict[str, tuple[str, str]] = {
+    "field-service-routing/TURIN_TWO_DAYS": (
+        "44.8751_7.1076_45.8869_7.9297.json", "d7b268560a52bfb5422e8bbb3fbfd4db00c9cd513a8cbadff03e052b233cf78c"),
+    "pickup-delivery-routing/MILAN_TWO_DAYS": (
+        "45.3345_9.0268_45.6008_9.3499.json", "5244e0a5101249173eae584d4829c04663da27b0cbe433952dd42234ca2f6be6"),
+}
 MAX_ROADS_BYTES = 512 * 1024 * 1024
 TARGETS = (
     "x86_64-unknown-linux-musl", "aarch64-unknown-linux-musl",
@@ -230,14 +243,15 @@ class StockEngine:
         finally:
             Path(tmp).unlink(missing_ok=True)
         log(f"installed {target} (sha256 {actual[:12]}…)")
-        self.install_roads(log)
         return target
 
-    def install_roads(self, log: Callable[[str], None] = print) -> list[Path]:
-        """Download, verify and unpack the demos' road networks into the road cache."""
+    def install_demo_roads(self, model_id: str, demo: str, log: Callable[[str], None] = print) -> list[Path]:
+        """Download, verify and unpack the road network the stock demo ``demo`` of ``model_id``
+        runs on into the road cache, once. Nothing for any other dataset."""
         folder = Path(roads_config(self.data_dir)["cache_dir"])
         installed = []
-        for name, expected in DEMO_ROADS.items():
+        pinned = DEMO_ROADS.get(f"{model_id}/{demo}")
+        for name, expected in [pinned] if pinned else []:
             target = folder / name
             if target.is_file():
                 continue
