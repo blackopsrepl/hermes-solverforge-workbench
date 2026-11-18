@@ -661,9 +661,11 @@ function RoutesPlan({ data, frame, onItem }) {
     r.broken.medium ? `${count(r.broken.medium, 'stop')} breaking a medium rule` : ''].filter(Boolean).join(' · ')
   const height = docked ? '60vh' : 'max(560px, calc(100vh - 220px))'
   const list = e('div', { style: { ...stack(8), minHeight: 0, overflow: docked ? 'visible' : 'auto', paddingRight: docked ? 0 : 4 } },
-    e(ListSearch, { value: search, onChange: setSearch, shown: found.length, total: data.routes.length, noun: 'route', placeholder: 'Search routes: who, day or stats' }),
-    focus ? e('div', null, e(Button, { size: 'xs', variant: 'text', onClick: () => show(focus) }, 'Show every route')) : null,
-    e('div', { role: 'list', 'aria-label': 'Routes', style: stack(2) },
+    // Keyed: the optional "Show every route" row must not shift the list and remount it
+    // (that would drop the keyboard focus from the route just picked).
+    e(ListSearch, { key: 'search', value: search, onChange: setSearch, shown: found.length, total: data.routes.length, noun: 'route', placeholder: 'Search routes' }),
+    focus ? e('div', { key: 'all' }, e(Button, { size: 'xs', variant: 'text', onClick: () => show(focus) }, 'Show every route')) : null,
+    e('div', { key: 'list', role: 'list', 'aria-label': 'Routes', style: stack(2) },
       found.map(({ item: r, hits }) => e('button', {
         key: r.id, type: 'button', role: 'listitem', 'aria-pressed': focus === r.id, onClick: () => show(r.id),
         style: { display: 'grid', gridTemplateColumns: '12px 1fr', gap: '2px 8px', alignItems: 'baseline', textAlign: 'left', cursor: 'pointer',
@@ -678,7 +680,7 @@ function RoutesPlan({ data, frame, onItem }) {
       brokenWords(r) ? e('span', null) : null,
       brokenWords(r) ? e('span', { style: { ...faint, color: 'var(--ui-danger, #e5534b)' } }, brokenWords(r)) : null))),
     data.unassigned.length
-      ? e('div', { style: stack(4) },
+      ? e('div', { key: 'open', style: stack(4) },
           e(Label, null, `${fmt(data.unassigned.length)} unplanned`),
           data.unassigned.map(u => e('div', { key: u.id, style: { ...row(6), justifyContent: 'space-between' } },
             e('span', { style: muted }, u.label),
