@@ -226,3 +226,10 @@ fn replanning_changes_compile_to_patches_the_engine_accepts() {
         engine(json!({"command": "evaluate", "model": "employee-scheduling", "plan": changed}));
     assert_eq!(code, 0, "{out}");
 }
+
+#[test]
+fn the_data_tables_match_the_demo() {
+    let problems =
+        solverforge_workbench_host::data::mismatches(&month(), &EmployeeScheduling::tables());
+    assert!(problems.is_empty(), "{problems:?}");
+}

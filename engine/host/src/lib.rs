@@ -5,6 +5,7 @@
 //! and are listed with [`entry`] in the engine binary.
 
 mod analysis;
+pub mod data;
 pub mod edit;
 pub mod fill;
 mod inspect;

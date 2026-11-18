@@ -64,6 +64,9 @@ impl Model for EmployeeScheduling {
     fn descriptor() -> solverforge::domain::SolutionDescriptor {
         Plan::descriptor()
     }
+    fn tables() -> Vec<solverforge_workbench_host::data::Table> {
+        crate::tables::tables()
+    }
     fn edits(plan: &Plan) -> Vec<Edit> {
         crate::edits::edits(plan)
     }

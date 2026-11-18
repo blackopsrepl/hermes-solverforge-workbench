@@ -645,3 +645,20 @@ fn replanning_changes_compile_to_patches_the_engine_accepts() {
     );
     evaluate(changed);
 }
+
+#[test]
+fn the_data_tables_match_the_demo() {
+    let mut demo =
+        PickupDeliveryRouting::present(&PickupDeliveryRouting::demo("MILAN_TWO_DAYS").unwrap());
+    // The demo's shifts all end where they start; an end place is a real field
+    // the plan keeps through a read and a write.
+    let start = demo["drivers"][0]["shifts"][0]["startLocation"].clone();
+    demo["drivers"][0]["shifts"][0]["endLocation"] = start;
+    let demo = PickupDeliveryRouting::present(
+        &serde_json::from_value::<solverforge_workbench_pickup_delivery_routing::Plan>(demo)
+            .unwrap(),
+    );
+    let problems =
+        solverforge_workbench_host::data::mismatches(&demo, &PickupDeliveryRouting::tables());
+    assert!(problems.is_empty(), "{problems:?}");
+}

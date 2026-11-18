@@ -14,6 +14,7 @@ mod model;
 mod names;
 pub mod prepare;
 mod present;
+mod tables;
 pub mod time;
 mod view;
 pub mod wire;

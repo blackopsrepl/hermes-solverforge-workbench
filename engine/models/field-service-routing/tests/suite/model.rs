@@ -693,3 +693,19 @@ fn replanning_changes_compile_to_patches_the_engine_accepts() {
     assert_ne!(code, 0);
     assert_eq!(refused["error"]["code"], "invalid_edit");
 }
+
+#[test]
+fn the_data_tables_match_the_demo() {
+    let mut demo =
+        FieldServiceRouting::present(&FieldServiceRouting::demo("TURIN_TWO_DAYS").unwrap());
+    // The demo's shifts all end where they start; an end place is a real field
+    // the plan keeps through a read and a write.
+    let start = demo["vehicles"][0]["shifts"][0]["startLocation"].clone();
+    demo["vehicles"][0]["shifts"][0]["endLocation"] = start;
+    let demo = FieldServiceRouting::present(
+        &serde_json::from_value::<solverforge_workbench_field_service_routing::Plan>(demo).unwrap(),
+    );
+    let problems =
+        solverforge_workbench_host::data::mismatches(&demo, &FieldServiceRouting::tables());
+    assert!(problems.is_empty(), "{problems:?}");
+}

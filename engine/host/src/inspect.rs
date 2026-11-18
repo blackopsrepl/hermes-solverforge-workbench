@@ -52,6 +52,7 @@ pub fn describe<M: Model, W: Write>(out: &mut Output<W>) {
             "parameters": M::parameters(),
             "view": M::view_kind(),
             "roads": M::travels(),
+            "tables": M::tables(),
             "constraints": entries,
         }),
     );

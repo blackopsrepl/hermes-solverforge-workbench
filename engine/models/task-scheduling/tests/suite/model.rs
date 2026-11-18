@@ -353,3 +353,10 @@ fn replanning_changes_compile_to_patches_the_engine_accepts() {
     assert_ne!(code, 0);
     assert_eq!(refused["error"]["code"], "invalid_edit");
 }
+
+#[test]
+fn the_data_tables_match_the_demo() {
+    let plan = TaskScheduling::present(&demo_plan(TaskScheduling::demos()[0]));
+    let problems = solverforge_workbench_host::data::mismatches(&plan, &TaskScheduling::tables());
+    assert!(problems.is_empty(), "{problems:?}");
+}

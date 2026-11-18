@@ -82,6 +82,11 @@ pub trait Model: 'static + Sized {
     /// [`Model::places`] listed, in that order.
     fn set_roads(_plan: &mut Self::Plan, _roads: RoadMatrix) {}
 
+    /// The plan's records as tables of typed columns, for the page's data editor.
+    /// None by default: the page then edits the dataset as JSON only.
+    fn tables() -> Vec<crate::data::Table> {
+        Vec::new()
+    }
     /// The changes a plan offers for replanning, with each field's choices read
     /// from `plan` (deserialized, not prepared). None by default.
     fn edits(_plan: &Self::Plan) -> Vec<Edit> {
