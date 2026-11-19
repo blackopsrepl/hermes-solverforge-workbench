@@ -2303,12 +2303,30 @@ function ExperimentPage({ model, id }) {
                 : e('span', { style: faint }, c ? `${c.finished} of ${c.runs} done` : '—')]
             }))
           }))
-        })))
+        })),
+      // What each profile's plans come to, in the model's own measures: the score says which
+      // ranks first, these say what that means (shorter drives, visits left open, cost).
+      (x.kpis || []).length
+        ? x.datasets.map(d => e(Card, { key: `kpis-${d}` },
+            e('div', { style: row(8) }, e(Label, null, `Measures · ${x.dataset_names[d] || 'Dataset'}`), spacer(),
+              e('span', { style: faint }, 'the mean of each profile\u2019s solves')),
+            e(Table, {
+              columns: [{ id: 'kpi', label: 'Measure' }, ...x.profiles.map(p => ({ id: p, label: x.profile_names[p] || 'Profile', num: true }))],
+              rows: x.kpis.filter(k => x.profiles.some(p => { const c = cellOf(d, p); return c && c.kpis && c.kpis[k.id] != null }))
+                .map(k => {
+                  const values = x.profiles.map(p => { const c = cellOf(d, p); return c && c.kpis ? c.kpis[k.id] : null })
+                  const differ = new Set(values.filter(v => v != null)).size > 1
+                  return {
+                    key: k.id, kpi: e('span', { style: differ ? undefined : faint }, k.label),
+                    ...Object.fromEntries(x.profiles.map((p, i) => [p, values[i] == null ? '—'
+                      : e('span', { style: { fontVariantNumeric: 'tabular-nums', ...(differ ? { fontWeight: 600 } : faint) } }, `${fmt(values[i])}${k.unit ? ` ${k.unit}` : ''}`)]))
+                  }
+                })
+            })))
+        : null)
   })
 }
 
-/** One KPI over time: a line through every finished solve, oldest on the left, each solve a
- *  point that names its dataset, profile and time and opens its run. */
 // The colours of the series on a trend: one per dataset and profile, readable on every theme.
 const SERIES = ['--ui-accent, #3b82f6', '--ui-success, #3fb950', '--ui-warning, #d29922', '--ui-danger, #e5534b', '--ui-info, #a371f7']
 const seriesColor = i => ink(SERIES[i % SERIES.length])

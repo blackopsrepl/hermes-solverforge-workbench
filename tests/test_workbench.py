@@ -451,6 +451,9 @@ def test_an_experiment_solves_every_dataset_under_every_profile_and_ranks_the_pr
     assert all(c["best"]["score"] == c["worst"] == "0hard/0soft" for c in standard)
     assert [(r["profile"], r["place"]) for r in done["ranking"]] == [("Standard", 1), ("Blind", 2)]
     assert done["ranking"][0]["average_place"] == 1.0
+    # The measures each cell's plans come to, named once for the page's table.
+    assert [k["id"] for k in done["kpis"]][:1] == ["assigned"] and done["kpis"][0]["label"]
+    assert all(c["kpis"]["assigned"] == 6 for c in done["cells"])
     assert wb.experiments("toy")[0]["runs"] == 8
     trends = wb.trends("toy")
     assert len(trends["solves"]) == 8 and trends["feasible_share"] == 1.0

@@ -1126,10 +1126,15 @@ class Workbench:
         statuses: dict[str, int] = {}
         for run in runs:
             statuses[run["status"]] = statuses.get(run["status"], 0) + 1
+        # What each KPI in the cells is called, in the order the model reports them.
+        kpis: dict[str, dict[str, str]] = {}
+        for run in runs:
+            for kpi in run.get("kpis") or []:
+                kpis.setdefault(kpi["id"], {"id": kpi["id"], "label": kpi.get("label", kpi["id"]), "unit": kpi.get("unit", "")})
         return {**experiment, "judge_name": (self.store.profile(experiment["judge"]) or {}).get("name"),
                 "dataset_names": names, "profile_names": profile_names, "statuses": statuses,
                 "done": all(r["status"] in TERMINAL and not _awaiting_judge(r) for r in runs),
-                "cells": cells, "ranking": ranking}
+                "cells": cells, "ranking": ranking, "kpis": list(kpis.values())}
 
     def _judge(self, experiment: dict[str, Any]) -> None:
         """Scores every finished plan of the experiment not yet judged under the judge profile."""
