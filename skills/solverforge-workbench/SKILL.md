@@ -90,8 +90,9 @@ then host it:
 3. Give records a readable label: a `name` (or `label`, `title`) String field
    next to the `#[planning_id]`; analysis, fill and the plan view show it.
 4. `cargo test` in the project, then
-   `solverforge_workbench_model_register` with its path. The first build takes a
-   few minutes; later ones are incremental. Relay every warning in the answer.
+   `solverforge_workbench_model_register` with its path. The user approves the
+   build of each new project folder before it starts, because building runs the
+   project's code. The first build takes a few minutes; later ones are incremental. Relay every warning in the answer.
    A `build_failed` refusal lists the compiler errors: fix the project and
    register again.
 5. After any change to the project, register it again; `solverforge_workbench_models`

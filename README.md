@@ -187,6 +187,13 @@ Under **Settings → Plugins → SolverForge Workbench**
   `cargo build --release` on it and on the engine host shipped with the plugin;
   cargo downloads the crates they depend on from crates.io. The build gets only
   the environment cargo needs (paths, the cargo and rustup homes, proxies).
+  Building runs the project's own code (build scripts and macros), so a
+  registration from the chat asks you first, once for each project folder;
+  picking the folder on the Desktop is that approval.
+- **Files the agent names.** Importing a dataset or profile from a path, and
+  exporting one to a path, go through Hermes's own file guard first: a file
+  Hermes keeps from the agent (its secrets, credentials) is refused, as with
+  its own file tools.
 - **One folder.** `<hermes home>/plugin-data/solverforge-workbench/` holds
   the SQLite database (models, datasets, profiles, runs), the engine, and each
   custom model's generated engine crate and build.
