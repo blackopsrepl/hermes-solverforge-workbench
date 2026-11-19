@@ -11,6 +11,25 @@ import sys
 from pathlib import Path
 
 PACKAGE = "solverforge_workbench_plugin"
+
+# Hermes's file guard, as the plugin imports it inside Hermes. Outside Hermes the tests stand in a
+# guard that refuses only the paths a test puts in DENIED_READS or DENIED_WRITES.
+try:
+    import agent.file_safety  # noqa: F401
+except ImportError:
+    import types
+
+    DENIED_READS: set[str] = set()
+    DENIED_WRITES: set[str] = set()
+    _agent = types.ModuleType("agent")
+    _guard = types.ModuleType("agent.file_safety")
+    _guard.get_read_block_error = lambda path: f"Access denied: {path} is protected" if path in DENIED_READS else None
+    _guard.get_write_denied_error = (
+        lambda path, **_kw: f"Write denied: {path} is protected" if path in DENIED_WRITES else None)
+    _guard.DENIED_READS, _guard.DENIED_WRITES = DENIED_READS, DENIED_WRITES
+    _agent.file_safety = _guard
+    sys.modules.setdefault("agent", _agent)
+    sys.modules.setdefault("agent.file_safety", _guard)
 _ROOT = Path(__file__).resolve().parents[1]
 
 # The repo root on sys.path would let this plugin's ``tools.py`` shadow other ``tools`` modules.

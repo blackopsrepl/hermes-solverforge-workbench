@@ -76,3 +76,25 @@ def test_registering_a_project_asks_for_that_project(gate, tmp_path):
     assert other["rule_key"] != asked["rule_key"]
     assert gate(tool_name="solverforge_workbench_solve", args={"dataset": "x"}) is None
 
+
+def test_exports_refuse_a_path_hermes_protects(table, guard, tmp_path):
+    dataset = json.loads(table["solverforge_workbench_dataset_create"]({"model": "toy", "demo": ""}))["dataset"]
+    target = tmp_path / "keys" / "secrets.json"
+    guard.DENIED_WRITES.add(str(target.resolve()))
+    answer = json.loads(table["solverforge_workbench_export"]({"dataset": dataset["id"], "path": str(target)}))
+    assert answer["code"] == "write_denied" and not target.parent.exists()
+    allowed = tmp_path / "plan.json"
+    assert json.loads(table["solverforge_workbench_export"]({"dataset": dataset["id"], "path": str(allowed)}))["ok"]
+    assert allowed.is_file()
+
+
+def test_imports_refuse_a_file_hermes_protects(table, guard, tmp_path):
+    source = tmp_path / "auth.json"
+    source.write_text(json.dumps({"token": "secret"}), encoding="utf-8")
+    guard.DENIED_READS.add(str(source.resolve()))
+    for name, args in (("solverforge_workbench_profile_import", {"path": str(source)}),
+                       ("solverforge_workbench_dataset_create", {"model": "toy", "path": str(source)}),
+                       ("solverforge_workbench_dataset_check", {"model": "toy", "path": str(source)})):
+        answer = json.loads(table[name](args))
+        assert answer["code"] == "read_denied", (name, answer)
+        assert "secret" not in json.dumps(answer)

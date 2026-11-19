@@ -40,6 +40,28 @@ MAX_WEIGHT = 1_000_000
 TERMINAL = ("completed", "incomplete", "failed", "invalid")
 
 
+def guard_read(file: Path) -> None:
+    """Refuses a file Hermes keeps from the agent (credentials, its own secrets), as its own tools do."""
+    try:
+        from agent.file_safety import get_read_block_error
+    except ImportError as exc:
+        raise WorkbenchError("file_guard_missing", "Hermes's file guard is not available, so no file is read") from exc
+    blocked = get_read_block_error(str(file.resolve()))
+    if blocked:
+        raise WorkbenchError("read_denied", blocked)
+
+
+def guard_write(target: Path) -> None:
+    """Refuses a path Hermes keeps the agent from writing, as its own tools do."""
+    try:
+        from agent.file_safety import get_write_denied_error
+    except ImportError as exc:
+        raise WorkbenchError("file_guard_missing", "Hermes's file guard is not available, so no file is written") from exc
+    denied = get_write_denied_error(str(target.resolve()))
+    if denied:
+        raise WorkbenchError("write_denied", denied)
+
+
 class WorkbenchError(Exception):
     """A refusal with a machine-readable code, a sentence for the user and facts."""
 
@@ -398,6 +420,7 @@ class Workbench:
 
     def _read_json(self, path: str) -> Any:
         file = Path(os.path.expanduser(path))
+        guard_read(file)
         if not file.is_file():
             raise WorkbenchError("not_found", f"no file at {file}")
         if file.stat().st_size > MAX_DATASET_BYTES:

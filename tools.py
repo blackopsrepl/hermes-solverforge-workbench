@@ -9,7 +9,7 @@ from typing import Any, Callable
 
 from .engine_bin import EngineError
 from .schemas import SCHEMAS
-from .service import Workbench, WorkbenchError
+from .service import Workbench, WorkbenchError, guard_write
 
 
 def ok(**payload: Any) -> str:
@@ -24,6 +24,7 @@ def _write_json(path: str, value: Any) -> str:
     target = Path(os.path.expanduser(path))
     if target.suffix.lower() != ".json":
         raise WorkbenchError("invalid_path", "export paths end in .json")
+    guard_write(target)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
     return str(target)
