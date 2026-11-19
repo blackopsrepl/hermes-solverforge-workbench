@@ -193,8 +193,8 @@ Under **Settings → Plugins → SolverForge Workbench**
   Removing the plugin keeps it; delete the folder to erase everything.
 - Deleting a dataset, profile or experiment, or removing a custom model, from
   the chat asks you first, every time: the plugin's `pre_tool_call` hook holds
-  it until you approve that one record.
-  The Desktop cannot delete.
+  it until you approve that one record. On the Desktop, the same delete asks
+  in a dialog showing what goes with it.
 - No credentials read or stored, no telemetry, and no process left running
   after a solve.
 
