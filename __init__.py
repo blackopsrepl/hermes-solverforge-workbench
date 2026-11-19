@@ -22,7 +22,9 @@ NAME = "solverforge-workbench"
 TOOLSET = "solverforge-workbench"
 # Tools that delete the user's data. Each needs a human yes, every time.
 GATED = {"solverforge_workbench_dataset_delete", "solverforge_workbench_profile_delete",
-         "solverforge_workbench_experiment_delete", "solverforge_workbench_model_remove"}
+         "solverforge_workbench_experiment_delete", "solverforge_workbench_model_remove",
+         "solverforge_workbench_model_register"}
+REGISTER = "solverforge_workbench_model_register"
 
 _lock = threading.Lock()
 # One workbench per plugin data directory. The data directory follows the Hermes
@@ -80,6 +82,17 @@ def _count(n: int, noun: str) -> str:
     return f"{n} {noun}" if n == 1 else f"{n} {noun}s"
 
 
+def project_root(path: str) -> str:
+    """The project a registration names, resolved: what one approval covers."""
+    return str(Path(os.path.expanduser(path or ".")).resolve())
+
+
+def register_text(args: dict) -> str:
+    """What a registration from the chat asks first."""
+    return (f"Build the solverforge-cli project at {project_root(args.get('path', ''))} and register it as a "
+            "model? Building runs the project's own code (build scripts and macros) on this machine.")
+
+
 def approval_text(wb: Workbench, tool_name: str, args: dict) -> str:
     """The sentence a deletion asks first: the agent's approval prompt and the page's confirm dialog."""
     if tool_name == "solverforge_workbench_model_remove":
@@ -114,7 +127,11 @@ def register(ctx) -> None:
         if tool_name not in GATED:
             return None
         args = args or {}
-        # Scope "always allow" to this exact record, so one approval never covers a later deletion.
+        # Scope "always allow" to this exact record, so one approval never covers a later deletion,
+        # and a build to this exact project, so each new project needs its own yes.
+        if tool_name == REGISTER:
+            return {"action": "approve", "message": register_text(args),
+                    "rule_key": f"{tool_name}:{project_root(args.get('path', ''))}"}
         target = args.get("dataset") or args.get("profile") or args.get("experiment") or args.get("model") or ""
         return {"action": "approve", "message": approval_text(wb(), tool_name, args),
                 "rule_key": f"{tool_name}:{target}"}
