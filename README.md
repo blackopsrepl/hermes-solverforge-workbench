@@ -173,8 +173,16 @@ Under **Settings → Plugins → SolverForge Workbench**
   `gh attestation verify solverforge-workbench-<platform> --repo blackopsrepl/hermes-solverforge-workbench`.
 - **One program per solve.** The engine reads one JSON request on standard
   input and writes JSON lines on standard output. It starts with only the
-  environment a process needs (no API keys reach it) and makes no network
-  calls.
+  environment a process needs (no API keys reach it). The scheduling models
+  make no network calls.
+- **Road data, for the routing models only.** Opening a routing demo
+  downloads its road network once from the same engine release, refused
+  unless its SHA-256 matches the value pinned in `engine_bin.py`. Any other
+  routing dataset sends its area's bounding box to the Overpass API once, and
+  the roads are kept in the plugin's folder. The places themselves are routed
+  on your machine.
+- **Map tiles.** The Desktop's route map loads OpenStreetMap tiles; the tile
+  servers see the visible area and your IP.
 - **Custom models are built on your machine.** Registering a project runs
   `cargo build --release` on it and on the engine host shipped with the plugin;
   cargo downloads the crates they depend on from crates.io. The build gets only
@@ -183,8 +191,12 @@ Under **Settings → Plugins → SolverForge Workbench**
   the SQLite database (models, datasets, profiles, runs), the engine, and each
   custom model's generated engine crate and build.
   Removing the plugin keeps it; delete the folder to erase everything.
-- Deleting a dataset or a profile from the chat asks you first, every time.
+- Deleting a dataset, profile or experiment, or removing a custom model, from
+  the chat asks you first, every time: the plugin's `pre_tool_call` hook holds
+  it until you approve that one record.
   The Desktop cannot delete.
+- No credentials read or stored, no telemetry, and no process left running
+  after a solve.
 
 ## How it works
 
