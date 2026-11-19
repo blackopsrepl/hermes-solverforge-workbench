@@ -33,11 +33,11 @@ RELEASE_URL = f"https://github.com/{REPO}/releases/download/engine-v{ENGINE_VERS
 # SHA-256 of each engine-v{ENGINE_VERSION} release asset, copied from the
 # release's SHA256SUMS after verifying each binary's build attestation.
 CHECKSUMS: dict[str, str] = {
-    "x86_64-unknown-linux-musl": "76a5fd45a9a16797b9cc20f8ea25480b9658d01f5f3d3aaf4588ce010039123c",
-    "aarch64-unknown-linux-musl": "007c06aac6c5f521bb19f9849fe978e788808b0e70b4ec8678f284fdc6af36d7",
-    "x86_64-apple-darwin": "c1bd6667cc7b8e14daf65da1c8e4c41d9cebfc9de1c65e275be8b4706fd8a360",
-    "aarch64-apple-darwin": "595f0f6eb7ccaa5ac91ff84c1bb5557899844c5e96e936abb3c5da9341c2f650",
-    "x86_64-pc-windows-gnu": "5f2fc9ed596b82b4abb0094da6dfb665cfa7d17e0a332ac29b56f31a89a666bb",
+    "x86_64-unknown-linux-musl": "010b7672619bd0a5c624a4b1f4128950e095c112034c99658dcca71b1fb322b1",
+    "aarch64-unknown-linux-musl": "1cc96686fde8d5b57bd2c1819465e88b39b16ad0aec8b030f60333a5b412537c",
+    "x86_64-apple-darwin": "1b962026da1386e450f3290b6f0ae302e92978ac7f4529ed59c47b17f07ceb12",
+    "aarch64-apple-darwin": "fb63e18a807e0828164a46fe8ddfd21ef589ea95c9d5e4076238c55a927414c9",
+    "x86_64-pc-windows-gnu": "8f0fb33bfa75908e88438c66be49359ac03c5a77e74bc747c84ec76cc524f0f3",
 }
 # The road network each stock routing demo runs on, fetched from OpenStreetMap
 # by the engine release and published beside the binaries as `roads-<file>.gz`:
@@ -47,9 +47,9 @@ CHECKSUMS: dict[str, str] = {
 # other dataset's area is fetched by the engine itself.
 DEMO_ROADS: dict[str, tuple[str, str]] = {
     "field-service-routing/TURIN_TWO_DAYS": (
-        "44.8751_7.1076_45.8869_7.9297.json", "d7b268560a52bfb5422e8bbb3fbfd4db00c9cd513a8cbadff03e052b233cf78c"),
+        "44.8751_7.1076_45.8869_7.9297.json", "142ba2a7122c01d6e5d7046a407e428b8b50570c65c2e3601113e7e6888bfbf9"),
     "pickup-delivery-routing/MILAN_TWO_DAYS": (
-        "45.3345_9.0268_45.6008_9.3499.json", "5244e0a5101249173eae584d4829c04663da27b0cbe433952dd42234ca2f6be6"),
+        "45.3345_9.0268_45.6008_9.3499.json", "a78ea3a46be0d1451be3fe404dd9acbaaf6a272332d426e5566df9ed483ec07e"),
 }
 MAX_ROADS_BYTES = 512 * 1024 * 1024
 TARGETS = (
