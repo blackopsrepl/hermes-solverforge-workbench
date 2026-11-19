@@ -8,6 +8,8 @@ weights and profiles, solve in the background, and read which rule cost what
 and why. The Desktop shows each solved plan as a schedule, or on a map along
 the roads.
 
+https://github.com/user-attachments/assets/9b1a7415-4194-413d-9456-95e36495e4b8
+
 ## Try it
 
 You need [Hermes Agent](https://github.com/NousResearch/hermes-agent) 0.22.2 or newer.
@@ -118,6 +120,12 @@ list has a fuzzy search (`rst btwn` finds *Rest between shifts*).
 
   ![Two days of Turin building services on the map](docs/screenshots/routes.png)
 
+- **Fill** ranks the best places for an open item, each with what it changes
+  per level and the rules it moves, and applies the one you pick as a new
+  dataset.
+
+  ![The best places for an unplanned visit](docs/screenshots/fill.png)
+
 - **Rosters and schedules** show one lane per employee or machine: red marks
   an assignment that breaks a hard rule, rose a medium one, grey is time off.
 - **A dataset's data** opens as one grid per table (technicians, shifts,
@@ -133,10 +141,14 @@ list has a fuzzy search (`rst btwn` finds *Rest between shifts*).
 
   ![A profile against Standard](docs/screenshots/profile.png)
 
-- **Experiments** solve every dataset under every profile and rank the
-  profiles; **trends** chart a model's solves over time.
+- **Experiments** solve every dataset under every profile, rank the profiles
+  and show what each profile's plans come to in the model's measures;
+  **trends** chart a model's solves over time, one series per dataset and
+  profile.
 
   ![An experiment](docs/screenshots/experiment.png)
+
+  ![A model's solves over time](docs/screenshots/trends.png)
 
 - A `::solverforge-workbench{run="…"}` card in the chat shows what costs score
   in a run, and a status-bar chip counts running solves.
