@@ -178,6 +178,10 @@ export function duration(ms) {
 /** "1 run", "3 runs"; nouns ending in y take -ies. */
 export const plural = noun => (noun.endsWith('y') ? noun.slice(0, -1) + 'ies' : noun + 's')
 export const count = (n, noun) => `${fmt(n)} ${n === 1 ? noun : plural(noun)}`
+/** A plural unit word for one of it: "visits" -> "visit", "deliveries" -> "delivery". Symbols and abbreviations ("h", "km", "%") stay. */
+export const singular = unit => (/^[a-z ]*[a-z]{3,}ies$/i.test(unit) ? unit.slice(0, -3) + 'y' : /^[a-z ]*[a-z]{2,}s$/i.test(unit) ? unit.slice(0, -1) : unit)
+/** A measured value with its unit: "1 visit", "238 visits", "35.7 h". */
+export const amount = (value, unit) => `${fmt(value)}${unit ? ` ${value === 1 ? singular(unit) : unit}` : ''}`
 
 export const sizeText = sizes => (Array.isArray(sizes) ? sizes : []).map(s => `${fmt(s.count)} ${s.count === 1 && s.one ? s.one : s.label}`).join(' · ')
 
@@ -1786,7 +1790,7 @@ function KpiTile({ kpi, before }) {
   const change = before && before.value !== kpi.value ? kpi.value - before.value : null
   return e('div', { style: { ...card, padding: 10 } },
     e('div', { style: faint }, kpi.label),
-    e('div', { style: { fontWeight: 600, fontSize: '1rem', fontVariantNumeric: 'tabular-nums' } }, `${fmt(kpi.value)} ${kpi.unit || ''}`),
+    e('div', { style: { fontWeight: 600, fontSize: '1rem', fontVariantNumeric: 'tabular-nums' } }, amount(kpi.value, kpi.unit)),
     change !== null ? e('div', { style: faint }, `${change > 0 ? '+' : '−'}${fmt(Math.abs(change))} since the run before`) : null)
 }
 
@@ -1906,7 +1910,7 @@ function ComparePage({ model, ids }) {
       e(Table, { columns, rows: [
         line('score', e('strong', null, 'Score'), data.runs.map(r => e(ScoreText, { score: r.score }))),
         line('time', 'Solve time', data.runs.map(r => duration(r.elapsed_ms))),
-        ...data.kpis.map(k => line(`kpi:${k.id}`, k.label, k.values.map(v => (v == null ? '—' : `${fmt(v)} ${k.unit}`)))),
+        ...data.kpis.map(k => line(`kpi:${k.id}`, k.label, k.values.map(v => (v == null ? '—' : amount(v, k.unit))))),
         ...constraints.map(c => line(`c:${c.name}`, c.name, c.scores.map(s => e(ScoreText, { score: s }))))
       ] }),
       !constraints.length ? e('div', { style: faint }, 'Every rule scores the same in these runs.') : null,
@@ -2046,7 +2050,7 @@ export function paramText(param, value) {
   }
   if (Array.isArray(value)) return value.length ? value.map(v => paramText((param.fields || [])[0] || {}, v)).join(', ') : 'none'
   if (typeof value === 'object') return JSON.stringify(value)
-  return typeof value === 'number' ? `${fmt(value)}${param.unit ? ` ${param.unit}` : ''}` : String(value)
+  return typeof value === 'number' ? amount(value, param.unit) : String(value)
 }
 
 function ImportProfile({ model }) {
@@ -2319,7 +2323,7 @@ function ExperimentPage({ model, id }) {
                   return {
                     key: k.id, kpi: e('span', { style: differ ? undefined : faint }, k.label),
                     ...Object.fromEntries(x.profiles.map((p, i) => [p, values[i] == null ? '—'
-                      : e('span', { style: { fontVariantNumeric: 'tabular-nums', ...(differ ? { fontWeight: 600 } : faint) } }, `${fmt(values[i])}${k.unit ? ` ${k.unit}` : ''}`)]))
+                      : e('span', { style: { fontVariantNumeric: 'tabular-nums', ...(differ ? { fontWeight: 600 } : faint) } }, amount(values[i], k.unit))]))
                   }
                 })
             })))
@@ -2348,7 +2352,7 @@ export function TrendLine({ kpi, solves = [], model, width = 520, height = 72 })
   const byRun = new Map(solves.map(s => [s.run_id, s]))
   const points = kpi.points.filter(([, , runId]) => !solves.length || byRun.has(runId))
   const values = points.map(p => p[1])
-  if (values.length < 2) return e('div', { style: faint }, `${kpi.label}: ${values.length ? `${fmt(values[0])} ${kpi.unit || ''}` : 'no data'}`)
+  if (values.length < 2) return e('div', { style: faint }, `${kpi.label}: ${values.length ? amount(values[0], kpi.unit) : 'no data'}`)
   const keys = trendSeries(solves)
   const keyOf = runId => { const s = byRun.get(runId); return s ? `${s.dataset} · ${s.profile || 'Standard'}` : '' }
   const low = Math.min(...values)
@@ -2367,7 +2371,7 @@ export function TrendLine({ kpi, solves = [], model, width = 520, height = 72 })
       lines,
       points.map(([when, v, runId], i) => {
         const solve = byRun.get(runId)
-        const words = `${fmt(v)} ${kpi.unit || ''} · ${solve ? `${solve.dataset} · ${solve.profile || 'Standard'} · ` : ''}${ago(when)}`
+        const words = `${amount(v, kpi.unit)} · ${solve ? `${solve.dataset} · ${solve.profile || 'Standard'} · ` : ''}${ago(when)}`
         const open = runId && model ? () => go(placeOf(model, 'runs', runId)) : undefined
         const n = Math.max(0, keys.indexOf(keyOf(runId)))
         return e('circle', { key: `${runId}-${i}`, cx: x(i), cy: y(v), r: 3.5, fill: solve && !solve.feasible ? DANGER : seriesColor(n),

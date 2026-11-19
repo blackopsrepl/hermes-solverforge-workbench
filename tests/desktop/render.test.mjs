@@ -16,7 +16,7 @@ mkdirSync(join(here, '.build'), { recursive: true })
 cpSync(join(here, '../../desktop/plugin.js'), join(here, '.build/plugin.mjs'))
 const {
   default: plugin, Workbench, ScoreChart, StatusChip, FillPanel, TrendLine, parseScore, openBeside, openPage,
-  parseAt, placeOf, hrefOf, runName, ago, duration, count, errorText, refusal, madeFrom, CheckResult, BuildProgress, parseTags, profileLabel, ImportDataset,
+  parseAt, placeOf, hrefOf, runName, ago, duration, count, amount, errorText, refusal, madeFrom, CheckResult, BuildProgress, parseTags, profileLabel, ImportDataset,
   ReplanForm, scoreDelta, verdictText, editArgs, ParamCell, paramText, profileChanges,
   DataEditor, tableRows, inferTables, cellText, stagedOperations
 } = await import('./.build/plugin.mjs')
@@ -74,6 +74,15 @@ test('names, times and counts read as words', () => {
   assert.equal(count(1, 'run'), '1 run')
   assert.equal(count(1200, 'dataset'), '1,200 datasets')
   assert.equal(count(2, 'strategy'), '2 strategies')
+  // A measure of one reads in the singular; symbols and abbreviations stay.
+  assert.equal(amount(1, 'visits'), '1 visit')
+  assert.equal(amount(238, 'visits'), '238 visits')
+  assert.equal(amount(1, 'deliveries'), '1 delivery')
+  assert.equal(amount(1, 'hard points'), '1 hard point')
+  assert.equal(amount(1, 'h'), '1 h')
+  assert.equal(amount(1, 's'), '1 s')
+  assert.equal(amount(1, '%'), '1 %')
+  assert.equal(amount(1.5, 'days'), '1.5 days')
   assert.equal(madeFrom({ origin: 'run', parent_name: 'Turin' }), 'Replan of Turin')
   assert.equal(errorText({ ok: false, code: 'busy', error: 'x' }), 'Something is still solving here. Stop it first.')
   assert.equal(errorText({ ok: false, error: 'unknown field weights' }), 'Unknown field weights.')
