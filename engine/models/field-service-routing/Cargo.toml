@@ -1,6 +1,6 @@
 [package]
 name = "solverforge-workbench-field-service-routing"
-version = "0.2.0"
+version = "0.2.1"
 description = "Field service routing stock model for the SolverForge Workbench engine"
 edition.workspace = true
 rust-version.workspace = true

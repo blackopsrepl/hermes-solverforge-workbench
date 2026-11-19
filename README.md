@@ -155,7 +155,7 @@ Under **Settings → Plugins → SolverForge Workbench**
 
 - **The engine.** `hermes solverforge-workbench install` or
   `/solverforge-workbench install` downloads `solverforge-workbench-<platform>`
-  from this repository's `engine-v0.2.0` release and refuses it unless its
+  from this repository's `engine-v0.2.1` release and refuses it unless its
   SHA-256 matches the value pinned in [`engine_bin.py`](engine_bin.py). Each
   binary carries a build attestation:
   `gh attestation verify solverforge-workbench-<platform> --repo blackopsrepl/hermes-solverforge-workbench`.

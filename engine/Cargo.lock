@@ -1251,7 +1251,7 @@ dependencies = [
 
 [[package]]
 name = "solverforge-workbench"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "solverforge-workbench-employee-scheduling",
  "solverforge-workbench-field-service-routing",
@@ -1262,7 +1262,7 @@ dependencies = [
 
 [[package]]
 name = "solverforge-workbench-employee-scheduling"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -1272,7 +1272,7 @@ dependencies = [
 
 [[package]]
 name = "solverforge-workbench-field-service-routing"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -1282,7 +1282,7 @@ dependencies = [
 
 [[package]]
 name = "solverforge-workbench-host"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "libc",
  "serde",
@@ -1297,7 +1297,7 @@ dependencies = [
 
 [[package]]
 name = "solverforge-workbench-pickup-delivery-routing"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -1308,7 +1308,7 @@ dependencies = [
 
 [[package]]
 name = "solverforge-workbench-task-scheduling"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
  "serde_json",

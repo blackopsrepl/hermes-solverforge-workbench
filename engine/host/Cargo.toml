@@ -1,6 +1,6 @@
 [package]
 name = "solverforge-workbench-host"
-version = "0.2.0"
+version = "0.2.1"
 description = "Runs any SolverForge model behind the workbench engine contract: JSON request on stdin, JSON Lines events on stdout"
 edition.workspace = true
 rust-version.workspace = true
