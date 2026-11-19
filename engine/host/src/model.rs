@@ -203,12 +203,16 @@ impl SizeField {
     }
 }
 
-/// `TURIN_TWO_DAYS` -> `Turin two days`.
+/// `TURIN_TWO_DAYS` -> `Turin two days demo`: a demo's dataset is named after
+/// it, and a bare `STANDARD` would read like the profile of that name.
 pub fn demo_name(id: &str) -> String {
     let words = id.to_lowercase().replace('_', " ");
     let mut chars = words.chars();
     match chars.next() {
-        Some(first) => first.to_uppercase().chain(chars).collect(),
+        Some(first) => format!(
+            "{} demo",
+            first.to_uppercase().chain(chars).collect::<String>()
+        ),
         None => String::new(),
     }
 }
@@ -353,7 +357,7 @@ mod tests {
 
     #[test]
     fn a_demo_is_named_after_its_id() {
-        assert_eq!(demo_name("TURIN_TWO_DAYS"), "Turin two days");
+        assert_eq!(demo_name("TURIN_TWO_DAYS"), "Turin two days demo");
         assert_eq!(demo_name(""), "");
     }
 
