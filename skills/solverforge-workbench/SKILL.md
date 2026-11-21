@@ -144,6 +144,15 @@ model and its data (it asks the user) and leaves the project's files.
   uses (a separate road download per mode) into `travelMatrix.modes`; a
   dataset with its own matrix brings one per mode (`mode`, `seconds`,
   `meters`).
+- Parts in stock: a field-service or pickup-delivery shift loads `stock`
+  (`[{part, quantity}]`) and each visit or stop takes its `parts` in route
+  order (a linked field-service shift sets off with its first day's stock);
+  "Require parts in stock" / "Parts out of stock" cost an hour per unit
+  short. In task scheduling, the plan's `stock` lists `{part, quantity, at?}`
+  (on hand, or arriving at `at`), a task `consumes` parts when it starts and
+  `produces` them when it ends; "Parts out of stock" costs an hour per unit
+  a task finds missing. Quantities are whole units, never below zero; at most
+  16 distinct parts per dataset.
 - The road cache belongs to the engine. Never write, copy, rename or delete
   files in it, never hand a dataset a network or a travel matrix made from a
   stock demo's roads, and never stand a demo in for a real area: a real

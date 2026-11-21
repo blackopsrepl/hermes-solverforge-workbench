@@ -43,9 +43,9 @@ sidebar then opens the same models, datasets and runs.
 | Model | Constraints | What it plans |
 | --- | --- | --- |
 | Employee scheduling | 127: 56 hard, 3 medium, 68 soft, in 14 groups | Shifts to employees: skills and risks, availability, contract work limits over periods and rolling windows, time off, rotations and shift patterns, rest, travel and locations, teams and pairings, hourly demand, alternative shifts, cost, fairness and replanning |
-| Task scheduling | 17: 9 hard, 1 medium, 7 soft, in 7 groups | Tasks to machines and people over time: time windows, dependencies, resource fit and hand-overs, changeovers, due dates, makespan and idle time |
-| Pick-up and delivery routing | 36: 26 hard, 1 medium, 9 soft, in 12 groups | Multi-stop jobs to drivers' shifts and their order: stop order, vehicle capacity, time burden and pooling, skills and tags, breaks and appointments, time windows and SLAs, priorities, overtime and replanning |
-| Field service routing | 64: 32 hard, 3 medium, 29 soft, in 17 groups | Visits to technicians' shifts and their order: skills and levels, tags, time windows and SLAs, breaks, visit dependencies, multi-technician visits, linked multi-day shifts, coverage areas, shift limits, cost, fairness and replanning |
+| Task scheduling | 18: 10 hard, 1 medium, 7 soft, in 8 groups | Tasks to machines and people over time: time windows, dependencies, resource fit and hand-overs, parts in stock, changeovers, due dates, makespan and idle time |
+| Pick-up and delivery routing | 39: 27 hard, 1 medium, 11 soft, in 12 groups | Multi-stop jobs to drivers' shifts and their order: stop order, vehicle capacity, parts in stock, time burden and pooling, skills and tags, breaks and appointments, time windows and SLAs, priorities, overtime, drivers used and work balance, and replanning |
+| Field service routing | 65: 33 hard, 3 medium, 29 soft, in 17 groups | Visits to technicians' shifts and their order: skills and levels, tags, parts in stock, time windows and SLAs, breaks, visit dependencies, multi-technician visits, linked multi-day shifts, coverage areas, shift limits, cost, fairness and replanning |
 
 Every constraint has a name, a group, a level and a description you can read
 in the model's page or ask Hermes about. Each model ships one large demo that
@@ -74,6 +74,12 @@ matrix per period.
 Technicians and drivers may also go by bicycle or on foot: each mode travels
 its own paths (cycleways, footways and steps), at its own speed, and is not
 slowed by busy periods.
+
+Parts are kept in stock. A routing shift loads parts before it sets off and
+each visit or stop uses up its own along the route; in task scheduling, tasks
+use parts up when they start and make them when they end, from a stock with
+deliveries over time. A visit, stop or task that finds its parts missing costs
+an hour per unit short.
 
 ### Your own models
 
