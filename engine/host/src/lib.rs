@@ -17,6 +17,7 @@ pub mod roads;
 mod run;
 mod solve;
 mod stdio;
+pub mod stock;
 pub mod traffic;
 pub mod view;
 

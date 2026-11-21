@@ -14,6 +14,7 @@ use crate::constraints::{
 };
 use crate::derived::{meters, Coordination, Facts, Kind, Pooling, ShiftFact, Window};
 use crate::domain::Plan;
+use solverforge_workbench_host::stock::{consume, MAX_PARTS};
 
 /// One element as the route plans it.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
@@ -60,6 +61,8 @@ pub struct State {
     pub day: usize,
     pub last_far: bool,
     pub overnights: i64,
+    /// Units of each part the route's visits used up so far.
+    pub parts_used: [i64; MAX_PARTS],
 }
 
 /// The drive back to the end location, after the last element, and what
@@ -317,6 +320,11 @@ fn serve(
         .filter(|&&t| !has_tag(shift, t, start))
         .count() as i64;
     add(Rule::TagsMissing, missing_tags * HOUR);
+    if let Some(needs) = facts.visit_parts.get(v).filter(|n| !n.is_empty()) {
+        let stock = facts.shift_stock.get(s).map_or(&[][..], Vec::as_slice);
+        let short = consume(&mut next.parts_used, stock, needs);
+        add(Rule::PartsMissing, short * HOUR);
+    }
     let (mut missing, mut above) = (0, 0);
     for &(skill, min) in &fact.skills {
         match held(shift, skill, start) {

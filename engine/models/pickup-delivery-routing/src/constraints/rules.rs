@@ -29,6 +29,7 @@ pub const BURDEN: &str = "Time burden over the maximum";
 pub const PROHIBITED_RIDE: &str = "Prohibited jobs on board together";
 pub const POOLING: &str = "Pooled with a job that forbids pooling";
 pub const TAGS: &str = "Required tags missing";
+pub const PARTS: &str = "Parts out of stock";
 pub const FLOATING_LATE: &str = "Floating break ends too late";
 pub const FIXED_LATE: &str = "Late for a fixed break";
 pub const APPOINTMENT_LATE: &str = "Late for an appointment";
@@ -56,7 +57,7 @@ pub const DRIVER_USED: &str = "Driver used";
 pub const DRIVER_BALANCE: &str = "Work unbalanced between drivers";
 
 /// Every rule: name, group, level and one sentence on what it costs.
-pub const RULES: [(&str, &str, Level, &str); 38] = [
+pub const RULES: [(&str, &str, Level, &str); 39] = [
     (OUT_OF_ORDER, DEPENDENCIES, Level::Hard, "A stop starts before the job's previous stop has left; costs the seconds of overlap, or the previous stop's service seconds when it is unplanned, plus one hour."),
     (SPLIT, DEPENDENCIES, Level::Hard, "A job's stop is planned on another shift than the job's previous stop; costs the stop's service seconds plus one hour."),
     (PREVIOUS_UNPLANNED, DEPENDENCIES, Level::Hard, "A stop is planned while the job's previous stop is unplanned; costs the service seconds of both plus one hour."),
@@ -70,6 +71,7 @@ pub const RULES: [(&str, &str, Level, &str); 38] = [
     (PROHIBITED_RIDE, REQUIREMENTS, Level::Hard, "Two jobs where one prohibits the other are on board at the same time; costs the seconds together."),
     (POOLING, REQUIREMENTS, Level::Hard, "A job that forbids pooling is on board together with another job; costs the seconds together."),
     (TAGS, REQUIREMENTS, Level::Hard, "The shift serving a stop lacks tags its job requires; costs one hour per missing tag."),
+    (PARTS, REQUIREMENTS, Level::Hard, "A stop needs parts its shift's stock no longer holds when it is served, its earlier stops having used them; costs one hour per unit short."),
     (FLOATING_LATE, BREAKS, Level::Hard, "A floating break ends after its latest end; costs the seconds late."),
     (FIXED_LATE, BREAKS, Level::Hard, "Work runs into a fixed break, which starts late; costs the seconds late."),
     (APPOINTMENT_LATE, BREAKS, Level::Hard, "The driver reaches a fixed break at a place of its own after it starts; costs the seconds late."),

@@ -51,6 +51,7 @@ pub enum Rule {
     TagsMissing,
     NotRequiredVehicle,
     ProhibitedVehicle,
+    PartsMissing,
     // Scored on other rows.
     Exclusion,
     DependentUnplanned,
@@ -82,7 +83,7 @@ pub enum Rule {
 pub const VISIT_RULES: usize = Rule::Exclusion as usize;
 
 /// Every rule, in scoring order.
-pub const RULES: [Rule; 64] = {
+pub const RULES: [Rule; 65] = {
     use Rule::*;
     [
         DependencyDelay,
@@ -125,6 +126,7 @@ pub const RULES: [Rule; 64] = {
         TagsMissing,
         NotRequiredVehicle,
         ProhibitedVehicle,
+        PartsMissing,
         Exclusion,
         DependentUnplanned,
         Fairness,
@@ -238,6 +240,7 @@ impl Rule {
             TagsMissing => "Require tags",
             NotRequiredVehicle => "Require visit vehicle match required vehicles",
             ProhibitedVehicle => "Require visit vehicle not match prohibited vehicles",
+            PartsMissing => "Require parts in stock",
             Exclusion => "Require no mutually exclusive visits assigned",
             DependentUnplanned => "Require visit dependency dependent assigned",
             Fairness => "Balance time utilization",
@@ -289,6 +292,7 @@ impl Rule {
             | TagsMissing
             | NotRequiredVehicle
             | ProhibitedVehicle
+            | PartsMissing
             | Exclusion
             | DependentUnplanned
             | MovableBalance
@@ -363,7 +367,8 @@ impl Rule {
             OutsidePreferredArea | OutsideArea => AREAS,
             Rating => RATING,
             PreferredWindow | WindowEnd | WindowStart => WINDOWS,
-            PreferredVehicle | TagsMissing | NotRequiredVehicle | ProhibitedVehicle => REQUIREMENTS,
+            PreferredVehicle | TagsMissing | NotRequiredVehicle | ProhibitedVehicle
+            | PartsMissing => REQUIREMENTS,
         }
     }
 
@@ -411,6 +416,7 @@ impl Rule {
             TagsMissing => "The shift serving a visit lacks tags it needs; costs one hour per tag.",
             NotRequiredVehicle => "A visit is served by a vehicle it does not list among its required vehicles; costs one hour.",
             ProhibitedVehicle => "A visit is served by a vehicle it prohibits; costs one hour.",
+            PartsMissing => "A visit needs parts its shift's stock no longer holds when it is served, its earlier visits having used them; costs one hour per unit short.",
             Exclusion => "Two visits that exclude each other are both planned; costs one hour per pair.",
             DependentUnplanned => "A visit is planned while a visit that depends on it is not; costs the dependent's service seconds plus one hour.",
             Fairness => "Technicians' utilization (worked over available time, history included) differs; costs the squares of each technician's utilization in ten-thousandths, divided by ten thousand.",
@@ -453,6 +459,6 @@ mod tests {
             assert_eq!(rule.index(), index);
             assert_eq!(RULES.iter().filter(|r| r.name() == rule.name()).count(), 1);
         }
-        assert_eq!(VISIT_RULES, 40);
+        assert_eq!(VISIT_RULES, 41);
     }
 }

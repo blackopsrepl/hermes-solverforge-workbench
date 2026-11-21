@@ -660,3 +660,57 @@ fn work_shared_evenly_between_drivers_costs_least() {
     ]);
     assert_eq!(score(shared, "Work unbalanced between drivers"), soft(800));
 }
+
+#[test]
+fn stops_use_up_the_parts_their_shift_loads_in_route_order() {
+    let jobs = vec![
+        job(
+            "J",
+            vec![
+                stop("Ja", 10, json!({})),
+                stop(
+                    "Jb",
+                    10,
+                    json!({"parts": [{"part": "meter", "quantity": 2}]}),
+                ),
+            ],
+            json!({}),
+        ),
+        job(
+            "K",
+            vec![
+                stop("Ka", 10, json!({})),
+                stop(
+                    "Kb",
+                    10,
+                    json!({"parts": [{"part": "meter", "quantity": 1}]}),
+                ),
+            ],
+            json!({}),
+        ),
+    ];
+    let route = ["Ja", "Jb", "Ka", "Kb"];
+    let two = json!({"stock": [{"part": "meter", "quantity": 2}]});
+    assert_eq!(
+        score(
+            plan(&route, two, jobs.clone(), json!({})),
+            "Parts out of stock"
+        ),
+        hard(3600)
+    );
+    let three = json!({"stock": [{"part": "meter", "quantity": 3}]});
+    assert_eq!(
+        score(
+            plan(&route, three, jobs.clone(), json!({})),
+            "Parts out of stock"
+        ),
+        ZERO
+    );
+    assert_eq!(
+        score(
+            plan(&route, json!({}), jobs, json!({})),
+            "Parts out of stock"
+        ),
+        hard(3 * 3600)
+    );
+}

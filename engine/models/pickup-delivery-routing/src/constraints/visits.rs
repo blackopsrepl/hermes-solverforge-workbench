@@ -60,6 +60,7 @@ pub fn constraints() -> impl ConstraintSet<Plan, Score> {
             hard(PROHIBITED_RIDE, |v| planned(v, |at| at.prohibited_ride)),
             hard(POOLING, |v| planned(v, |at| at.pooling)),
             hard(TAGS, |v| planned(v, |at| at.tags_missing * HOUR)),
+            hard(PARTS, |v| planned(v, |at| at.parts_missing * HOUR)),
         ),
         (
             hard(FLOATING_LATE, |v| {

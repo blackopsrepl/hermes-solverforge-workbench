@@ -225,6 +225,12 @@ pub struct Facts {
     pub shifts: Vec<ShiftFact>,
     /// `fits[job * shifts + shift]`.
     pub fits: Vec<Fit>,
+    /// Part names, in the order the dataset first names them.
+    pub parts: Vec<String>,
+    /// Per element, the parts it uses up: `(part, quantity)`.
+    pub visit_parts: Vec<Vec<(usize, i64)>>,
+    /// Per shift, the units of each part it loads.
+    pub shift_stock: Vec<Vec<i64>>,
 }
 
 impl Facts {

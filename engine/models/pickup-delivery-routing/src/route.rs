@@ -11,6 +11,7 @@ use smallvec::SmallVec;
 
 use crate::derived::{Facts, Kind, Window};
 use crate::domain::Plan;
+use solverforge_workbench_host::stock::{consume, MAX_PARTS};
 
 /// A visit's cascading slot: the visit as planned, the state after it, and
 /// the drive back to the end location should the shift stop there.
@@ -105,6 +106,8 @@ pub struct At {
     pub not_preferred: bool,
     pub skills_missing: i64,
     pub tags_missing: i64,
+    /// Units of parts the stop needs that its shift's stock no longer holds.
+    pub parts_missing: i64,
     pub overqualified: i64,
     pub break_late: i64,
     pub break_during_job: i64,
@@ -190,6 +193,8 @@ pub struct State {
     /// When the driver is free to leave.
     pub clock: i64,
     pub load: [i64; MAX_LOAD_TYPES],
+    /// Units of each part the route's stops used up so far.
+    pub parts_used: [i64; MAX_PARTS],
     /// A stop was served already.
     pub active: bool,
     /// When the driver sets off: just in time for the first stop.
@@ -303,6 +308,10 @@ pub fn visit(facts: &Facts, s: usize, state: &State, v: usize) -> (At, State) {
             at.not_preferred = fit.not_preferred;
             at.skills_missing = fit.skills_missing;
             at.tags_missing = fit.tags_missing;
+            if let Some(needs) = facts.visit_parts.get(v).filter(|n| !n.is_empty()) {
+                let stock = facts.shift_stock.get(s).map_or(&[][..], Vec::as_slice);
+                at.parts_missing = consume(&mut next.parts_used, stock, needs);
+            }
             at.overqualified = fit.overqualified * duration;
             at.arrival = arrival;
             at.start = start;

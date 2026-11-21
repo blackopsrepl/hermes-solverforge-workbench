@@ -445,6 +445,7 @@ fn shift(crew: &Crew, day: i64, k: usize) -> VehicleShift {
     VehicleShift {
         id: format!("{}-{}", crew.id, ["mon", "tue"][day as usize]),
         start_location: depot,
+        stock: Vec::new(),
         end_location: None,
         min_start_time: Some(at(day, start)),
         min_first_visit_arrival_time: None,
@@ -686,6 +687,7 @@ fn visit(rng: &mut Rng, id: String, day: i64, job: Job) -> Visit {
         id,
         name: Some(format!("{} · {area}", job.name)),
         location: near(rng, lat, lon, 900.0),
+        parts: Vec::new(),
         service_duration: job.minutes,
         service_duration_breakdown: vec![ServicePart {
             skill: job.skill.into(),
@@ -821,6 +823,7 @@ pub fn turin_two_days() -> Plan {
             id: format!("M-{:02}", k + 1),
             name: Some(format!("Annual {} · {area}", job.name.to_lowercase())),
             location: near(&mut rng, lat, lon, 900.0),
+            parts: Vec::new(),
             service_duration: job.minutes,
             time_windows: vec![
                 window(0, 8 * 60, 17 * 60 + 30),
@@ -842,6 +845,7 @@ pub fn turin_two_days() -> Plan {
             id: format!("NIZZA-{}", k + 1),
             name: Some(format!("Gas safety check · Via Nizza 120, flat {}", k + 1)),
             location: [45.0480, 7.6735],
+            parts: Vec::new(),
             service_duration: 30,
             time_windows: vec![window(0, 8 * 60, 17 * 60 + 30)],
             required_skills: vec![SkillRequirement {
@@ -857,6 +861,7 @@ pub fn turin_two_days() -> Plan {
             id: format!("FRANCIA-{}", k + 1),
             name: Some(format!("Lighting check · Corso Francia {}", 200 + 10 * k)),
             location: [45.0760 + 0.0006 * k as f64, 7.6420 - 0.0012 * k as f64],
+            parts: Vec::new(),
             service_duration: 40,
             time_windows: vec![window(1, 8 * 60, 17 * 60 + 30)],
             required_skills: vec![SkillRequirement {
@@ -879,6 +884,7 @@ pub fn turin_two_days() -> Plan {
             id: format!("INSPECT-{}", k + 1),
             name: Some(format!("Lift inspection · {area}")),
             location: place,
+            parts: Vec::new(),
             service_duration: 45,
             time_windows: vec![window(0, 8 * 60, 16 * 60)],
             required_skills: vec![SkillRequirement {
@@ -892,6 +898,7 @@ pub fn turin_two_days() -> Plan {
             id: format!("REPAIR-{}", k + 1),
             name: Some(format!("Lift repair · {area}")),
             location: place,
+            parts: Vec::new(),
             service_duration: 90,
             time_windows: vec![window(1, 8 * 60, 17 * 60 + 30)],
             required_skills: vec![SkillRequirement {
@@ -924,6 +931,7 @@ pub fn turin_two_days() -> Plan {
             id: format!("PARTS-{}", k + 1),
             name: Some("Boiler pick-up · wholesaler, Strada del Drosso".into()),
             location: [45.0250, 7.6250],
+            parts: Vec::new(),
             service_duration: 20,
             time_windows: vec![window(day, 8 * 60, 15 * 60)],
             required_tags: vec!["van-large".into()],
@@ -934,6 +942,7 @@ pub fn turin_two_days() -> Plan {
             id: format!("FIT-{}", k + 1),
             name: Some(format!("Boiler fitting · {area}")),
             location: near(&mut rng, lat, lon, 700.0),
+            parts: Vec::new(),
             service_duration: 120,
             time_windows: vec![window(day, 8 * 60, 17 * 60 + 30)],
             required_skills: vec![SkillRequirement {
@@ -959,6 +968,7 @@ pub fn turin_two_days() -> Plan {
         id: "QUOTE-A".into(),
         name: Some("Heating quote, morning · Centro office".into()),
         location: [45.0712, 7.6855],
+        parts: Vec::new(),
         service_duration: 45,
         time_windows: vec![window(0, 9 * 60, 12 * 60)],
         required_skills: vec![SkillRequirement {
@@ -974,6 +984,7 @@ pub fn turin_two_days() -> Plan {
         id: "QUOTE-B".into(),
         name: Some("Heating quote, afternoon · Centro office".into()),
         location: [45.0712, 7.6855],
+        parts: Vec::new(),
         service_duration: 45,
         time_windows: vec![window(1, 14 * 60, 17 * 60)],
         required_skills: vec![SkillRequirement {
@@ -997,6 +1008,7 @@ pub fn turin_two_days() -> Plan {
                 "Lift overhaul, day {part} · hydro plant, Aosta valley"
             )),
             location: REMOTE,
+            parts: Vec::new(),
             service_duration: minutes,
             time_windows: vec![TimeWindow {
                 min_start_time: at(0, 8 * 60),
@@ -1037,6 +1049,7 @@ pub fn turin_two_days() -> Plan {
             id: format!("JOINT-{}-{}", k + 1, ["a", "b"][m]),
             name: Some(format!("Rooftop unit install · {area}")),
             location: place,
+            parts: Vec::new(),
             service_duration: 150,
             time_windows: vec![window(day, 8 * 60, 17 * 60 + 30)],
             required_skills: vec![SkillRequirement {

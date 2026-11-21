@@ -162,6 +162,7 @@ pub fn tables() -> Vec<Table> {
                     "Should leave the last stop by",
                 ),
                 col("startLocation", "Starts at", "location"),
+                solverforge_workbench_host::stock::column("stock", "Parts loaded"),
                 col("endLocation", "Ends at", "location").optional(),
                 breaks(),
                 list(
@@ -238,6 +239,7 @@ pub fn tables() -> Vec<Table> {
             columns: vec![
                 col("name", "Name", "text").optional(),
                 col("location", "Place", "location"),
+                solverforge_workbench_host::stock::column("parts", "Parts used"),
                 col("duration", "Minutes there", "minutes").unit("minutes"),
                 windows(
                     "timeWindows",

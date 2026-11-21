@@ -112,11 +112,11 @@ fn a_small_plan_with_breaks_pins_and_pooling_scores_incrementally_like_in_full()
 #[test]
 fn the_catalog_names_every_constraint_the_engine_scores() {
     let catalog = PickupDeliveryRouting::catalog();
-    assert_eq!(catalog.len(), 38);
+    assert_eq!(catalog.len(), 39);
     let scored = scores(PickupDeliveryRouting::present(
         &PickupDeliveryRouting::demo("MILAN_TWO_DAYS").unwrap(),
     ));
-    assert_eq!(scored.len(), 38);
+    assert_eq!(scored.len(), 39);
     for info in &catalog {
         assert!(
             scored.contains_key(info.name),
@@ -221,13 +221,14 @@ fn scrambled_and_crowded_demos_break_every_rule_the_data_can_break() {
     }
     broken.extend(broken_rules(crowded));
     // Straight-line travel reaches everywhere, the demo pins nothing and
-    // waiting is off unless weighted.
+    // carries no parts, and waiting is off unless weighted.
     let needs_other_data = [
         "Unreachable leg in a route",
         "Stop unreachable from the previous place",
         "Pinned stop off its shift",
         "Pinned stop starts late",
         "Waiting time",
+        "Parts out of stock",
     ];
     for info in PickupDeliveryRouting::catalog() {
         if needs_other_data.contains(&info.name) {
@@ -473,7 +474,7 @@ fn the_engine_describes_the_model() {
     assert_eq!(code, 0, "{model}");
     assert_eq!(model["view"], "routes");
     assert_eq!(model["demos"], json!(["MILAN_TWO_DAYS"]));
-    assert_eq!(model["constraints"].as_array().unwrap().len(), 38);
+    assert_eq!(model["constraints"].as_array().unwrap().len(), 39);
     let params: Vec<&str> = model["parameters"]
         .as_array()
         .unwrap()

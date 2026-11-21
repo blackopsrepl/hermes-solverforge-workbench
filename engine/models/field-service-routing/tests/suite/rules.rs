@@ -913,3 +913,55 @@ fn moving_away_from_the_end_location_costs_the_meters() {
         soft(5000)
     );
 }
+
+#[test]
+fn visits_use_up_the_parts_their_shift_loads_in_route_order() {
+    let stock = json!({"stock": [{"part": "filter", "quantity": 3}]});
+    let visits = vec![
+        visit(
+            "a",
+            10,
+            json!({"parts": [{"part": "filter", "quantity": 2}]}),
+        ),
+        visit(
+            "b",
+            10,
+            json!({"parts": [{"part": "filter", "quantity": 2}, {"part": "valve", "quantity": 1}]}),
+        ),
+    ];
+    // Three filters: b finds one, is a filter and the valve the shift never loaded short.
+    assert_eq!(
+        rule(
+            plan(&["a", "b"], stock.clone(), visits.clone(), json!({})),
+            Rule::PartsMissing
+        ),
+        hard(2 * 3600)
+    );
+    // Enough of both: nothing short.
+    let full =
+        json!({"stock": [{"part": "filter", "quantity": 4}, {"part": "valve", "quantity": 1}]});
+    assert_eq!(
+        rule(
+            plan(&["a", "b"], full, visits.clone(), json!({})),
+            Rule::PartsMissing
+        ),
+        ZERO
+    );
+    // Unplanned visits use nothing.
+    assert_eq!(
+        rule(plan(&["a"], stock, visits, json!({})), Rule::PartsMissing),
+        ZERO
+    );
+}
+
+#[test]
+fn a_negative_part_quantity_is_refused() {
+    let visits = vec![visit(
+        "a",
+        10,
+        json!({"parts": [{"part": "filter", "quantity": -1}]}),
+    )];
+    assert!(
+        issue_codes(plan(&["a"], json!({}), visits, json!({}))).contains(&"bad_parts".to_string())
+    );
+}

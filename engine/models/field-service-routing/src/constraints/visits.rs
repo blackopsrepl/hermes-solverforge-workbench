@@ -108,6 +108,7 @@ pub fn constraints() -> impl ConstraintSet<Plan, Score> {
             TagsMissing,
             NotRequiredVehicle,
             ProhibitedVehicle,
+            PartsMissing,
         ),
         loops(),
     )

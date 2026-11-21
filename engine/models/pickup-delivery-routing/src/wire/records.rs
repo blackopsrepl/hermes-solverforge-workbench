@@ -5,6 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 pub use solverforge_workbench_host::roads::{ModeTravel, TravelMode};
+pub use solverforge_workbench_host::stock::Part;
 pub use solverforge_workbench_host::traffic::{Traffic, TravelPeriod};
 
 /// A driver and the shifts they work.
@@ -26,6 +27,9 @@ pub struct Driver {
 pub struct DriverShift {
     pub id: String,
     pub start_location: [f64; 2],
+    /// Parts loaded before the shift sets off, used up at its stops.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub stock: Vec<Part>,
     /// Where the shift ends; the start location when unset.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub end_location: Option<[f64; 2]>,
@@ -209,6 +213,10 @@ pub struct Stop {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     pub location: [f64; 2],
+    /// Parts the stop uses up from the stock of the shift serving it, as
+    /// when a driver installs what it delivers from the van's own stock.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parts: Vec<Part>,
     /// Service minutes on site.
     pub duration: i64,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

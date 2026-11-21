@@ -3,6 +3,7 @@
 use std::collections::HashMap;
 
 use solverforge_workbench_host::roads::TravelMode;
+use solverforge_workbench_host::stock::PartNames;
 use solverforge_workbench_host::traffic;
 use solverforge_workbench_host::Issue;
 
@@ -1332,6 +1333,63 @@ pub fn build(plan: &Plan, issues: &mut Vec<Issue>) -> Option<Built> {
         .collect();
     let bench_skills = skills.0;
     let bench_tags = tags.0;
+    // Parts: what each shift loads, what each visit uses up.
+    let mut part_names = PartNames::default();
+    let wire_visits: HashMap<&str, &crate::wire::Visit> = plan
+        .visits
+        .iter()
+        .chain(plan.visit_groups.iter().flat_map(|g| g.visits.iter()))
+        .map(|v| (v.id.as_str(), v))
+        .collect();
+    let mut visit_parts = Vec::with_capacity(visit_facts.len());
+    for fact in &visit_facts {
+        let needs = match wire_visits.get(fact.id.as_str()) {
+            Some(visit) => part_names.read(&visit.parts, &format!("visit {:?}", visit.id)),
+            None => Ok(Vec::new()),
+        };
+        match needs {
+            Ok(needs) => visit_parts.push(needs),
+            Err(message) => {
+                issues.push(Issue::error("bad_parts", message));
+                return None;
+            }
+        }
+    }
+    let wire_shifts_by_id: HashMap<&str, &crate::wire::VehicleShift> = plan
+        .vehicles
+        .iter()
+        .flat_map(|v| v.shifts.iter())
+        .map(|s| (s.id.as_str(), s))
+        .collect();
+    let mut loads = Vec::with_capacity(shift_facts.len());
+    for fact in &shift_facts {
+        // A linked shift sets off with what its first day's shift loads.
+        let id = match fact.components.first() {
+            Some(&first) => shift_facts[first].id.as_str(),
+            None => fact.id.as_str(),
+        };
+        let stock = match wire_shifts_by_id.get(id) {
+            Some(shift) => part_names.read(&shift.stock, &format!("shift {:?}", shift.id)),
+            None => Ok(Vec::new()),
+        };
+        match stock {
+            Ok(stock) => loads.push(stock),
+            Err(message) => {
+                issues.push(Issue::error("bad_parts", message));
+                return None;
+            }
+        }
+    }
+    let shift_stock = loads
+        .into_iter()
+        .map(|load| {
+            let mut units = vec![0; part_names.names.len()];
+            for (part, quantity) in load {
+                units[part] += quantity;
+            }
+            units
+        })
+        .collect();
     Some((
         Facts {
             window,
@@ -1353,6 +1411,9 @@ pub fn build(plan: &Plan, issues: &mut Vec<Issue>) -> Option<Built> {
                 .visit_completion_risk_minimal_time_to_shift_end
                 * 60,
             holidays,
+            parts: part_names.names,
+            visit_parts,
+            shift_stock,
         },
         statics,
         shifts,

@@ -142,15 +142,15 @@ fn a_dependency_delayed_to_the_next_working_day_waits_for_it() {
 #[test]
 fn the_catalog_names_every_constraint_the_engine_scores() {
     let catalog = FieldServiceRouting::catalog();
-    assert_eq!(catalog.len(), 64);
+    assert_eq!(catalog.len(), 65);
     let hard = catalog
         .iter()
         .filter(|c| matches!(c.level, solverforge_workbench_host::Level::Hard));
-    assert_eq!(hard.count(), 32);
+    assert_eq!(hard.count(), 33);
     let scored = scores(FieldServiceRouting::present(
         &FieldServiceRouting::demo("TURIN_TWO_DAYS").unwrap(),
     ));
-    assert_eq!(scored.len(), 64);
+    assert_eq!(scored.len(), 65);
     for info in &catalog {
         assert!(
             scored.contains_key(info.name),
@@ -264,6 +264,8 @@ fn a_scrambled_demo_breaks_most_rules() {
             Rule::Overnight.name(),
             Rule::Loops.name(),
             Rule::DependencyPooling.name(),
+            // The demo carries no parts.
+            Rule::PartsMissing.name(),
         ])
         .collect();
     let missing: Vec<&str> = RULES
@@ -516,7 +518,7 @@ fn the_engine_describes_the_model() {
     assert_eq!(code, 0, "{model}");
     assert_eq!(model["view"], "routes");
     assert_eq!(model["demos"], json!(["TURIN_TWO_DAYS"]));
-    assert_eq!(model["constraints"].as_array().unwrap().len(), 64);
+    assert_eq!(model["constraints"].as_array().unwrap().len(), 65);
     assert_eq!(model["parameters"].as_array().unwrap().len(), 11);
     for p in model["parameters"].as_array().unwrap() {
         assert!(!p["label"].as_str().unwrap().is_empty(), "{p}");

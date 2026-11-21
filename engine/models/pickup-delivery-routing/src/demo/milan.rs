@@ -406,6 +406,7 @@ fn shifts(crew: &Crew, day: i64) -> DriverShift {
     DriverShift {
         id: format!("{}-{}", crew.id, ["mon", "tue"][day as usize]),
         start_location: [lat, lon],
+        stock: Vec::new(),
         end_location: None,
         min_start_time: Some(at(day, start)),
         max_soft_end_time: Some(at(day, end)),
@@ -503,6 +504,7 @@ fn patient_jobs(rng: &mut Rng, day: i64, n: usize, jobs: &mut Vec<Job>) {
             id: format!("{id}-a"),
             name: Some(format!("{area} home")),
             location: home,
+            parts: Vec::new(),
             duration: if wheelchair { 10 } else { 5 },
             // Collected in time to reach the appointment, and no earlier than
             // the hospital lets the patient in less the ride: a pick-up any
@@ -518,6 +520,7 @@ fn patient_jobs(rng: &mut Rng, day: i64, n: usize, jobs: &mut Vec<Job>) {
             id: format!("{id}-b"),
             name: Some(hospital.to_string()),
             location: [plat, plon],
+            parts: Vec::new(),
             duration: if wheelchair { 8 } else { 4 },
             time_windows: vec![window(day, appointment - 60, appointment)],
             ..Stop::default()
@@ -536,6 +539,7 @@ fn patient_jobs(rng: &mut Rng, day: i64, n: usize, jobs: &mut Vec<Job>) {
                 id: format!("{rid}-a"),
                 name: Some(hospital.to_string()),
                 location: [plat, plon],
+                parts: Vec::new(),
                 duration: if wheelchair { 10 } else { 5 },
                 time_windows: vec![window(day, back, back + 90)],
                 ..Stop::default()
@@ -544,6 +548,7 @@ fn patient_jobs(rng: &mut Rng, day: i64, n: usize, jobs: &mut Vec<Job>) {
                 id: format!("{rid}-b"),
                 name: Some(format!("{area} home")),
                 location: home,
+                parts: Vec::new(),
                 duration: if wheelchair { 8 } else { 4 },
                 time_windows: vec![window(day, back, back + 150)],
                 ..Stop::default()
@@ -591,6 +596,7 @@ fn courier_jobs(rng: &mut Rng, day: i64, n: usize, jobs: &mut Vec<Job>) {
             id: format!("{id}-a"),
             name: Some(hub_name.to_string()),
             location: [hlat, hlon],
+            parts: Vec::new(),
             duration: 5,
             time_windows: windows(ready, (ready + 240).min(18 * 60 + 30)),
             demands: vec![Demand {
@@ -609,6 +615,7 @@ fn courier_jobs(rng: &mut Rng, day: i64, n: usize, jobs: &mut Vec<Job>) {
                 id: format!("{id}-{}", ["b", "c"][d]),
                 name: Some(name.to_string()),
                 location: near(rng, lat, lon, 60.0),
+                parts: Vec::new(),
                 duration: 5 + rng.below(3) as i64 * 5,
                 time_windows: windows(ready, (ready + 360).min(19 * 60)),
                 demands: vec![Demand {

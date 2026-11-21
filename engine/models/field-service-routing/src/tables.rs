@@ -203,6 +203,7 @@ fn visit() -> Vec<Column> {
     vec![
         col("name", "Name", "text").optional(),
         col("location", "Place", "location"),
+        solverforge_workbench_host::stock::column("parts", "Parts used"),
         col("serviceDuration", "Length", "minutes").unit("minutes"),
         col("priority", "Priority", "text")
             .options(priority_options())
@@ -328,6 +329,7 @@ pub fn tables() -> Vec<Table> {
             "Should leave the last visit by",
         ),
         col("startLocation", "Starts at", "location"),
+        solverforge_workbench_host::stock::column("stock", "Parts loaded"),
         col("endLocation", "Ends at", "location").optional(),
         area("requiredArea", "Works only in"),
         area("preferredArea", "Prefers to work in"),

@@ -439,6 +439,12 @@ pub struct Facts {
     pub risk_margin: i64,
     /// Days (since 1970) that are no working day besides weekends.
     pub holidays: Vec<i64>,
+    /// Part names, in the order the dataset first names them.
+    pub parts: Vec<String>,
+    /// Per element, the parts it uses up: `(part, quantity)`.
+    pub visit_parts: Vec<Vec<(usize, i64)>>,
+    /// Per shift, the units of each part it loads.
+    pub shift_stock: Vec<Vec<i64>>,
 }
 
 impl Facts {
