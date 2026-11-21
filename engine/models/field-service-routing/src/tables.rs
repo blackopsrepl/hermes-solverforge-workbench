@@ -353,6 +353,16 @@ pub fn tables() -> Vec<Table> {
             title: "name",
             columns: vec![
                 col("name", "Name", "text").optional(),
+                choice(
+                    "travelMode",
+                    "Travels",
+                    &[
+                        ("car", "By car"),
+                        ("bicycle", "By bicycle"),
+                        ("foot", "On foot"),
+                    ],
+                )
+                .optional(),
                 col("technicianRating", "Rating", "number")
                     .unit("points")
                     .optional(),

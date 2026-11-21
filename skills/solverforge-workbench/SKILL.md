@@ -137,6 +137,13 @@ model and its data (it asks the user) and leaves the project's files.
   `travelMatrix` brings one per period in `travelMatrix.periods` (`id`,
   `seconds`, `meters`) instead. OpenStreetMap has no traffic data: the
   slowdowns are the user's own figures, never invented ones.
+- Travel modes: a technician or driver with `travelMode` `bicycle` or `foot`
+  travels on that mode's own paths (cycleways, footways, steps on foot), at
+  15 or 5 km/h, ignoring one-way streets on foot and not slowed by busy
+  periods; `car` (or unset) drives. The engine measures each mode the plan
+  uses (a separate road download per mode) into `travelMatrix.modes`; a
+  dataset with its own matrix brings one per mode (`mode`, `seconds`,
+  `meters`).
 - The road cache belongs to the engine. Never write, copy, rename or delete
   files in it, never hand a dataset a network or a travel matrix made from a
   stock demo's roads, and never stand a demo in for a real area: a real

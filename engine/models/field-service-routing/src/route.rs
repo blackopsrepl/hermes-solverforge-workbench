@@ -227,10 +227,11 @@ fn ready(facts: &Facts, s: usize, state: &State, v: usize, not_before: i64) -> R
     let depart = fact
         .min_start_travel
         .map_or(state.clock, |m| state.clock.max(m));
-    let (travel, distance, unreachable) = match facts.travel.leg_at(state.place, to, depart) {
-        Some((secs, m)) => (shift.drive(secs), m, false),
-        None => (0, 0, true),
-    };
+    let (travel, distance, unreachable) =
+        match facts.travel.trip(shift.vehicle, state.place, to, depart) {
+            Some((secs, m)) => (shift.drive(secs), m, false),
+            None => (0, 0, true),
+        };
     let mut arrival = shift.advance(depart, travel);
     if !state.active {
         if let Some(m) = shift.min_first_arrival {
@@ -383,7 +384,12 @@ fn serve(
     add(Rule::ReachableVisit, i64::from(r.unreachable) * HOUR);
     if state.active {
         if let Some(to) = fact.location {
-            let toward = |from: usize| facts.travel.leg(from, shift.end_location).map(|l| l.1);
+            let toward = |from: usize| {
+                facts
+                    .travel
+                    .leg_of(shift.vehicle, from, shift.end_location)
+                    .map(|l| l.1)
+            };
             if let (Some(before), Some(after)) = (toward(state.place), toward(to)) {
                 add(Rule::TowardsEnd, (after - before).max(0));
             }
@@ -470,10 +476,14 @@ fn rest(
         unreachable!("rest takes breaks")
     };
     let to = fact.location.unwrap_or(state.place);
-    let (travel, distance, unreachable) = match facts.travel.leg_at(state.place, to, state.clock) {
-        Some((secs, m)) => (shift.drive(secs), m, false),
-        None => (0, 0, true),
-    };
+    let (travel, distance, unreachable) =
+        match facts
+            .travel
+            .trip(shift.vehicle, state.place, to, state.clock)
+        {
+            Some((secs, m)) => (shift.drive(secs), m, false),
+            None => (0, 0, true),
+        };
     let arrival = state.clock + travel;
     let start = arrival.max(b.start);
     let end = start + b.duration;
@@ -525,7 +535,7 @@ pub fn finish(facts: &Facts, s: usize, state: &State) -> End {
     let (travel, distance, unreachable) =
         match facts
             .travel
-            .leg_at(state.place, shift.end_location, state.clock)
+            .trip(shift.vehicle, state.place, shift.end_location, state.clock)
         {
             Some((secs, m)) => (shift.drive(secs), m, false),
             None => (0, 0, true),

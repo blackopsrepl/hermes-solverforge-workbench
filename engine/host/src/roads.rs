@@ -15,7 +15,8 @@ use std::ops::Deref;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+pub use solverforge_maps::TravelMode;
 use solverforge_maps::{
     BoundingBox, ConnectivityPolicy, Coord, NetworkConfig, NetworkRef, RoadNetwork, SnapAccess,
     SnappedCoord, TravelTimeMatrix, UNREACHABLE,
@@ -48,6 +49,18 @@ pub struct RoadMatrix {
     pub snapped: Vec<Option<f64>>,
     /// The travel of each busy period that slows roads, measured with its slowdowns.
     pub periods: Vec<TravelPeriod>,
+    /// The travel of each other mode than the car's the plan's vehicles use.
+    pub modes: Vec<ModeTravel>,
+}
+
+/// Travel by bicycle or on foot between a matrix's locations, on that mode's
+/// own paths and at its own speed; `null` where no way leads.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModeTravel {
+    pub mode: TravelMode,
+    pub seconds: Grid,
+    pub meters: Grid,
 }
 
 /// What a plan's travel stands on now.
@@ -106,6 +119,15 @@ pub struct Roads {
 
 impl Roads {
     pub fn load(config: Option<&RoadsConfig>, points: &[[f64; 2]]) -> Result<Self, EngineError> {
+        Self::load_for(config, points, TravelMode::Car)
+    }
+
+    /// The network around `points` travelled in `mode`: by car, bicycle or on foot.
+    pub fn load_for(
+        config: Option<&RoadsConfig>,
+        points: &[[f64; 2]],
+        mode: TravelMode,
+    ) -> Result<Self, EngineError> {
         let bbox = area(points)?;
         let runtime = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
@@ -131,7 +153,7 @@ impl Roads {
             .cache_dir(&config.cache_dir)
             .connectivity_policy(ConnectivityPolicy::LargestStronglyConnectedComponent);
         let network = runtime
-            .block_on(RoadNetwork::load_or_fetch(&bbox, &settings, None))
+            .block_on(RoadNetwork::load_or_fetch_for(&bbox, &settings, mode, None))
             .map_err(|error| {
                 EngineError::new(
                     "roads_failed",
@@ -181,9 +203,28 @@ impl Roads {
                 .map(|snap| Some(snap.snap_distance_m).filter(|m| m.is_finite()))
                 .collect(),
             periods,
+            modes: Vec::new(),
         };
         let issues = issues(places, &matrix);
         Ok((matrix, issues))
+    }
+
+    /// Travel in this network's mode between every pair of `places`.
+    pub fn mode_travel(
+        &self,
+        places: &[Place],
+        mode: TravelMode,
+    ) -> Result<ModeTravel, EngineError> {
+        let coords = places
+            .iter()
+            .map(|p| coord(p.point))
+            .collect::<Result<Vec<_>, _>>()?;
+        let (seconds, meters, _) = self.measure(&self.network, &coords);
+        Ok(ModeTravel {
+            mode,
+            seconds,
+            meters,
+        })
     }
 
     /// Seconds and meters between every pair of `coords` on `network`, and the

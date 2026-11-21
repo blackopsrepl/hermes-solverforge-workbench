@@ -311,6 +311,10 @@ pub struct Travel {
     periods: Vec<Option<Legs>>,
     /// When each busy period runs, in time order.
     windows: Vec<BusyWindow>,
+    /// Legs of each mode other than the car's, in the plan's order.
+    modes: Vec<Legs>,
+    /// Per vehicle, which travel it uses: 0 the car's, `m` the `m`-th mode's.
+    vehicle_modes: Vec<usize>,
 }
 
 impl Travel {
@@ -320,6 +324,8 @@ impl Travel {
             legs,
             periods: Vec::new(),
             windows: Vec::new(),
+            modes: Vec::new(),
+            vehicle_modes: Vec::new(),
         }
     }
 
@@ -333,6 +339,38 @@ impl Travel {
     /// Seconds and meters from `from` to `to` at usual speeds.
     pub fn leg(&self, from: usize, to: usize) -> Option<(i64, i64)> {
         self.legs[from * self.places.len() + to]
+    }
+
+    /// The same travel, with the vehicles that go by bicycle or on foot
+    /// travelling on their mode's legs: `vehicle_modes[v]` is 0 for a car,
+    /// `m` for the `m`-th of `modes`.
+    pub fn with_modes(mut self, modes: Vec<Legs>, vehicle_modes: Vec<usize>) -> Self {
+        self.modes = modes;
+        self.vehicle_modes = vehicle_modes;
+        self
+    }
+
+    /// Which travel `vehicle` uses: 0 the car's, `m` the `m`-th mode's.
+    fn mode(&self, vehicle: usize) -> usize {
+        self.vehicle_modes.get(vehicle).copied().unwrap_or(0)
+    }
+
+    /// Seconds and meters from `from` to `to` for `vehicle` at usual speeds.
+    pub fn leg_of(&self, vehicle: usize, from: usize, to: usize) -> Option<(i64, i64)> {
+        match self.mode(vehicle) {
+            0 => self.leg(from, to),
+            m => self.modes[m - 1][from * self.places.len() + to],
+        }
+    }
+
+    /// Seconds and meters from `from` to `to` for `vehicle` leaving at
+    /// `depart`: a car drives through the busy periods it crosses; a bicycle
+    /// or a walker is not slowed by them.
+    pub fn trip(&self, vehicle: usize, from: usize, to: usize, depart: i64) -> Option<(i64, i64)> {
+        match self.mode(vehicle) {
+            0 => self.leg_at(from, to, depart),
+            _ => self.leg_of(vehicle, from, to),
+        }
     }
 
     /// Seconds and meters from `from` to `to` leaving at `depart`: driven

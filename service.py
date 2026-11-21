@@ -1253,8 +1253,9 @@ def with_params(plan: dict[str, Any], params: dict[str, Any] | None) -> dict[str
 
 def _roads_due(plan: dict[str, Any]) -> bool:
     """Whether a routing plan's travel must be measured on the roads: it has none yet, or its road
-    travel was measured with other busy-period slowdowns than the plan's ``traffic`` has now. A
-    travel matrix the dataset brought itself is never replaced."""
+    travel was measured with other busy-period slowdowns than the plan's ``traffic`` has now, or
+    for other travel modes than its vehicles use. A travel matrix the dataset brought itself is
+    never replaced."""
     matrix = plan.get("travelMatrix")
     if not isinstance(matrix, dict):
         return True
@@ -1264,7 +1265,13 @@ def _roads_due(plan: dict[str, Any]) -> bool:
               if isinstance(t, dict) and t.get("slowdowns")]
     measured = [(p.get("id"), p.get("slowdowns")) for p in matrix.get("periods") or []
                 if isinstance(p, dict)]
-    return wanted != measured
+    modes: list[str] = []
+    for vehicle in (plan.get("vehicles") or []) + (plan.get("drivers") or []):
+        mode = vehicle.get("travelMode") if isinstance(vehicle, dict) else None
+        if mode and mode != "car" and mode not in modes:
+            modes.append(mode)
+    kept = [m.get("mode") for m in matrix.get("modes") or [] if isinstance(m, dict)]
+    return wanted != measured or modes != kept
 
 
 def _score_key(score: str | None) -> tuple[float, ...]:

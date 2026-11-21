@@ -7,7 +7,7 @@ use solverforge::{ConstraintSet, ConstraintWeightError, ConstraintWeights};
 
 use crate::model::{Issue, Model, Severity};
 use crate::protocol::EngineError;
-use crate::roads::{issues, same, Roads, RoadsConfig, Travel};
+use crate::roads::{issues, same, Roads, RoadsConfig, Travel, TravelMode};
 use crate::traffic::slowed_periods;
 
 /// Deserializes and prepares the plan. A model that travels gets its travel
@@ -71,6 +71,12 @@ fn road_travel<M: Model>(
         return Ok(Vec::new());
     }
     let traffic = M::traffic(plan);
+    let mut modes: Vec<TravelMode> = Vec::new();
+    for mode in M::travel_modes(plan) {
+        if mode != TravelMode::Car && !modes.contains(&mode) {
+            modes.push(mode);
+        }
+    }
     match M::travel(plan) {
         Travel::Given => return Ok(Vec::new()),
         // Kept while it covers every place and was measured with the busy
@@ -83,7 +89,12 @@ fn road_travel<M: Model>(
                     .periods
                     .iter()
                     .map(|p| (p.id.as_str(), p.slowdowns.as_slice()))
-                    .eq(slowed_periods(&traffic)) =>
+                    .eq(slowed_periods(&traffic))
+                && matrix
+                    .modes
+                    .iter()
+                    .map(|m| m.mode)
+                    .eq(modes.iter().copied()) =>
         {
             return Ok(issues(&places, &matrix));
         }
@@ -96,7 +107,11 @@ fn road_travel<M: Model>(
         }
     }
     let points: Vec<[f64; 2]> = distinct.iter().map(|p| p.point).collect();
-    let (matrix, issues) = Roads::load(roads, &points)?.matrix(&distinct, &traffic)?;
+    let (mut matrix, issues) = Roads::load(roads, &points)?.matrix(&distinct, &traffic)?;
+    for mode in modes {
+        let travel = Roads::load_for(roads, &points, mode)?.mode_travel(&distinct, mode)?;
+        matrix.modes.push(travel);
+    }
     M::set_roads(plan, matrix);
     Ok(issues)
 }

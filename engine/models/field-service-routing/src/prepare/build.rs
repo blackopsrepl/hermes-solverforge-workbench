@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 
+use solverforge_workbench_host::roads::TravelMode;
 use solverforge_workbench_host::traffic;
 use solverforge_workbench_host::Issue;
 
@@ -156,7 +157,52 @@ fn travel(
         legs
     };
     let legs = legs_of(&matrix.seconds, &matrix.meters);
-    let travel = Travel::new(places, legs.clone());
+    // Vehicles that go by bicycle or on foot travel on their mode's own legs.
+    let mut modes: Vec<TravelMode> = Vec::new();
+    let mut vehicle_modes = Vec::with_capacity(plan.vehicles.len());
+    for vehicle in &plan.vehicles {
+        match vehicle.travel_mode.filter(|m| *m != TravelMode::Car) {
+            None => vehicle_modes.push(0),
+            Some(mode) => {
+                let index = match modes.iter().position(|m| *m == mode) {
+                    Some(i) => i,
+                    None => {
+                        modes.push(mode);
+                        modes.len() - 1
+                    }
+                };
+                vehicle_modes.push(index + 1);
+            }
+        }
+    }
+    let mut mode_legs = Vec::with_capacity(modes.len());
+    for mode in &modes {
+        let Some(measured) = matrix.modes.iter().find(|m| m.mode == *mode) else {
+            issues.push(Issue::error(
+                "mode_without_travel",
+                format!(
+                    "travelMatrix.modes has no travel {}: a vehicle travels that way",
+                    match mode {
+                        TravelMode::Foot => "on foot".to_string(),
+                        other => format!("by {}", other.as_str()),
+                    }
+                ),
+            ));
+            return None;
+        };
+        if !square(&measured.seconds, &measured.meters) {
+            issues.push(Issue::error(
+                "bad_travel_matrix",
+                format!(
+                    "travelMatrix.modes {}: seconds and meters must be square and match locations",
+                    mode.as_str()
+                ),
+            ));
+            return None;
+        }
+        mode_legs.push(legs_of(&measured.seconds, &measured.meters));
+    }
+    let travel = Travel::new(places, legs.clone()).with_modes(mode_legs, vehicle_modes);
     if plan.traffic.is_empty() {
         return Some(travel);
     }
@@ -1207,8 +1253,16 @@ pub fn build(plan: &Plan, issues: &mut Vec<Issue>) -> Option<Built> {
                     .sum::<i64>();
             let place = visit.location;
             let round_trip = travel
-                .leg(fact.start_location, visit_facts[v].location.unwrap_or(0))
-                .zip(travel.leg(visit_facts[v].location.unwrap_or(0), fact.end_location))
+                .leg_of(
+                    fact.vehicle,
+                    fact.start_location,
+                    visit_facts[v].location.unwrap_or(0),
+                )
+                .zip(travel.leg_of(
+                    fact.vehicle,
+                    visit_facts[v].location.unwrap_or(0),
+                    fact.end_location,
+                ))
                 .map(|(a, b)| fact.drive(a.0) + visit_facts[v].service + fact.drive(b.0));
             fits[v * shift_facts.len() + s] = Fit {
                 not_required: !visit.required_vehicles.is_empty()

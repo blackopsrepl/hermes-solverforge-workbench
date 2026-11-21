@@ -660,6 +660,7 @@ pub fn milan_two_days() -> Plan {
         .map(|crew| Driver {
             id: crew.id.to_string(),
             name: Some(crew.name.to_string()),
+            travel_mode: None,
             shifts: (0..2).map(|day| shifts(crew, day)).collect(),
         })
         .collect();

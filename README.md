@@ -71,6 +71,10 @@ leg that runs into a rush hour slows down from the moment it does, so leaving
 later never arrives earlier. A dataset with its own travel matrix brings one
 matrix per period.
 
+Technicians and drivers may also go by bicycle or on foot: each mode travels
+its own paths (cycleways, footways and steps), at its own speed, and is not
+slowed by busy periods.
+
 ### Your own models
 
 A project made with [solverforge-cli](https://github.com/SolverForge/solverforge-cli)

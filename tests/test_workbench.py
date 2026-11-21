@@ -177,6 +177,9 @@ def test_a_dataset_that_travels_is_measured_on_the_roads_the_first_time_it_is_us
                        for t in request["plan"].get("traffic", []) if t.get("slowdowns")]
             if periods:
                 matrix["periods"] = periods
+            modes = [v["travelMode"] for v in request["plan"].get("vehicles", []) if v.get("travelMode")]
+            if modes:
+                matrix["modes"] = [{"mode": m, "seconds": [[0]], "meters": [[0]]} for m in modes]
             return {"plan": {**request["plan"], "travelMatrix": matrix}, "issues": []}
         return real_call(model_id, request, timeout_s)
 
@@ -211,11 +214,17 @@ def test_a_dataset_that_travels_is_measured_on_the_roads_the_first_time_it_is_us
     assert len(roads()) == calls + 1 and measured["periods"][0]["slowdowns"] == rush[0]["slowdowns"]
     wb.evaluate(copied["id"])
     assert len(roads()) == calls + 1
+    # A vehicle that starts walking: measured again for that mode.
+    walking = wb.dataset(copied["id"], with_plan=True)["plan"]
+    walking["vehicles"] = [{"id": "v", "travelMode": "foot"}]
+    wb.store.set_dataset_plan(copied["id"], walking)
+    wb.evaluate(copied["id"])
+    assert len(roads()) == calls + 2
     # Its own matrix stays its own, busy periods or not.
     own = {**wb.dataset(given["id"], with_plan=True)["plan"], "traffic": rush}
     wb.store.set_dataset_plan(given["id"], own)
     wb.evaluate(given["id"])
-    assert len(roads()) == calls + 1
+    assert len(roads()) == calls + 2
 
 
 def test_a_check_reads_scores_and_lists_issues_without_storing_anything(wb):

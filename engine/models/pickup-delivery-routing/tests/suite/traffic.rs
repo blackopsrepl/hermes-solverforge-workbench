@@ -147,3 +147,16 @@ fn incremental_scores_match_full_ones_through_busy_periods() {
     );
     assert_incremental_matches_full(prepared(wire), 300, 11);
 }
+
+#[test]
+fn a_driver_by_bicycle_rides_on_the_cycling_legs() {
+    let mut extra = with_rush(rush());
+    extra["travelMatrix"]["modes"] = json!([{
+        "mode": "bicycle", "seconds": [[0, 900], [900, 0]], "meters": [[0, 4000], [4000, 0]],
+    }]);
+    let mut wire = trip(8, 0, extra);
+    wire["drivers"][0]["travelMode"] = json!("bicycle");
+    assert_eq!(travel_time(wire.clone()), soft(1800));
+    wire["travelMatrix"]["modes"] = json!([]);
+    assert!(issue_codes(wire).contains(&"mode_without_travel".to_string()));
+}

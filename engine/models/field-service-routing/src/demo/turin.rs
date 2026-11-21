@@ -723,6 +723,7 @@ pub fn turin_two_days() -> Plan {
         .map(|(k, crew)| Vehicle {
             id: crew.id.into(),
             name: Some(crew.name.into()),
+            travel_mode: None,
             shifts: (0..2).map(|day| shift(crew, day, k)).collect(),
             linked_shifts: Vec::new(),
             historical_time_utilized: crew.history.0 * 60,

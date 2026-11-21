@@ -244,7 +244,7 @@ pub fn visit(facts: &Facts, s: usize, state: &State, v: usize) -> (At, State) {
     };
     let leg = fact
         .location
-        .map(|to| (to, facts.travel.leg_at(state.place, to, depart)));
+        .map(|to| (to, facts.travel.trip(shift.driver, state.place, to, depart)));
     let (travel, distance, reachable) = match leg {
         Some((_, Some((secs, meters)))) => (secs, meters, true),
         Some((_, None)) => (0, 0, false),
@@ -367,7 +367,7 @@ pub fn finish(facts: &Facts, s: usize, state: &State) -> End {
     let (travel, distance, unreachable) =
         match facts
             .travel
-            .leg_at(state.place, shift.end_location, state.clock)
+            .trip(shift.driver, state.place, shift.end_location, state.clock)
         {
             Some((travel, distance)) => (travel, distance, false),
             None => (0, 0, true),
@@ -465,7 +465,10 @@ fn ride(
         Some(i) => {
             let a = &mut next.aboard[i];
             let leg = match (a.last_location, location) {
-                (Some(from), Some(to)) => facts.travel.leg(from, to).map_or(0, |l| l.0),
+                (Some(from), Some(to)) => facts
+                    .travel
+                    .leg_of(next.driver, from, to)
+                    .map_or(0, |l| l.0),
                 _ => 0,
             };
             a.direct += a.last_service + leg;

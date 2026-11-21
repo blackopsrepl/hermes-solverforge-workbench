@@ -171,3 +171,48 @@ fn incremental_scores_match_full_ones_through_busy_periods() {
     );
     assert_incremental_matches_full(prepared(wire), 300, 7);
 }
+
+// Travel modes: a technician on foot or by bicycle travels on that mode's legs.
+
+fn walking(extra: Value) -> Value {
+    let mut wire = trip(8, 0, extra);
+    wire["vehicles"][0]["travelMode"] = json!("foot");
+    wire
+}
+
+#[test]
+fn a_technician_on_foot_travels_on_the_walking_legs_and_is_not_slowed_by_rush_hours() {
+    let mut matrix = matrix_with_rush();
+    matrix["modes"] = json!([{
+        "mode": "foot", "seconds": [[0, 1800], [1800, 0]], "meters": [[0, 2500], [2500, 0]],
+    }]);
+    let extra = json!({"travelMatrix": matrix, "traffic": [rush("08:00", "09:00")]});
+    assert_eq!(travel_time(walking(extra.clone())), soft(3600));
+    // By car the same trip is in the rush: twenty minutes each way.
+    assert_eq!(travel_time(trip(8, 0, extra)), soft(2400));
+}
+
+#[test]
+fn a_mode_without_travel_is_refused() {
+    let extra = json!({"travelMatrix": matrix_with_rush()});
+    assert!(issue_codes(walking(extra)).contains(&"mode_without_travel".to_string()));
+}
+
+#[test]
+fn the_engine_measures_each_mode_its_technicians_use() {
+    let mut wire = walking(json!({}));
+    wire["vehicles"]
+        .as_array_mut()
+        .unwrap()
+        .push(vehicle("bea", shift("bea-mon", &[], json!({}))));
+    give_roads(&wire);
+    let (code, answer) = engine(json!({"command": "roads", "plan": wire}));
+    assert_eq!(code, 0, "{answer}");
+    let modes = answer["plan"]["travelMatrix"]["modes"]
+        .as_array()
+        .unwrap()
+        .clone();
+    assert_eq!(modes.len(), 1, "{modes:?}");
+    assert_eq!(modes[0]["mode"], "foot");
+    assert!(modes[0]["seconds"][0][1].as_i64().unwrap() > 0);
+}

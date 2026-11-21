@@ -11,7 +11,7 @@ use crate::analysis::Analysis;
 use crate::edit::{Compiled, Edit};
 use crate::fill::{FillAnswer, FillRequest};
 use crate::protocol::EngineError;
-use crate::roads::{Place, RoadMatrix, Travel};
+use crate::roads::{Place, RoadMatrix, Travel, TravelMode};
 use crate::traffic::Traffic;
 use crate::view::View;
 
@@ -82,6 +82,11 @@ pub trait Model: 'static + Sized {
     /// The plan's busy periods: the roads measure the travel of each one that
     /// slows roads, beside the usual travel.
     fn traffic(_plan: &Self::Plan) -> Vec<Traffic> {
+        Vec::new()
+    }
+    /// The modes other than the car's the plan's vehicles travel in: the
+    /// roads measure each one's travel on its own paths.
+    fn travel_modes(_plan: &Self::Plan) -> Vec<TravelMode> {
         Vec::new()
     }
     /// Gives the plan travel measured along the roads between the places

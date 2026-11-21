@@ -2,6 +2,7 @@
 
 use std::collections::{BTreeSet, HashMap};
 
+use solverforge_workbench_host::roads::TravelMode;
 use solverforge_workbench_host::traffic;
 use solverforge_workbench_host::Issue;
 
@@ -113,7 +114,52 @@ fn travel(
         legs
     };
     let legs = legs_of(&matrix.seconds, &matrix.meters);
-    let travel = Travel::new(places, legs.clone());
+    // Vehicles that go by bicycle or on foot travel on their mode's own legs.
+    let mut modes: Vec<TravelMode> = Vec::new();
+    let mut vehicle_modes = Vec::with_capacity(plan.drivers.len());
+    for vehicle in &plan.drivers {
+        match vehicle.travel_mode.filter(|m| *m != TravelMode::Car) {
+            None => vehicle_modes.push(0),
+            Some(mode) => {
+                let index = match modes.iter().position(|m| *m == mode) {
+                    Some(i) => i,
+                    None => {
+                        modes.push(mode);
+                        modes.len() - 1
+                    }
+                };
+                vehicle_modes.push(index + 1);
+            }
+        }
+    }
+    let mut mode_legs = Vec::with_capacity(modes.len());
+    for mode in &modes {
+        let Some(measured) = matrix.modes.iter().find(|m| m.mode == *mode) else {
+            issues.push(Issue::error(
+                "mode_without_travel",
+                format!(
+                    "travelMatrix.modes has no travel {}: a vehicle travels that way",
+                    match mode {
+                        TravelMode::Foot => "on foot".to_string(),
+                        other => format!("by {}", other.as_str()),
+                    }
+                ),
+            ));
+            return None;
+        };
+        if !square(&measured.seconds, &measured.meters) {
+            issues.push(Issue::error(
+                "bad_travel_matrix",
+                format!(
+                    "travelMatrix.modes {}: seconds and meters must be square and match locations",
+                    mode.as_str()
+                ),
+            ));
+            return None;
+        }
+        mode_legs.push(legs_of(&measured.seconds, &measured.meters));
+    }
+    let travel = Travel::new(places, legs.clone()).with_modes(mode_legs, vehicle_modes);
     if plan.traffic.is_empty() {
         return Some(travel);
     }

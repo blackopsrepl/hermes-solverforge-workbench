@@ -3,7 +3,7 @@
 use solverforge::{ConstraintSet, ConstraintWeights, HardMediumSoftScore, SolverManager};
 use solverforge_workbench_host::edit::{Compiled, Edit};
 use solverforge_workbench_host::fill::{FillAnswer, FillRequest};
-use solverforge_workbench_host::roads::{Place, RoadMatrix, Travel};
+use solverforge_workbench_host::roads::{Place, RoadMatrix, Travel, TravelMode};
 use solverforge_workbench_host::traffic::Traffic;
 use solverforge_workbench_host::view::View;
 use solverforge_workbench_host::{
@@ -92,6 +92,9 @@ impl Model for PickupDeliveryRouting {
     }
     fn traffic(plan: &Plan) -> Vec<Traffic> {
         plan.traffic.clone()
+    }
+    fn travel_modes(plan: &Plan) -> Vec<TravelMode> {
+        plan.drivers.iter().filter_map(|v| v.travel_mode).collect()
     }
     fn set_roads(plan: &mut Plan, roads: RoadMatrix) {
         crate::roads::set_roads(plan, roads)
