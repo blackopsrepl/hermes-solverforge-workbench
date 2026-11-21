@@ -619,3 +619,44 @@ fn a_stop_takes_its_first_window_that_still_fits() {
     assert_eq!(all["Service ends after its window"], ZERO);
     assert_eq!(all["Last stop departs after the latest time"], hard(600));
 }
+
+#[test]
+fn each_driver_used_costs_an_hour_when_weighed() {
+    let weights = json!({"weights": {"Driver used": 1}});
+    let jobs = || vec![pair("J", json!({})), pair("K", json!({}))];
+    let one = plan(
+        &["Ja", "Jb", "Ka", "Kb"],
+        json!({}),
+        jobs(),
+        weights.clone(),
+    );
+    assert_eq!(score(one, "Driver used"), soft(3600));
+    let mut two = plan(&["Ja", "Jb"], json!({}), jobs(), weights);
+    two["drivers"][1]["shifts"][0]["itinerary"] = json!([
+        {"id": "Ka", "kind": "STOP"}, {"id": "Kb", "kind": "STOP"}
+    ]);
+    assert_eq!(score(two, "Driver used"), soft(2 * 3600));
+    // Off unless weighed.
+    let quiet = plan(&["Ja", "Jb"], json!({}), jobs(), json!({}));
+    assert_eq!(score(quiet, "Driver used"), ZERO);
+}
+
+#[test]
+fn work_shared_evenly_between_drivers_costs_least() {
+    let weights = json!({"weights": {"Work unbalanced between drivers": 1}});
+    let jobs = || vec![pair("J", json!({})), pair("K", json!({}))];
+    // Ann alone works 40 minutes: 1600.
+    let alone = plan(
+        &["Ja", "Jb", "Ka", "Kb"],
+        json!({}),
+        jobs(),
+        weights.clone(),
+    );
+    assert_eq!(score(alone, "Work unbalanced between drivers"), soft(1600));
+    // Twenty minutes each: 400 + 400.
+    let mut shared = plan(&["Ja", "Jb"], json!({}), jobs(), weights);
+    shared["drivers"][1]["shifts"][0]["itinerary"] = json!([
+        {"id": "Ka", "kind": "STOP"}, {"id": "Kb", "kind": "STOP"}
+    ]);
+    assert_eq!(score(shared, "Work unbalanced between drivers"), soft(800));
+}

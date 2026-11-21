@@ -183,6 +183,8 @@ pub struct Aboard {
 /// Where a shift's route stands after a visit: the drive so far.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub struct State {
+    /// The driver of the shift.
+    pub driver: usize,
     /// The place the driver is at.
     pub place: usize,
     /// When the driver is free to leave.
@@ -220,6 +222,7 @@ pub struct End {
 pub fn begin(facts: &Facts, s: usize) -> State {
     let shift = &facts.shifts[s];
     State {
+        driver: shift.driver,
         place: shift.start_location,
         clock: shift.min_start,
         start: shift.min_start,

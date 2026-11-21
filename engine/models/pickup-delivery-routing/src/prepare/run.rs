@@ -4,7 +4,7 @@ use solverforge_workbench_host::Issue;
 
 use super::build::build;
 use super::place::place;
-use crate::constraints::WAITING;
+use crate::constraints::{DRIVER_BALANCE, DRIVER_USED, WAITING};
 use crate::domain::Plan;
 
 /// Checks the dataset, derives its facts and lays its itineraries into the
@@ -19,9 +19,12 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
     plan.visits = visits;
     plan.shifts = shifts;
     place(plan, &mut issues);
-    // Waiting time is off unless a dataset or profile weighs it.
-    if plan.weights.get(WAITING).is_none() {
-        plan.weights.set(WAITING, 0);
+    // Waiting time, drivers used and balance between drivers are off unless
+    // a dataset or profile weighs them.
+    for rule in [WAITING, DRIVER_USED, DRIVER_BALANCE] {
+        if plan.weights.get(rule).is_none() {
+            plan.weights.set(rule, 0);
+        }
     }
     issues
 }

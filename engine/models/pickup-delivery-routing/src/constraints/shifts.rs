@@ -38,8 +38,45 @@ fn soft(name: &'static str, amount: Amount) -> impl IncrementalConstraint<Plan, 
         .named(name)
 }
 
+/// A route's driver and its working seconds, start to end, on its last visit.
+fn work(v: &Visit) -> Option<(usize, i64)> {
+    match v.planned_slot() {
+        Some(slot) if v.route_next.is_none() && slot.state.active => Some((
+            slot.state.driver,
+            (slot.end.arrival - slot.state.start).max(0),
+        )),
+        _ => None,
+    }
+}
+
+fn drivers_used() -> impl IncrementalConstraint<Plan, Score> {
+    ConstraintFactory::<Plan, Score>::new()
+        .for_each(Plan::visits())
+        .filter(|v: &Visit| work(v).is_some())
+        .group_by(|v: &Visit| work(v).map_or(usize::MAX, |w| w.0), count())
+        .penalize(|_: &usize, _: &usize| Score::of_soft(HOUR))
+        .named(DRIVER_USED)
+}
+
+fn balance() -> impl IncrementalConstraint<Plan, Score> {
+    ConstraintFactory::<Plan, Score>::new()
+        .for_each(Plan::visits())
+        .filter(|v: &Visit| work(v).is_some())
+        .group_by(
+            |v: &Visit| work(v).map_or(usize::MAX, |w| w.0),
+            sum(|v: &Visit| work(v).map_or(0, |w| w.1)),
+        )
+        .penalize(|_: &usize, seconds: &i64| {
+            let minutes = seconds / 60;
+            Score::of_soft(minutes * minutes)
+        })
+        .named(DRIVER_BALANCE)
+}
+
 pub fn constraints() -> impl ConstraintSet<Plan, Score> {
     (
+        drivers_used(),
+        balance(),
         hard(UNREACHABLE_ROUTE, |s| {
             (s.state.unreachable_legs + i64::from(s.end.unreachable)) * HOUR
         }),

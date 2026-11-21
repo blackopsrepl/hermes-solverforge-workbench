@@ -1,4 +1,4 @@
-//! The thirty-six rules: names, levels and groups, as weights, analysis and
+//! The thirty-eight rules: names, levels and groups, as weights, analysis and
 //! the catalog know them.
 
 use solverforge_workbench_host::Level;
@@ -52,9 +52,11 @@ pub const SKILLS_MISSING: &str = "Required skills missing";
 pub const OVERQUALIFIED: &str = "Driver more skilled than needed";
 pub const WINDOW_END: &str = "Service ends after its window";
 pub const WINDOW_START: &str = "Service starts after its window";
+pub const DRIVER_USED: &str = "Driver used";
+pub const DRIVER_BALANCE: &str = "Work unbalanced between drivers";
 
 /// Every rule: name, group, level and one sentence on what it costs.
-pub const RULES: [(&str, &str, Level, &str); 36] = [
+pub const RULES: [(&str, &str, Level, &str); 38] = [
     (OUT_OF_ORDER, DEPENDENCIES, Level::Hard, "A stop starts before the job's previous stop has left; costs the seconds of overlap, or the previous stop's service seconds when it is unplanned, plus one hour."),
     (SPLIT, DEPENDENCIES, Level::Hard, "A job's stop is planned on another shift than the job's previous stop; costs the stop's service seconds plus one hour."),
     (PREVIOUS_UNPLANNED, DEPENDENCIES, Level::Hard, "A stop is planned while the job's previous stop is unplanned; costs the service seconds of both plus one hour."),
@@ -81,6 +83,8 @@ pub const RULES: [(&str, &str, Level, &str); 36] = [
     (UNREACHABLE_ROUTE, ROUTES, Level::Hard, "A shift's route has a leg no road connects, from its start through its stops and breaks to its end; costs one hour per leg."),
     (TRAVEL, ROUTES, Level::Soft, "Driving time of a shift, from its start through its stops to its end; costs the seconds."),
     (WAITING, ROUTES, Level::Soft, "A driver waits before starting service, for a window to open; costs the seconds. Off unless weighted."),
+    (DRIVER_USED, ROUTES, Level::Soft, "A driver serves at least one stop in the plan; costs one hour per driver, so fewer drivers do the work. Off unless weighted."),
+    (DRIVER_BALANCE, ROUTES, Level::Soft, "Drivers work different amounts: each driver's working minutes, start to end over all their shifts, squared; costs the sum, which is least when work is shared evenly. Off unless weighted."),
     (UNREACHABLE_STOP, ROUTES, Level::Hard, "No road leads to a stop or break from the place before it; costs one hour per visit."),
     (SLA_MISSED, SLA, Level::Soft, "A stop ends after its latest SLA end, or stays unplanned with that SLA inside the planning window; costs the seconds late."),
     (LAST_LATE, HOURS, Level::Hard, "A shift leaves its last stop after the latest departure; costs the seconds late."),
