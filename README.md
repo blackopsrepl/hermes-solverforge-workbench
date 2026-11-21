@@ -68,8 +68,8 @@ days and the roads it slows: a factor for chosen road classes (motorways,
 primary roads, residential streets…), anywhere or inside an area. The engine
 measures each period's travel on the same roads with those slowdowns, and a
 leg that runs into a rush hour slows down from the moment it does, so leaving
-later never arrives earlier. Both routing demos carry a morning and an evening
-rush. A dataset with its own travel matrix brings one matrix per period.
+later never arrives earlier. A dataset with its own travel matrix brings one
+matrix per period.
 
 ### Your own models
 

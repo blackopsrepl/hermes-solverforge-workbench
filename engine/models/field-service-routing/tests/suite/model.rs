@@ -699,6 +699,14 @@ fn the_data_tables_match_the_demo() {
     // Every field of the demo has a column, and every column is a field the
     // model reads and writes back: the data editor can change all of it.
     let demo = FieldServiceRouting::present(&FieldServiceRouting::demo("TURIN_TWO_DAYS").unwrap());
+    // The demo has no busy periods: give it one with every field, so the
+    // Busy periods table is checked too.
+    let mut demo = demo;
+    demo["traffic"] = serde_json::json!([{
+        "id": "morning-rush", "from": "07:30", "to": "09:30", "days": ["monday"],
+        "slowdowns": [{"factor": 1.5, "roads": ["primary"],
+                       "area": {"south": 45.0, "west": 7.6, "north": 45.1, "east": 7.7}}],
+    }]);
     let tables = FieldServiceRouting::tables();
     let mut problems = solverforge_workbench_host::data::mismatches(&demo, &tables, &[]);
     problems.extend(solverforge_workbench_host::data::unread(

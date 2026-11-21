@@ -9,7 +9,6 @@ use crate::wire::{
     Break, BreakKind, BreakPolicy, Capacity, Demand, Driver, DriverShift, Interruption, Job,
     JobDemand, Parameters, PlanningWindow, Skill, SkillRequirement, Stop, TimeWindow,
 };
-use solverforge_workbench_host::traffic::{Area, Slowdown, Traffic, Weekday};
 
 const MONDAY: &str = "2027-02-01";
 
@@ -294,19 +293,6 @@ const CREWS: [Crew; 15] = [
         late: true,
     },
 ];
-/// Weekdays, when the city's rush hours run.
-const WEEKDAYS: [Weekday; 5] = [
-    Weekday::Monday,
-    Weekday::Tuesday,
-    Weekday::Wednesday,
-    Weekday::Thursday,
-    Weekday::Friday,
-];
-
-fn names(roads: &[&str]) -> Vec<String> {
-    roads.iter().map(|r| r.to_string()).collect()
-}
-
 fn at(day: i64, minutes: i64) -> String {
     let base = crate::time::parse_date_time(&format!("{MONDAY}T00:00")).expect("demo date");
     format_date_time(base + day * crate::time::DAY + minutes * 60)
@@ -706,48 +692,7 @@ pub fn milan_two_days() -> Plan {
         }),
         priority_weights: Vec::new(),
         travel_matrix: None,
-        traffic: vec![
-            Traffic {
-                id: "morning-rush".into(),
-                from: "07:30".into(),
-                to: "09:30".into(),
-                days: WEEKDAYS.to_vec(),
-                slowdowns: vec![
-                    Slowdown {
-                        factor: 1.5,
-                        roads: names(&["primary", "secondary", "tertiary"]),
-                        area: None,
-                    },
-                    Slowdown {
-                        factor: 1.3,
-                        roads: names(&["motorway", "trunk"]),
-                        area: None,
-                    },
-                    // The centre's streets are slower still.
-                    Slowdown {
-                        factor: 1.2,
-                        roads: names(&["residential", "unclassified"]),
-                        area: Some(Area {
-                            south: 45.455,
-                            west: 9.165,
-                            north: 45.48,
-                            east: 9.21,
-                        }),
-                    },
-                ],
-            },
-            Traffic {
-                id: "evening-rush".into(),
-                from: "17:00".into(),
-                to: "19:00".into(),
-                days: WEEKDAYS.to_vec(),
-                slowdowns: vec![Slowdown {
-                    factor: 1.4,
-                    roads: names(&["trunk", "primary", "secondary", "tertiary"]),
-                    area: None,
-                }],
-            },
-        ],
+        traffic: Vec::new(),
         drivers,
         jobs,
         visits: Vec::new(),
