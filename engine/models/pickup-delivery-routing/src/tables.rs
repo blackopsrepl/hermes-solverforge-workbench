@@ -163,6 +163,7 @@ pub fn tables() -> Vec<Table> {
                 ),
                 col("startLocation", "Starts at", "location"),
                 solverforge_workbench_host::stock::column("stock", "Parts loaded"),
+                solverforge_workbench_host::driving::column(),
                 col("endLocation", "Ends at", "location").optional(),
                 breaks(),
                 list(

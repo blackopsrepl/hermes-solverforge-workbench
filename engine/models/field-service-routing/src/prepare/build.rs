@@ -564,10 +564,19 @@ pub fn build(plan: &Plan, issues: &mut Vec<Issue>) -> Option<Built> {
                     format!("{what} ends before it starts"),
                 ));
             }
+            let driving_rest = match shift.driving_rest.map(|r| r.seconds(&what)) {
+                Some(Ok(rest)) => Some(rest),
+                Some(Err(message)) => {
+                    issues.push(Issue::error("bad_driving_rest", message));
+                    None
+                }
+                None => None,
+            };
             let mut fact = ShiftFact {
                 id: shift.id.clone(),
                 label: format!("{name} · {}", crate::time::day_label(min_start)),
                 vehicle: vi,
+                driving_rest,
                 start_location: places.add(shift.start_location),
                 end_location: places.add(shift.end_location.unwrap_or(shift.start_location)),
                 spans: vec![(min_start, i64::MAX)],
@@ -706,6 +715,7 @@ pub fn build(plan: &Plan, issues: &mut Vec<Issue>) -> Option<Built> {
                 max_soft_end: last.max_soft_end,
                 max_last_departure: last.max_last_departure,
                 max_soft_last_departure: last.max_soft_last_departure,
+                driving_rest: first.driving_rest,
                 ..ShiftFact::default()
             };
             offer(

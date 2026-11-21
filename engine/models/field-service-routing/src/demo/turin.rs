@@ -446,6 +446,7 @@ fn shift(crew: &Crew, day: i64, k: usize) -> VehicleShift {
         id: format!("{}-{}", crew.id, ["mon", "tue"][day as usize]),
         start_location: depot,
         stock: Vec::new(),
+        driving_rest: None,
         end_location: None,
         min_start_time: Some(at(day, start)),
         min_first_visit_arrival_time: None,

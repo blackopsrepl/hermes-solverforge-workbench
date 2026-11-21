@@ -714,3 +714,46 @@ fn stops_use_up_the_parts_their_shift_loads_in_route_order() {
         hard(3 * 3600)
     );
 }
+
+#[test]
+fn a_driver_rests_after_so_long_at_the_wheel() {
+    // Ann collects at the depot and delivers three hours away, then drives
+    // back; a 30-minute rest after every two hours at the wheel.
+    let away = [45.5, 9.3];
+    let jobs = vec![job(
+        "J",
+        vec![
+            stop("Ja", 10, json!({})),
+            stop("Jb", 10, json!({"location": away})),
+        ],
+        json!({}),
+    )];
+    let far = json!({"travelMatrix": {
+        "locations": [DEPOT, away],
+        "seconds": [[0, 10_800], [10_800, 0]],
+        "meters": [[0, 300_000], [300_000, 0]],
+    }});
+    let shift_extra = |rest: bool| {
+        let mut out = json!({"maxEndTime": at(0, 14, 20)});
+        if rest {
+            out["drivingRest"] = json!({"afterMinutes": 120, "minutes": 30});
+        }
+        out
+    };
+    // 08:00-08:10 collect, 11:10-11:20 deliver, home at 14:20.
+    assert_eq!(
+        score(
+            plan(&["Ja", "Jb"], shift_extra(false), jobs.clone(), far.clone()),
+            "Shift ends after the latest time"
+        ),
+        ZERO
+    );
+    // A rest on the way out and one on the way back: home at 15:20.
+    assert_eq!(
+        score(
+            plan(&["Ja", "Jb"], shift_extra(true), jobs, far),
+            "Shift ends after the latest time"
+        ),
+        hard(3600)
+    );
+}

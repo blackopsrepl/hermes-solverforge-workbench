@@ -94,6 +94,9 @@ pub struct ShiftFact {
     pub max_last_departure: Option<i64>,
     pub max_soft_last_departure: Option<i64>,
     pub capacity: Vec<i64>,
+    /// A rest of `pause` seconds after every `limit` seconds at the wheel:
+    /// `(limit, pause)`.
+    pub driving_rest: Option<(i64, i64)>,
     /// The holding list of stops no shift serves.
     pub bench: bool,
 }

@@ -407,6 +407,7 @@ fn shifts(crew: &Crew, day: i64) -> DriverShift {
         id: format!("{}-{}", crew.id, ["mon", "tue"][day as usize]),
         start_location: [lat, lon],
         stock: Vec::new(),
+        driving_rest: None,
         end_location: None,
         min_start_time: Some(at(day, start)),
         max_soft_end_time: Some(at(day, end)),

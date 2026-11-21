@@ -364,6 +364,14 @@ pub fn build(plan: &Plan, issues: &mut Vec<Issue>) -> Option<Built> {
             }
             let start_location = places.add(shift.start_location);
             let end_location = places.add(shift.end_location.unwrap_or(shift.start_location));
+            let driving_rest = match shift.driving_rest.map(|r| r.seconds(&what)) {
+                Some(Ok(rest)) => Some(rest),
+                Some(Err(message)) => {
+                    issues.push(Issue::error("bad_driving_rest", message));
+                    None
+                }
+                None => None,
+            };
             shift_facts.push(ShiftFact {
                 id: shift.id.clone(),
                 label: format!(
@@ -381,6 +389,7 @@ pub fn build(plan: &Plan, issues: &mut Vec<Issue>) -> Option<Built> {
                 max_last_departure,
                 max_soft_last_departure,
                 capacity,
+                driving_rest,
                 bench: false,
             });
         }

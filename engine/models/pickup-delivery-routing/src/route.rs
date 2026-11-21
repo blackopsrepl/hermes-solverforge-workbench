@@ -11,6 +11,7 @@ use smallvec::SmallVec;
 
 use crate::derived::{Facts, Kind, Window};
 use crate::domain::Plan;
+use solverforge_workbench_host::driving::{after_stop, on_the_road};
 use solverforge_workbench_host::stock::{consume, MAX_PARTS};
 
 /// A visit's cascading slot: the visit as planned, the state after it, and
@@ -195,6 +196,8 @@ pub struct State {
     pub load: [i64; MAX_LOAD_TYPES],
     /// Units of each part the route's stops used up so far.
     pub parts_used: [i64; MAX_PARTS],
+    /// Seconds driven since the last rest.
+    pub driven: i64,
     /// A stop was served already.
     pub active: bool,
     /// When the driver sets off: just in time for the first stop.
@@ -263,12 +266,13 @@ pub fn visit(facts: &Facts, s: usize, state: &State, v: usize) -> (At, State) {
     at.distance = distance;
     next.travel += travel;
     next.distance += distance;
+    let (rest, driven) = on_the_road(shift.driving_rest, state.driven, travel);
     match &fact.kind {
         Kind::Stop { job, seq } => {
             let first_stop = !state.active;
             let fit = facts.fit(*job, s);
             let depart = fact.min_start_travel.map_or(clock, |m| clock.max(m));
-            let mut arrival = depart + travel;
+            let mut arrival = depart + travel + rest;
             if first_stop {
                 if let Some(m) = shift.min_first_arrival {
                     arrival = arrival.max(m);
@@ -284,8 +288,8 @@ pub fn visit(facts: &Facts, s: usize, state: &State, v: usize) -> (At, State) {
             }
             if first_stop {
                 // The driver sets off just in time for the first stop.
-                next.start = (start - travel).max(shift.min_start);
-                at.wait = (start - (next.start + travel)).max(0);
+                next.start = (start - travel - rest).max(shift.min_start);
+                at.wait = (start - (next.start + travel + rest)).max(0);
             } else {
                 at.wait = start - arrival;
             }
@@ -322,9 +326,10 @@ pub fn visit(facts: &Facts, s: usize, state: &State, v: usize) -> (At, State) {
             next.active = true;
             next.last_departure = end;
             next.clock = end;
+            next.driven = after_stop(shift.driving_rest, driven, at.wait);
         }
         Kind::Break(b) => {
-            let arrival = clock + travel;
+            let arrival = clock + travel + rest;
             let (start, end) = if b.fixed {
                 at.break_late = (arrival - b.start).max(0);
                 let start = arrival.max(b.start);
@@ -355,6 +360,7 @@ pub fn visit(facts: &Facts, s: usize, state: &State, v: usize) -> (At, State) {
                 next.deferred_unreachable += i64::from(at.unreachable);
             }
             next.clock = end;
+            next.driven = after_stop(shift.driving_rest, driven, end - arrival);
         }
     }
     if let Some((to, _)) = leg {
@@ -381,7 +387,8 @@ pub fn finish(facts: &Facts, s: usize, state: &State) -> End {
             Some((travel, distance)) => (travel, distance, false),
             None => (0, 0, true),
         };
-    let arrival = state.clock + travel;
+    let (rest, _) = on_the_road(shift.driving_rest, state.driven, travel);
+    let arrival = state.clock + travel + rest;
     End {
         travel,
         distance,

@@ -6,6 +6,7 @@
 //! `[latitude, longitude]` corners.
 
 use serde::{Deserialize, Serialize};
+pub use solverforge_workbench_host::driving::DrivingRest;
 pub use solverforge_workbench_host::roads::{ModeTravel, TravelMode};
 pub use solverforge_workbench_host::stock::Part;
 pub use solverforge_workbench_host::traffic::{Traffic, TravelPeriod};
@@ -116,6 +117,9 @@ pub struct VehicleShift {
     /// Parts loaded before the shift sets off, used up by its visits.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub stock: Vec<Part>,
+    /// A rest the technician takes after so long at the wheel.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub driving_rest: Option<DrivingRest>,
     /// Where the shift ends; the start location when unset.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub end_location: Option<[f64; 2]>,

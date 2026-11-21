@@ -1015,3 +1015,102 @@ fn a_visit_needing_a_tool_the_plan_does_not_list_is_refused() {
         issue_codes(plan(&["a"], json!({}), visits, tools)).contains(&"unknown_tool".to_string())
     );
 }
+
+#[test]
+fn a_technician_rests_after_so_long_at_the_wheel() {
+    // Three hours each way between the depot and the site; a 30-minute rest
+    // after every two hours at the wheel.
+    let far = json!({"travelMatrix": {
+        "locations": [DEPOT, AWAY],
+        "seconds": [[0, 10_800], [10_800, 0]],
+        "meters": [[0, 300_000], [300_000, 0]],
+    }});
+    let plan = |rest: Value| {
+        let mut shift_extra = json!({"maxEndTime": at(0, 15, 0)});
+        if !rest.is_null() {
+            shift_extra["drivingRest"] = rest;
+        }
+        let visits = vec![visit(
+            "a",
+            60,
+            json!({"location": AWAY, "timeWindows": [{"minStartTime": at(0, 8, 0), "maxEndTime": at(0, 12, 0)}]}),
+        )];
+        dataset(
+            vec![vehicle("ann", shift("ann-mon", &["a"], shift_extra))],
+            visits,
+            far.clone(),
+        )
+    };
+    let rest = json!({"afterMinutes": 120, "minutes": 30});
+    // Without rests: there at 11:00, done at 12:00, home at 15:00.
+    assert_eq!(rule(plan(Value::Null), Rule::WindowEnd), ZERO);
+    assert_eq!(rule(plan(Value::Null), Rule::EndHard), ZERO);
+    // A rest on the way out ends the visit at 12:30, and another on the way
+    // back (one hour driven before the visit, three after) brings him home
+    // at 16:00.
+    assert_eq!(rule(plan(rest.clone()), Rule::WindowEnd), hard(1800));
+    assert_eq!(rule(plan(rest), Rule::EndHard), hard(3600));
+    // The rest is no travel.
+    assert_eq!(
+        rule(
+            plan(json!({"afterMinutes": 120, "minutes": 30})),
+            Rule::TravelTime
+        ),
+        soft(21_600)
+    );
+}
+
+#[test]
+fn a_wait_as_long_as_the_rest_counts_as_one() {
+    let far = json!({"travelMatrix": {
+        "locations": [DEPOT, AWAY],
+        "seconds": [[0, 6_000], [6_000, 0]],
+        "meters": [[0, 100_000], [100_000, 0]],
+    }});
+    // 100 minutes each way, a rest after 150: the round trip needs one,
+    // unless the technician waits half an hour at the visit.
+    let plan = |opens: i64| {
+        let visits = vec![
+            visit(
+                "a",
+                10,
+                json!({"location": AWAY, "timeWindows": [{"minStartTime": at(0, 9, 40), "maxEndTime": at(0, 18, 0)}]}),
+            ),
+            visit(
+                "b",
+                10,
+                json!({"location": AWAY, "timeWindows": [{"minStartTime": at(0, opens / 60, opens % 60), "maxEndTime": at(0, 18, 0)}]}),
+            ),
+        ];
+        dataset(
+            vec![vehicle(
+                "ann",
+                shift(
+                    "ann-mon",
+                    &["a", "b"],
+                    json!({"maxEndTime": at(0, 11, 30), "drivingRest": {"afterMinutes": 150, "minutes": 30}}),
+                ),
+            )],
+            visits,
+            far.clone(),
+        )
+    };
+    // Back to back: 09:40-09:50, 09:50-10:00, then 100 minutes and a rest:
+    // home at 12:10, forty minutes past 11:30.
+    assert_eq!(rule(plan(9 * 60 + 50), Rule::EndHard), hard(2400));
+    // A twenty-minute wait after a ends at 09:50 is no rest: b 10:10-10:20,
+    // then the drive and a rest, home at 12:30.
+    assert_eq!(rule(plan(10 * 60 + 10), Rule::EndHard), hard(3600));
+    // A thirty-minute wait is: b 10:20-10:30, home at 12:10 without
+    // stopping, ten minutes later starting but twenty earlier home.
+    assert_eq!(rule(plan(10 * 60 + 20), Rule::EndHard), hard(2400));
+}
+
+#[test]
+fn a_driving_rest_needs_a_limit_above_zero() {
+    let visits = vec![visit("a", 10, json!({}))];
+    let bad = json!({"drivingRest": {"afterMinutes": 0, "minutes": 30}});
+    assert!(
+        issue_codes(plan(&["a"], bad, visits, json!({}))).contains(&"bad_driving_rest".to_string())
+    );
+}

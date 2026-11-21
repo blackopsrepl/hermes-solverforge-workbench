@@ -14,6 +14,7 @@ use crate::constraints::{
 };
 use crate::derived::{meters, Coordination, Facts, Kind, Pooling, ShiftFact, Window};
 use crate::domain::Plan;
+use solverforge_workbench_host::driving::{after_stop, on_the_road};
 use solverforge_workbench_host::stock::{consume, MAX_PARTS};
 
 /// One element as the route plans it.
@@ -63,6 +64,8 @@ pub struct State {
     pub overnights: i64,
     /// Units of each part the route's visits used up so far.
     pub parts_used: [i64; MAX_PARTS],
+    /// Seconds driven since the last rest.
+    pub driven: i64,
 }
 
 /// The drive back to the end location, after the last element, and what
@@ -147,6 +150,10 @@ impl Slot {
 struct Ready {
     arrival: i64,
     travel: i64,
+    /// Seconds of rest the drive takes, and the seconds driven since the
+    /// last rest on arrival.
+    rest: i64,
+    driven: i64,
     distance: i64,
     unreachable: bool,
     /// Earliest start: arrival, dependencies and window opening.
@@ -235,7 +242,8 @@ fn ready(facts: &Facts, s: usize, state: &State, v: usize, not_before: i64) -> R
             Some((secs, m)) => (shift.drive(secs), m, false),
             None => (0, 0, true),
         };
-    let mut arrival = shift.advance(depart, travel);
+    let (rest, driven) = on_the_road(shift.driving_rest, state.driven, travel);
+    let mut arrival = shift.advance(depart, travel + rest);
     if !state.active {
         if let Some(m) = shift.min_first_arrival {
             arrival = arrival.max(m);
@@ -248,6 +256,8 @@ fn ready(facts: &Facts, s: usize, state: &State, v: usize, not_before: i64) -> R
     Ready {
         arrival,
         travel,
+        rest,
+        driven,
         distance,
         unreachable,
         earliest,
@@ -288,8 +298,8 @@ fn serve(
     let mut arrival = r.arrival;
     if !state.items {
         // The technician sets off just in time to start the first visit.
-        next.start = (start - r.travel).max(shift.min_start);
-        arrival = arrival.max((next.start + r.travel).min(start));
+        next.start = (start - r.travel - r.rest).max(shift.min_start);
+        arrival = arrival.max((next.start + r.travel + r.rest).min(start));
     }
     let at = At {
         arrival,
@@ -445,6 +455,7 @@ fn serve(
         next.movable += r.travel + r.service;
     }
     next.last_visit = Some(v);
+    next.driven = after_stop(shift.driving_rest, r.driven, at.wait);
     (at, next)
 }
 
@@ -492,7 +503,8 @@ fn rest(
             Some((secs, m)) => (shift.drive(secs), m, false),
             None => (0, 0, true),
         };
-    let arrival = state.clock + travel;
+    let (on_road, driven) = on_the_road(shift.driving_rest, state.driven, travel);
+    let arrival = state.clock + travel + on_road;
     let start = arrival.max(b.start);
     let end = start + b.duration;
     if b.fixed {
@@ -517,6 +529,7 @@ fn rest(
     next.travel += travel;
     next.distance += distance;
     next.unreachable_legs += i64::from(unreachable);
+    next.driven = after_stop(shift.driving_rest, driven, end - arrival);
     let at = At {
         arrival,
         start,
@@ -548,7 +561,8 @@ pub fn finish(facts: &Facts, s: usize, state: &State) -> End {
             Some((secs, m)) => (shift.drive(secs), m, false),
             None => (0, 0, true),
         };
-    let arrival = shift.advance(state.clock, travel);
+    let (rest, _) = on_the_road(shift.driving_rest, state.driven, travel);
+    let arrival = shift.advance(state.clock, travel + rest);
     let mut end = End {
         travel,
         distance,

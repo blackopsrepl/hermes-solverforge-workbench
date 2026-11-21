@@ -223,6 +223,9 @@ pub struct ShiftFact {
     /// Seconds from the start limit to the end limit, less breaks.
     pub working_time: i64,
     pub cost: Option<CostFact>,
+    /// A rest of `pause` seconds after every `limit` seconds at the wheel:
+    /// `(limit, pause)`.
+    pub driving_rest: Option<(i64, i64)>,
     /// Drive seconds as `multiplier * plain + extra`.
     pub travel_multiplier: f64,
     pub travel_extra: i64,

@@ -6,6 +6,7 @@
 
 mod analysis;
 pub mod data;
+pub mod driving;
 pub mod edit;
 pub mod fill;
 mod inspect;
