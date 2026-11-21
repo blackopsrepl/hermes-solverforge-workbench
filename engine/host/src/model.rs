@@ -12,6 +12,7 @@ use crate::edit::{Compiled, Edit};
 use crate::fill::{FillAnswer, FillRequest};
 use crate::protocol::EngineError;
 use crate::roads::{Place, RoadMatrix, Travel};
+use crate::traffic::Traffic;
 use crate::view::View;
 
 /// Score type of a model's plan.
@@ -77,6 +78,11 @@ pub trait Model: 'static + Sized {
     /// measured earlier, or nothing yet.
     fn travel(_plan: &Self::Plan) -> Travel {
         Travel::Missing
+    }
+    /// The plan's busy periods: the roads measure the travel of each one that
+    /// slows roads, beside the usual travel.
+    fn traffic(_plan: &Self::Plan) -> Vec<Traffic> {
+        Vec::new()
     }
     /// Gives the plan travel measured along the roads between the places
     /// [`Model::places`] listed, in that order.

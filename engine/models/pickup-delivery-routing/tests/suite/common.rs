@@ -235,7 +235,7 @@ pub fn prepared(wire: Value) -> Plan {
         let points: Vec<[f64; 2]> = distinct.iter().map(|p| p.point).collect();
         let (matrix, _) = Roads::load(None, &points)
             .unwrap()
-            .matrix(&distinct)
+            .matrix(&distinct, &plan.traffic)
             .unwrap();
         PickupDeliveryRouting::set_roads(&mut plan, matrix);
     }

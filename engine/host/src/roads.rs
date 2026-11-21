@@ -18,11 +18,12 @@ use std::sync::{Arc, Mutex};
 use serde::Deserialize;
 use solverforge_maps::{
     BoundingBox, ConnectivityPolicy, Coord, NetworkConfig, NetworkRef, RoadNetwork, SnapAccess,
-    SnappedCoord, UNREACHABLE,
+    SnappedCoord, TravelTimeMatrix, UNREACHABLE,
 };
 
 use crate::model::Issue;
 use crate::protocol::EngineError;
+use crate::traffic::{map_slowdowns, Traffic, TravelPeriod};
 
 /// Where a request keeps road networks between calls.
 #[derive(Debug, Clone, Deserialize)]
@@ -45,6 +46,8 @@ pub struct RoadMatrix {
     pub meters: Vec<Vec<Option<i64>>>,
     /// How far each place is from the road it was snapped to; `None` when no road is near.
     pub snapped: Vec<Option<f64>>,
+    /// The travel of each busy period that slows roads, measured with its slowdowns.
+    pub periods: Vec<TravelPeriod>,
 }
 
 /// What a plan's travel stands on now.
@@ -56,6 +59,9 @@ pub enum Travel {
     /// Nothing yet.
     Missing,
 }
+
+/// One value per ordered pair of places, `None` where no road leads.
+type Grid = Vec<Vec<Option<i64>>>;
 
 /// A place farther than this from the nearest road is reported.
 pub const FAR_FROM_ROAD_M: f64 = 150.0;
@@ -139,21 +145,57 @@ impl Roads {
     }
 
     /// Every place snapped to a road it can be driven to and from, and the
-    /// travel between each pair; with an issue per place far from a road and
+    /// travel between each pair, at usual speeds and during each busy period of
+    /// `traffic` that slows roads; with an issue per place far from a road and
     /// per place no road reaches or leaves.
-    pub fn matrix(&self, places: &[Place]) -> Result<(RoadMatrix, Vec<Issue>), EngineError> {
+    pub fn matrix(
+        &self,
+        places: &[Place],
+        traffic: &[Traffic],
+    ) -> Result<(RoadMatrix, Vec<Issue>), EngineError> {
         let coords = places
             .iter()
             .map(|p| coord(p.point))
             .collect::<Result<Vec<_>, _>>()?;
+        let (seconds, meters, table) = self.measure(&self.network, &coords);
+        let mut periods = Vec::new();
+        for period in traffic.iter().filter(|t| !t.slowdowns.is_empty()) {
+            let slowdowns = map_slowdowns(period)
+                .map_err(|message| EngineError::new("invalid_plan", message))?;
+            let slowed = self.network.slowed(&slowdowns);
+            let (seconds, meters, _) = self.measure(&slowed, &coords);
+            periods.push(TravelPeriod {
+                id: period.id.clone(),
+                seconds,
+                meters,
+                slowdowns: period.slowdowns.clone(),
+            });
+        }
+        let matrix = RoadMatrix {
+            locations: places.iter().map(|p| p.point).collect(),
+            seconds,
+            meters,
+            snapped: table
+                .locations()
+                .iter()
+                .map(|snap| Some(snap.snap_distance_m).filter(|m| m.is_finite()))
+                .collect(),
+            periods,
+        };
+        let issues = issues(places, &matrix);
+        Ok((matrix, issues))
+    }
+
+    /// Seconds and meters between every pair of `coords` on `network`, and the
+    /// table they come from.
+    fn measure(&self, network: &RoadNetwork, coords: &[Coord]) -> (Grid, Grid, TravelTimeMatrix) {
         let access = vec![SnapAccess::Both; coords.len()];
-        let table = self.runtime.block_on(
-            self.network
-                .compute_matrix_with_access(&coords, &access, None),
-        );
-        let n = places.len();
+        let table = self
+            .runtime
+            .block_on(network.compute_matrix_with_access(coords, &access, None));
+        let n = coords.len();
         let cell = |value: Option<i64>| value.filter(|&v| v != UNREACHABLE && v >= 0);
-        let seconds: Vec<Vec<Option<i64>>> = (0..n)
+        let seconds: Grid = (0..n)
             .map(|i| {
                 (0..n)
                     .map(|j| {
@@ -166,7 +208,7 @@ impl Roads {
                     .collect()
             })
             .collect();
-        let meters: Vec<Vec<Option<i64>>> = (0..n)
+        let meters: Grid = (0..n)
             .map(|i| {
                 (0..n)
                     .map(|j| {
@@ -181,18 +223,7 @@ impl Roads {
                     .collect()
             })
             .collect();
-        let matrix = RoadMatrix {
-            locations: places.iter().map(|p| p.point).collect(),
-            seconds,
-            meters,
-            snapped: table
-                .locations()
-                .iter()
-                .map(|snap| Some(snap.snap_distance_m).filter(|m| m.is_finite()))
-                .collect(),
-        };
-        let issues = issues(places, &matrix);
-        Ok((matrix, issues))
+        (seconds, meters, table)
     }
 
     /// The road geometry through `points` in order, as `[lat, lng]` pairs. A hop
@@ -402,7 +433,7 @@ mod tests {
             place(g, "Visit G"),
             place(far, "Visit F"),
         ];
-        let (matrix, issues) = roads.matrix(&places).unwrap();
+        let (matrix, issues) = roads.matrix(&places, &[]).unwrap();
         assert_eq!(matrix.seconds[0][..3], [Some(0), Some(100), Some(200)]);
         assert_eq!(
             matrix.seconds[1][0],
@@ -425,6 +456,60 @@ mod tests {
         let path = roads.path(&[b, a]).unwrap();
         assert_eq!((path.first(), path.last()), (Some(&b), Some(&a)));
         assert!(path.contains(&c), "b to a drives through c: {path:?}");
+    }
+
+    #[test]
+    fn a_busy_period_measures_travel_on_its_slowed_roads() {
+        use crate::traffic::Slowdown;
+        use solverforge_maps::RoadClass;
+        // a - b by a primary road (60 s), b - c residential (60 s), a - c a
+        // motorway (150 s): city streets win until the rush slows them.
+        let (a, b, c) = ([44.0, 8.0], [44.0, 8.01], [44.01, 8.01]);
+        let roads = [
+            (0, 1, 60.0, 800.0, RoadClass::Primary),
+            (1, 2, 60.0, 1_100.0, RoadClass::Residential),
+            (0, 2, 150.0, 3_000.0, RoadClass::Motorway),
+        ];
+        let edges: Vec<_> = roads
+            .iter()
+            .flat_map(|&(x, y, s, m, k)| [(x, y, s, m, k), (y, x, s, m, k)])
+            .collect();
+        let at = [(a[0], a[1]), (b[0], b[1]), (c[0], c[1])];
+        provide(&[a, b, c], RoadNetwork::from_test_data_classed(&at, &edges));
+        let rush = Traffic {
+            id: "rush".into(),
+            from: "07:30".into(),
+            to: "09:00".into(),
+            days: Vec::new(),
+            slowdowns: vec![Slowdown {
+                factor: 2.0,
+                roads: vec!["primary".into(), "residential".into()],
+                area: None,
+            }],
+        };
+        let quiet = Traffic {
+            id: "quiet".into(),
+            slowdowns: Vec::new(),
+            ..rush.clone()
+        };
+        let roads = Roads::load(None, &[a, b, c]).unwrap();
+        let places = [place(a, "Depot"), place(c, "Visit C")];
+        let (matrix, _) = roads.matrix(&places, &[rush, quiet]).unwrap();
+        assert_eq!(
+            (matrix.seconds[0][1], matrix.meters[0][1]),
+            (Some(120), Some(1_900))
+        );
+        assert_eq!(
+            matrix.periods.len(),
+            1,
+            "a period without slowdowns is not measured"
+        );
+        let period = &matrix.periods[0];
+        assert_eq!(period.id, "rush");
+        assert_eq!(
+            (period.seconds[0][1], period.meters[0][1]),
+            (Some(150), Some(3_000))
+        );
     }
 
     #[test]

@@ -4,6 +4,7 @@ use solverforge::{ConstraintSet, ConstraintWeights, HardMediumSoftScore, SolverM
 use solverforge_workbench_host::edit::{Compiled, Edit};
 use solverforge_workbench_host::fill::{FillAnswer, FillRequest};
 use solverforge_workbench_host::roads::{Place, RoadMatrix, Travel};
+use solverforge_workbench_host::traffic::Traffic;
 use solverforge_workbench_host::view::View;
 use solverforge_workbench_host::{
     Analysis, ConstraintInfo, DemoInfo, EngineError, EntityName, Issue, Kpi, Model, ParameterInfo,
@@ -88,6 +89,9 @@ impl Model for PickupDeliveryRouting {
     }
     fn travel(plan: &Plan) -> Travel {
         crate::roads::travel(plan)
+    }
+    fn traffic(plan: &Plan) -> Vec<Traffic> {
+        plan.traffic.clone()
     }
     fn set_roads(plan: &mut Plan, roads: RoadMatrix) {
         crate::roads::set_roads(plan, roads)

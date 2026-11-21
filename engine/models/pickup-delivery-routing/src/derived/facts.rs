@@ -2,6 +2,8 @@
 //! clone of the plan: places and travel, what each stop and break needs,
 //! and what each shift offers.
 
+use solverforge_workbench_host::traffic::{travel_seconds, BusyWindow};
+
 /// A job's stop or a driver's break.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Kind {
@@ -110,21 +112,65 @@ pub struct Fit {
     pub multiplier: f64,
 }
 
+/// Seconds and meters per ordered pair of places, `None` where no road goes.
+pub type Legs = Vec<Option<(i64, i64)>>;
+
 /// Travel between places: seconds and meters, `None` where no road goes.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Travel {
     pub places: Vec<[f64; 2]>,
     legs: Vec<Option<(i64, i64)>>,
+    /// Per busy period of the plan, its legs; `None` when it travels as usual.
+    periods: Vec<Option<Legs>>,
+    /// When each busy period runs, in time order.
+    windows: Vec<BusyWindow>,
 }
 
 impl Travel {
     pub fn new(places: Vec<[f64; 2]>, legs: Vec<Option<(i64, i64)>>) -> Self {
-        Self { places, legs }
+        Self {
+            places,
+            legs,
+            periods: Vec::new(),
+            windows: Vec::new(),
+        }
     }
 
-    /// Seconds and meters from `from` to `to`.
+    /// The same travel, slower or faster while busy periods run.
+    pub fn with_traffic(mut self, periods: Vec<Option<Legs>>, windows: Vec<BusyWindow>) -> Self {
+        self.periods = periods;
+        self.windows = windows;
+        self
+    }
+
+    /// Seconds and meters from `from` to `to` at usual speeds.
     pub fn leg(&self, from: usize, to: usize) -> Option<(i64, i64)> {
         self.legs[from * self.places.len() + to]
+    }
+
+    /// Seconds and meters from `from` to `to` leaving at `depart`: driven
+    /// through the busy periods it crosses, over the route of the moment it leaves.
+    pub fn leg_at(&self, from: usize, to: usize, depart: i64) -> Option<(i64, i64)> {
+        let (seconds, meters) = self.leg(from, to)?;
+        if self.windows.is_empty() {
+            return Some((seconds, meters));
+        }
+        let cell = from * self.places.len() + to;
+        let during = |period: usize| {
+            self.periods
+                .get(period)
+                .and_then(|p| p.as_ref())
+                .and_then(|legs| legs[cell])
+        };
+        let travel = travel_seconds(depart, seconds, &self.windows, |p| {
+            during(p).map_or(seconds, |l| l.0)
+        });
+        let leaving = self
+            .windows
+            .iter()
+            .find(|w| w.start <= depart && depart < w.end)
+            .and_then(|w| during(w.period));
+        Some((travel, leaving.map_or(meters, |l| l.1)))
     }
 }
 

@@ -224,13 +224,13 @@ fn ready(facts: &Facts, s: usize, state: &State, v: usize, not_before: i64) -> R
     let shift = &facts.shifts[s];
     let fact = &facts.visits[v];
     let to = fact.location.unwrap_or(state.place);
-    let (travel, distance, unreachable) = match facts.travel.leg(state.place, to) {
-        Some((secs, m)) => (shift.drive(secs), m, false),
-        None => (0, 0, true),
-    };
     let depart = fact
         .min_start_travel
         .map_or(state.clock, |m| state.clock.max(m));
+    let (travel, distance, unreachable) = match facts.travel.leg_at(state.place, to, depart) {
+        Some((secs, m)) => (shift.drive(secs), m, false),
+        None => (0, 0, true),
+    };
     let mut arrival = shift.advance(depart, travel);
     if !state.active {
         if let Some(m) = shift.min_first_arrival {
@@ -470,7 +470,7 @@ fn rest(
         unreachable!("rest takes breaks")
     };
     let to = fact.location.unwrap_or(state.place);
-    let (travel, distance, unreachable) = match facts.travel.leg(state.place, to) {
+    let (travel, distance, unreachable) = match facts.travel.leg_at(state.place, to, state.clock) {
         Some((secs, m)) => (shift.drive(secs), m, false),
         None => (0, 0, true),
     };
@@ -522,10 +522,14 @@ pub fn finish(facts: &Facts, s: usize, state: &State) -> End {
             ..End::default()
         };
     }
-    let (travel, distance, unreachable) = match facts.travel.leg(state.place, shift.end_location) {
-        Some((secs, m)) => (shift.drive(secs), m, false),
-        None => (0, 0, true),
-    };
+    let (travel, distance, unreachable) =
+        match facts
+            .travel
+            .leg_at(state.place, shift.end_location, state.clock)
+        {
+            Some((secs, m)) => (shift.drive(secs), m, false),
+            None => (0, 0, true),
+        };
     let arrival = shift.advance(state.clock, travel);
     let mut end = End {
         travel,

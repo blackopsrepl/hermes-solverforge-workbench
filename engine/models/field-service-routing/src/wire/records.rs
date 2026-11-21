@@ -6,6 +6,7 @@
 //! `[latitude, longitude]` corners.
 
 use serde::{Deserialize, Serialize};
+pub use solverforge_workbench_host::traffic::{Traffic, TravelPeriod};
 
 /// A technician and their vehicle, with the shifts they work.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -531,4 +532,8 @@ pub struct TravelMatrix {
     /// `null` where no road is near.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub snap_meters: Option<Vec<Option<f64>>>,
+    /// The travel of each busy period (`traffic`): measured on the roads for
+    /// a period with slowdowns, brought by the dataset with its own matrix.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub periods: Vec<TravelPeriod>,
 }

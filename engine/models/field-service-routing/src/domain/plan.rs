@@ -6,7 +6,9 @@ use solverforge::prelude::*;
 use super::{Shift, Visit};
 use crate::derived::Facts;
 use crate::route::Slot;
-use crate::wire::{Parameters, PlanningWindow, PriorityWeight, TravelMatrix, Vehicle, VisitGroup};
+use crate::wire::{
+    Parameters, PlanningWindow, PriorityWeight, Traffic, TravelMatrix, Vehicle, VisitGroup,
+};
 
 /// A field service dataset and, once solved, its route plan.
 ///
@@ -42,6 +44,9 @@ pub struct Plan {
     pub priority_weights: Vec<PriorityWeight>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub travel_matrix: Option<TravelMatrix>,
+    /// Busy periods of the day, when travel takes longer.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub traffic: Vec<Traffic>,
     /// Skill and tag names the dataset declares, checked when given.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub skills: Vec<String>,

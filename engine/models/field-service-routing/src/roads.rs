@@ -60,6 +60,7 @@ pub fn travel(plan: &Plan) -> Travel {
                 .snap_meters
                 .clone()
                 .unwrap_or_else(|| vec![Some(0.0); matrix.locations.len()]),
+            periods: matrix.periods.clone(),
         }),
         Some(_) => Travel::Given,
         None => Travel::Missing,
@@ -73,5 +74,6 @@ pub fn set_roads(plan: &mut Plan, roads: RoadMatrix) {
         meters: roads.meters,
         source: Some(ROADS.to_string()),
         snap_meters: Some(roads.snapped),
+        periods: roads.periods,
     });
 }

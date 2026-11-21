@@ -261,5 +261,6 @@ pub fn tables() -> Vec<Table> {
                 col("endDate", "Until", "date_time"),
             ],
         },
+        solverforge_workbench_host::traffic::table(),
     ]
 }

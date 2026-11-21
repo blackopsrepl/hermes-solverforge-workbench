@@ -12,9 +12,22 @@ use crate::wire::{
     ServicePart, ShiftLink, Skill, SkillRequirement, TemporarySkills, TemporaryTags, TimeWindow,
     TravelTimeAdjustment, Vehicle, VehicleShift, Visit, VisitDependency, VisitGroup,
 };
+use solverforge_workbench_host::traffic::{Area, Slowdown, Traffic, Weekday};
 
 /// Monday 1 February 2027, midnight.
 const DAY0: &str = "2027-02-01T00:00";
+/// Weekdays, when the city's rush hours run.
+const WEEKDAYS: [Weekday; 5] = [
+    Weekday::Monday,
+    Weekday::Tuesday,
+    Weekday::Wednesday,
+    Weekday::Thursday,
+    Weekday::Friday,
+];
+
+fn names(roads: &[&str]) -> Vec<String> {
+    roads.iter().map(|r| r.to_string()).collect()
+}
 
 fn at(day: i64, minute: i64) -> String {
     format_date_time(parse_date_time(DAY0).expect("demo epoch") + day * 86_400 + minute * 60)
@@ -1096,6 +1109,48 @@ pub fn turin_two_days() -> Plan {
         }),
         priority_weights: Vec::new(),
         travel_matrix: None,
+        traffic: vec![
+            Traffic {
+                id: "morning-rush".into(),
+                from: "07:30".into(),
+                to: "09:30".into(),
+                days: WEEKDAYS.to_vec(),
+                slowdowns: vec![
+                    Slowdown {
+                        factor: 1.5,
+                        roads: names(&["primary", "secondary", "tertiary"]),
+                        area: None,
+                    },
+                    Slowdown {
+                        factor: 1.3,
+                        roads: names(&["motorway", "trunk"]),
+                        area: None,
+                    },
+                    // The centre's streets are slower still.
+                    Slowdown {
+                        factor: 1.2,
+                        roads: names(&["residential", "unclassified"]),
+                        area: Some(Area {
+                            south: 45.055,
+                            west: 7.655,
+                            north: 45.085,
+                            east: 7.705,
+                        }),
+                    },
+                ],
+            },
+            Traffic {
+                id: "evening-rush".into(),
+                from: "17:00".into(),
+                to: "19:00".into(),
+                days: WEEKDAYS.to_vec(),
+                slowdowns: vec![Slowdown {
+                    factor: 1.4,
+                    roads: names(&["trunk", "primary", "secondary", "tertiary"]),
+                    area: None,
+                }],
+            },
+        ],
         skills: Vec::new(),
         tags: Vec::new(),
         vehicles,

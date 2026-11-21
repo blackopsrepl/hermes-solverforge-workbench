@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 
+use solverforge_workbench_host::traffic;
 use solverforge_workbench_host::Issue;
 
 use crate::derived::{
@@ -94,65 +95,132 @@ impl Places {
     }
 }
 
-fn travel(plan: &Plan, places: Vec<[f64; 2]>, issues: &mut Vec<Issue>) -> Option<Travel> {
+fn travel(
+    plan: &Plan,
+    places: Vec<[f64; 2]>,
+    days: (i64, i64),
+    issues: &mut Vec<Issue>,
+) -> Option<Travel> {
     let n = places.len();
-    let mut legs = vec![None; n * n];
-    match &plan.travel_matrix {
-        Some(matrix) => {
-            let m = matrix.locations.len();
-            if matrix.seconds.len() != m
-                || matrix.meters.len() != m
-                || matrix
-                    .seconds
-                    .iter()
-                    .chain(&matrix.meters)
-                    .any(|r| r.len() != m)
-            {
+    let Some(matrix) = &plan.travel_matrix else {
+        // The engine measures travel along the roads before preparing a plan.
+        issues.push(Issue::error(
+            "no_travel",
+            "the plan has no travel between its places: the engine measures it on the roads",
+        ));
+        return None;
+    };
+    let m = matrix.locations.len();
+    let square = |seconds: &Vec<Vec<Option<i64>>>, meters: &Vec<Vec<Option<i64>>>| {
+        seconds.len() == m
+            && meters.len() == m
+            && seconds.iter().chain(meters).all(|r| r.len() == m)
+    };
+    if !square(&matrix.seconds, &matrix.meters) {
+        issues.push(Issue::error(
+            "bad_travel_matrix",
+            "travelMatrix: seconds and meters must be square and match locations",
+        ));
+        return None;
+    }
+    let find = |p: &[f64; 2]| {
+        matrix
+            .locations
+            .iter()
+            .position(|q| (q[0] - p[0]).abs() < 1e-6 && (q[1] - p[1]).abs() < 1e-6)
+    };
+    let mut at = Vec::with_capacity(n);
+    for p in &places {
+        match find(p) {
+            Some(i) => at.push(i),
+            None => {
                 issues.push(Issue::error(
-                    "bad_travel_matrix",
-                    "travelMatrix: seconds and meters must be square and match locations",
+                    "place_not_in_travel_matrix",
+                    format!("travelMatrix has no location at {p:?}"),
                 ));
                 return None;
             }
-            let find = |p: &[f64; 2]| {
-                matrix
-                    .locations
-                    .iter()
-                    .position(|q| (q[0] - p[0]).abs() < 1e-6 && (q[1] - p[1]).abs() < 1e-6)
-            };
-            let mut at = Vec::with_capacity(n);
-            for p in &places {
-                match find(p) {
-                    Some(i) => at.push(i),
-                    None => {
-                        issues.push(Issue::error(
-                            "place_not_in_travel_matrix",
-                            format!("travelMatrix has no location at {p:?}"),
-                        ));
-                        return None;
-                    }
-                }
-            }
-            for a in 0..n {
-                for b in 0..n {
-                    legs[a * n + b] = if a == b {
-                        Some((0, 0))
-                    } else {
-                        matrix.seconds[at[a]][at[b]].zip(matrix.meters[at[a]][at[b]])
-                    };
-                }
+        }
+    }
+    let legs_of = |seconds: &Vec<Vec<Option<i64>>>, meters: &Vec<Vec<Option<i64>>>| {
+        let mut legs = vec![None; n * n];
+        for a in 0..n {
+            for b in 0..n {
+                legs[a * n + b] = if a == b {
+                    Some((0, 0))
+                } else {
+                    seconds[at[a]][at[b]].zip(meters[at[a]][at[b]])
+                };
             }
         }
-        None => {
-            // The engine measures travel along the roads before preparing a plan.
+        legs
+    };
+    let legs = legs_of(&matrix.seconds, &matrix.meters);
+    let travel = Travel::new(places, legs.clone());
+    if plan.traffic.is_empty() {
+        return Some(travel);
+    }
+    let windows = match traffic::windows(&plan.traffic, days.0, days.1) {
+        Ok(windows) => windows,
+        Err(message) => {
+            issues.push(Issue::error("bad_traffic", message));
+            return None;
+        }
+    };
+    let roads = matrix.source.as_deref() == Some(crate::roads::ROADS);
+    let mut periods = Vec::with_capacity(plan.traffic.len());
+    for period in &plan.traffic {
+        let Some(measured) = matrix.periods.iter().find(|p| p.id == period.id) else {
+            if roads && period.slowdowns.is_empty() {
+                // Nothing slows the roads: travel as usual.
+                periods.push(None);
+                continue;
+            }
             issues.push(Issue::error(
-                "no_travel",
-                "the plan has no travel between its places: the engine measures it on the roads",
+                "traffic_without_travel",
+                format!(
+                    "busy period {}: travelMatrix.periods has no travel for it",
+                    period.id
+                ),
+            ));
+            return None;
+        };
+        if !square(&measured.seconds, &measured.meters) {
+            issues.push(Issue::error(
+                "bad_travel_matrix",
+                format!(
+                    "travelMatrix.periods {}: seconds and meters must be square and match locations",
+                    period.id
+                ),
             ));
             return None;
         }
+        let during = legs_of(&measured.seconds, &measured.meters);
+        if during
+            .iter()
+            .zip(&legs)
+            .any(|(a, b)| a.is_some() != b.is_some())
+        {
+            issues.push(Issue::error(
+                "bad_travel_matrix",
+                format!(
+                    "travelMatrix.periods {}: a busy period cannot open or close a road; its \
+                     missing legs must be the usual travel's",
+                    period.id
+                ),
+            ));
+            return None;
+        }
+        periods.push(Some(during));
     }
-    Some(Travel::new(places, legs))
+    if !roads && plan.traffic.iter().any(|t| !t.slowdowns.is_empty()) {
+        issues.push(Issue::warning(
+            "slowdowns_unused",
+            "slowdowns apply to travel measured on the roads; this plan brings its own travel \
+             matrix, so each busy period travels by its own matrix",
+        ));
+    }
+    Some(travel.with_traffic(periods, windows))
 }
 
 /// A priority's weight and whether it is mandatory.
@@ -1106,7 +1174,16 @@ pub fn build(plan: &Plan, issues: &mut Vec<Issue>) -> Option<Built> {
     {
         return None;
     }
-    let travel = travel(plan, places.points, issues)?;
+    // Busy periods are laid out from the day before the first shift starts to
+    // the day after the last one ends.
+    let first = shift_facts.iter().map(|s| s.min_start).min().unwrap_or(0);
+    let last = shift_facts
+        .iter()
+        .map(|s| s.max_end.unwrap_or(s.min_start))
+        .max()
+        .unwrap_or(first);
+    let days = (first.div_euclid(DAY) - 1, last.div_euclid(DAY) + 1);
+    let travel = travel(plan, places.points, days, issues)?;
 
     // How each visit fits each shift.
     let mut fits = vec![Fit::default(); first_break * shift_facts.len()];

@@ -234,9 +234,14 @@ pub fn visit(facts: &Facts, s: usize, state: &State, v: usize) -> (At, State) {
     let fact = &facts.visits[v];
     let mut at = At::default();
     let mut next = state.clone();
+    let clock = state.clock;
+    let depart = match fact.kind {
+        Kind::Stop { .. } => fact.min_start_travel.map_or(clock, |m| clock.max(m)),
+        _ => clock,
+    };
     let leg = fact
         .location
-        .map(|to| (to, facts.travel.leg(state.place, to)));
+        .map(|to| (to, facts.travel.leg_at(state.place, to, depart)));
     let (travel, distance, reachable) = match leg {
         Some((_, Some((secs, meters)))) => (secs, meters, true),
         Some((_, None)) => (0, 0, false),
@@ -250,7 +255,6 @@ pub fn visit(facts: &Facts, s: usize, state: &State, v: usize) -> (At, State) {
     at.distance = distance;
     next.travel += travel;
     next.distance += distance;
-    let clock = state.clock;
     match &fact.kind {
         Kind::Stop { job, seq } => {
             let first_stop = !state.active;
@@ -357,10 +361,14 @@ pub fn finish(facts: &Facts, s: usize, state: &State) -> End {
             ..End::default()
         };
     }
-    let (travel, distance, unreachable) = match facts.travel.leg(state.place, shift.end_location) {
-        Some((travel, distance)) => (travel, distance, false),
-        None => (0, 0, true),
-    };
+    let (travel, distance, unreachable) =
+        match facts
+            .travel
+            .leg_at(state.place, shift.end_location, state.clock)
+        {
+            Some((travel, distance)) => (travel, distance, false),
+            None => (0, 0, true),
+        };
     let arrival = state.clock + travel;
     End {
         travel,

@@ -8,6 +8,7 @@ use solverforge::{ConstraintSet, ConstraintWeightError, ConstraintWeights};
 use crate::model::{Issue, Model, Severity};
 use crate::protocol::EngineError;
 use crate::roads::{issues, same, Roads, RoadsConfig, Travel};
+use crate::traffic::slowed_periods;
 
 /// Deserializes and prepares the plan. A model that travels gets its travel
 /// measured along the roads first, unless the plan brought its own or already
@@ -69,12 +70,20 @@ fn road_travel<M: Model>(
     if places.is_empty() {
         return Ok(Vec::new());
     }
+    let traffic = M::traffic(plan);
     match M::travel(plan) {
         Travel::Given => return Ok(Vec::new()),
+        // Kept while it covers every place and was measured with the busy
+        // periods the plan has now.
         Travel::Roads(matrix)
             if places
                 .iter()
-                .all(|place| matrix.locations.iter().any(|l| same(l, &place.point))) =>
+                .all(|place| matrix.locations.iter().any(|l| same(l, &place.point)))
+                && matrix
+                    .periods
+                    .iter()
+                    .map(|p| (p.id.as_str(), p.slowdowns.as_slice()))
+                    .eq(slowed_periods(&traffic)) =>
         {
             return Ok(issues(&places, &matrix));
         }
@@ -87,7 +96,7 @@ fn road_travel<M: Model>(
         }
     }
     let points: Vec<[f64; 2]> = distinct.iter().map(|p| p.point).collect();
-    let (matrix, issues) = Roads::load(roads, &points)?.matrix(&distinct)?;
+    let (matrix, issues) = Roads::load(roads, &points)?.matrix(&distinct, &traffic)?;
     M::set_roads(plan, matrix);
     Ok(issues)
 }
