@@ -168,10 +168,15 @@ def test_a_dataset_that_travels_is_measured_on_the_roads_the_first_time_it_is_us
 
     def call(model_id, request, timeout_s=600):
         asked.append(request)
-        if request["command"] == "roads" and "travelMatrix" in request["plan"]:
+        given = (request.get("plan") or {}).get("travelMatrix")
+        if request["command"] == "roads" and given and given.get("source") != "roads":
             return {"plan": request["plan"], "issues": []}  # a dataset's own travel is kept
         if request["command"] == "roads":
             matrix = {"locations": [[45.0, 7.6]], "seconds": [[0]], "meters": [[0]], "source": "roads"}
+            periods = [{"id": t["id"], "seconds": [[0]], "meters": [[0]], "slowdowns": t["slowdowns"]}
+                       for t in request["plan"].get("traffic", []) if t.get("slowdowns")]
+            if periods:
+                matrix["periods"] = periods
             return {"plan": {**request["plan"], "travelMatrix": matrix}, "issues": []}
         return real_call(model_id, request, timeout_s)
 
@@ -197,6 +202,20 @@ def test_a_dataset_that_travels_is_measured_on_the_roads_the_first_time_it_is_us
     assert len(roads()) == 2 and wb.dataset(copied["id"])["travel"] == "roads"
     given = wb.create_dataset(model_id="toy", plan={**stored["plan"], "travelMatrix": {"locations": []}})
     assert wb.dataset(given["id"])["travel"] == "dataset" and len(pinned) == 1
+    # Busy periods that slow other roads than the travel was measured with: measured again, once.
+    calls = len(roads())
+    rush = [{"id": "rush", "from": "08:00", "to": "09:00", "slowdowns": [{"factor": 1.5}]}]
+    wb.store.set_dataset_plan(copied["id"], {**wb.dataset(copied["id"], with_plan=True)["plan"], "traffic": rush})
+    wb.evaluate(copied["id"])
+    measured = wb.dataset(copied["id"], with_plan=True)["plan"]["travelMatrix"]
+    assert len(roads()) == calls + 1 and measured["periods"][0]["slowdowns"] == rush[0]["slowdowns"]
+    wb.evaluate(copied["id"])
+    assert len(roads()) == calls + 1
+    # Its own matrix stays its own, busy periods or not.
+    own = {**wb.dataset(given["id"], with_plan=True)["plan"], "traffic": rush}
+    wb.store.set_dataset_plan(given["id"], own)
+    wb.evaluate(given["id"])
+    assert len(roads()) == calls + 1
 
 
 def test_a_check_reads_scores_and_lists_issues_without_storing_anything(wb):

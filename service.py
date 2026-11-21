@@ -456,10 +456,11 @@ class Workbench:
 
     def _measured(self, dataset: dict[str, Any]) -> dict[str, Any]:
         """The dataset with its travel measured along the roads, for a model that travels: done
-        the first time it is solved, checked, drawn or changed, and kept. A stock demo's pinned
-        road network is downloaded then, so a demo nobody opens downloads nothing."""
+        the first time it is solved, checked, drawn or changed, and again when its busy periods
+        slow other roads than it was measured with; then kept. A stock demo's pinned road network
+        is downloaded then, so a demo nobody opens downloads nothing."""
         plan = dataset.get("plan")
-        if not (isinstance(plan, dict) and "travelMatrix" not in plan
+        if not (isinstance(plan, dict) and _roads_due(plan)
                 and self.model_record(dataset["model_id"])["manifest"].get("roads")):
             return dataset
         if dataset.get("demo"):
@@ -1248,6 +1249,22 @@ def with_params(plan: dict[str, Any], params: dict[str, Any] | None) -> dict[str
     if not params:
         return plan
     return {**plan, "parameters": {**(plan.get("parameters") or {}), **params}}
+
+
+def _roads_due(plan: dict[str, Any]) -> bool:
+    """Whether a routing plan's travel must be measured on the roads: it has none yet, or its road
+    travel was measured with other busy-period slowdowns than the plan's ``traffic`` has now. A
+    travel matrix the dataset brought itself is never replaced."""
+    matrix = plan.get("travelMatrix")
+    if not isinstance(matrix, dict):
+        return True
+    if matrix.get("source") != "roads":
+        return False
+    wanted = [(t.get("id"), t.get("slowdowns")) for t in plan.get("traffic") or []
+              if isinstance(t, dict) and t.get("slowdowns")]
+    measured = [(p.get("id"), p.get("slowdowns")) for p in matrix.get("periods") or []
+                if isinstance(p, dict)]
+    return wanted != measured
 
 
 def _score_key(score: str | None) -> tuple[float, ...]:
