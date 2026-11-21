@@ -89,6 +89,10 @@ A routing shift can carry a driving rest: after so long at the wheel the
 driver stops for a set time before going on, and a break or a wait at least
 that long counts as the rest.
 
+In employee scheduling an employee on a break does not cover demand. A break
+can float inside a window, and the engine places it where the demand misses
+the employee least, so a ward's staff stagger their breaks.
+
 ### Your own models
 
 A project made with [solverforge-cli](https://github.com/SolverForge/solverforge-cli)

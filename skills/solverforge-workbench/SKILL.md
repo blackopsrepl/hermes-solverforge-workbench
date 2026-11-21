@@ -164,6 +164,10 @@ model and its data (it asks the user) and leaves the project's files.
   they pass `afterMinutes` at the wheel since their last rest; the rest delays
   arrival but is no travel. A break, or a wait at a visit or stop, at least
   that long counts as the rest.
+- Breaks and demand (employee scheduling): a shift's break is no cover for
+  demand slots it falls in. A break with `minutes` shorter than its
+  `from`..`to` window floats: the engine places it, in 15-minute steps, where
+  it leaves the fewest required (then preferred) slots short.
 - The road cache belongs to the engine. Never write, copy, rename or delete
   files in it, never hand a dataset a network or a travel matrix made from a
   stock demo's roads, and never stand a demo in for a real area: a real
