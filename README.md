@@ -63,6 +63,14 @@ downloaded from the engine release the first time that demo is used; any
 other dataset fetches its area's roads once and keeps them. A dataset may bring
 its own travel matrix instead. Road data © OpenStreetMap contributors, ODbL.
 
+Busy periods make travel depend on the hour. A period names its hours and
+days and the roads it slows: a factor for chosen road classes (motorways,
+primary roads, residential streets…), anywhere or inside an area. The engine
+measures each period's travel on the same roads with those slowdowns, and a
+leg that runs into a rush hour slows down from the moment it does, so leaving
+later never arrives earlier. Both routing demos carry a morning and an evening
+rush. A dataset with its own travel matrix brings one matrix per period.
+
 ### Your own models
 
 A project made with [solverforge-cli](https://github.com/SolverForge/solverforge-cli)

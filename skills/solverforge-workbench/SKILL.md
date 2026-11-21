@@ -123,6 +123,20 @@ model and its data (it asks the user) and leaves the project's files.
   before creating one. Places far from a road come back as dataset issues. A
   dataset that brings its own `travelMatrix` keeps it. There is no speed or
   detour setting.
+- Busy periods (`traffic`, the "Busy periods" table): rush hours when travel
+  takes longer. Each has an `id`, `from`/`to` (`HH:MM`; `to` before `from`
+  runs past midnight), optional `days` (`monday`…`sunday`, every day when
+  left out) and `slowdowns`: a `factor` (1.5 = half as long again), optional
+  `roads` (road classes: `motorway`, `trunk`, `primary`, `secondary`,
+  `tertiary`, `residential`, `unclassified`, `service`, `living_street`,
+  `other`; all when left out) and an optional `area` (`south`, `west`,
+  `north`, `east`). Overlapping slowdowns multiply; periods may not overlap.
+  The engine measures each period's travel on the roads with its slowdowns
+  and keeps it with the dataset; a leg is driven through the periods it
+  crosses, so leaving later never arrives earlier. A dataset with its own
+  `travelMatrix` brings one per period in `travelMatrix.periods` (`id`,
+  `seconds`, `meters`) instead. OpenStreetMap has no traffic data: the
+  slowdowns are the user's own figures, never invented ones.
 - The road cache belongs to the engine. Never write, copy, rename or delete
   files in it, never hand a dataset a network or a travel matrix made from a
   stock demo's roads, and never stand a demo in for a real area: a real
