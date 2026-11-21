@@ -55,6 +55,26 @@ pub fn inside(area: &wire::Area, p: [f64; 2]) -> bool {
     })
 }
 
+/// Whether `shift` holds `skill` at level `min` (1 when unset) at some
+/// moment of its working time.
+fn offers_skill(shift: &ShiftFact, skill: usize, min: Option<i64>) -> bool {
+    let min = min.unwrap_or(1);
+    shift
+        .skills
+        .iter()
+        .chain(shift.temporary_skills.iter().flat_map(|(_, _, held)| held))
+        .any(|h| h.skill == skill && h.level >= min)
+}
+
+/// Whether `shift` holds `tag` at some moment of its working time.
+fn offers_tag(shift: &ShiftFact, tag: usize) -> bool {
+    shift.tags.contains(&tag)
+        || shift
+            .temporary_tags
+            .iter()
+            .any(|(_, _, tags)| tags.contains(&tag))
+}
+
 /// Every distinct place, by its coordinates.
 #[derive(Default)]
 struct Places {
@@ -1135,6 +1155,35 @@ pub fn build(plan: &Plan, issues: &mut Vec<Issue>) -> Option<Built> {
         let single = |s: &usize| !shift_facts[*s].bench && !shift_facts[*s].linked();
         fact.remote = (0..shift_count).filter(single).all(|s| fit(s).far)
             && (0..shift_count).any(|s| shift_facts[s].linked() && !fit(s).far);
+        if fact.earliest_day.is_some() {
+            let (windows, skills, tags) = (&fact.windows, &fact.skills, &fact.tags);
+            let may_serve = |s: &usize| {
+                let (shift, fit) = (&shift_facts[*s], fit(*s));
+                !shift.bench
+                    && !fit.not_required
+                    && !fit.prohibited
+                    && !fit.outside_required
+                    && skills
+                        .iter()
+                        .all(|&(skill, min)| offers_skill(shift, skill, min))
+                    && tags.iter().all(|&tag| offers_tag(shift, tag))
+            };
+            let first = (0..shift_count)
+                .filter(may_serve)
+                .flat_map(|s| {
+                    let shift = &shift_facts[s];
+                    let end = shift.max_end.unwrap_or(i64::MAX);
+                    windows.iter().filter_map(move |w| {
+                        let start = w.min_start.max(shift.min_start);
+                        let latest = w.max_start.unwrap_or(w.max_end);
+                        (start < end && start < w.max_end && start <= latest).then_some(start)
+                    })
+                })
+                .min();
+            if let Some(first) = first {
+                fact.earliest_day = Some(first.div_euclid(DAY));
+            }
+        }
     }
     let chains = chain(&mut visit_facts, first_break);
     order(&mut visit_facts, &groups, &chains, first_break);

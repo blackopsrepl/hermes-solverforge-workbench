@@ -73,7 +73,7 @@ pub const RULES: [(&str, &str, Level, &str); 36] = [
     (APPOINTMENT_LATE, BREAKS, Level::Hard, "The driver reaches a fixed break at a place of its own after it starts; costs the seconds late."),
     (FIXED_DURING_JOB, BREAKS, Level::Hard, "A fixed break falls while a job is on board, and the job or the break forbids it; costs the break seconds."),
     (FLOATING_DURING_JOB, BREAKS, Level::Hard, "A floating break falls while a job is on board, and the job or the break forbids it; costs the break seconds."),
-    (EARLIEST_DAY, MULTI_DAY, Level::Soft, "A stop whose windows span several days is served after its earliest day; costs 1000 per day later."),
+    (EARLIEST_DAY, MULTI_DAY, Level::Soft, "A stop whose windows span several days is served after the first day a shift that may serve it works; costs 1000 per day later."),
     (MANDATORY, PRIORITY, Level::Medium, "A stop of a mandatory job is unplanned; costs its priority weight."),
     (OPTIONAL, PRIORITY, Level::Soft, "A stop of an optional job is unplanned; costs its priority weight."),
     (PIN_SHIFT, REPLANNING, Level::Hard, "A pinned stop is not on the shift it is pinned to; costs 10 000 000 000."),

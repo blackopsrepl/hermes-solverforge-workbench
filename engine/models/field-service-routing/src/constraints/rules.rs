@@ -380,7 +380,7 @@ impl Rule {
             FloatingBreakLate => "A floating break ends after its latest end; costs the seconds late.",
             FixedBreakConflict => "Work runs into a fixed break, which starts late; costs the seconds of overlap.",
             LocatedBreakConflict => "Work runs into a fixed break at a place of its own; costs the seconds of overlap.",
-            EarliestDay => "A movable visit is served after the day it could first be served; costs 1000 per day later.",
+            EarliestDay => "A movable visit is served after the first day a technician who may serve it works; costs 1000 per day later.",
             CompletionRisk => "A visit of the risk priority or higher ends within the risk margin of its shift's end; costs the seconds inside the margin.",
             OptionalUnplanned => "An optional visit is unplanned; costs its priority weight.",
             MandatoryUnplanned => "A mandatory visit is unplanned; costs its priority weight.",

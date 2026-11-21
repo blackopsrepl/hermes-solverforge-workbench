@@ -114,7 +114,8 @@ pub struct VisitFact {
     pub chain: Option<usize>,
     /// Its place in list construction's order.
     pub order: i64,
-    /// Day (since 1970) of its earliest window start, for movable visits.
+    /// Day (since 1970) a shift that may serve it first could, for movable
+    /// visits: the earliest moment one of its windows meets such a shift.
     pub earliest_day: Option<i64>,
     pub dependencies: Vec<Dependency>,
     /// It is the preceding visit of some dependency.

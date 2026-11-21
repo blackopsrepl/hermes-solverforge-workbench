@@ -52,8 +52,8 @@ pub struct VisitFact {
     pub load: Vec<i64>,
     pub sla: Option<i64>,
     pub min_start_travel: Option<i64>,
-    /// Day (since 1970) of the earliest window start, for stops whose
-    /// windows span more than one day.
+    /// Day (since 1970) a shift that may serve it first could, for stops
+    /// whose windows span more than one day.
     pub earliest_day: Option<i64>,
     /// The shift this element must stay on: a break's own shift.
     pub owner: Option<usize>,

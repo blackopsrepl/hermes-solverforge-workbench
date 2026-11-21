@@ -648,6 +648,36 @@ pub fn build(plan: &Plan, issues: &mut Vec<Issue>) -> Option<Built> {
             fits.push(fit);
         }
     }
+    let shift_count = shift_facts.len();
+    for fact in visit_facts.iter_mut() {
+        let (Kind::Stop { job, .. }, Some(_)) = (&fact.kind, fact.earliest_day) else {
+            continue;
+        };
+        let job = *job;
+        let windows = &fact.windows;
+        let first = (0..shift_count)
+            .filter(|&s| {
+                let fit = &fits[job * shift_count + s];
+                !shift_facts[s].bench
+                    && !fit.not_required
+                    && !fit.prohibited
+                    && fit.skills_missing == 0
+                    && fit.tags_missing == 0
+            })
+            .flat_map(|s| {
+                let shift = &shift_facts[s];
+                let end = shift.max_end.unwrap_or(i64::MAX);
+                windows.iter().filter_map(move |w| {
+                    let start = w.min_start.max(shift.min_start);
+                    let latest = w.max_start.unwrap_or(w.max_end);
+                    (start < end && start < w.max_end && start <= latest).then_some(start)
+                })
+            })
+            .min();
+        if let Some(first) = first {
+            fact.earliest_day = Some(first.div_euclid(DAY));
+        }
+    }
     for job in &plan.jobs {
         for tag in &job.required_tags {
             if !shifts_wire.iter().any(|s| s.tags.contains(tag)) {
