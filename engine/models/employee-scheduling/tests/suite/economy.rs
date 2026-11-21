@@ -258,3 +258,46 @@ fn economy_scores_incrementally_like_in_full() {
     })));
     assert_incremental_matches_full(plan, 600, 21);
 }
+
+/// Two nurses 07:00-15:00 for a ward that needs both on 10:00-11:00 and
+/// 11:00-12:00, each with a 30-minute break.
+fn ward(brk: impl Fn(&str) -> Value) -> Value {
+    dataset(json!({
+        "employees": [employee("ann", json!({})), employee("bob", json!({}))],
+        "scheduleRules": {"demand": [{"slots": [
+            {"from": at(0, 10, 0), "to": at(0, 11, 0), "min": 2},
+            {"from": at(0, 11, 0), "to": at(0, 12, 0), "min": 2},
+        ]}]},
+        "shifts": [
+            on("a", 0, 7, 15, Some("ann"), json!({"breaks": [brk("a")]})),
+            on("b", 0, 7, 15, Some("bob"), json!({"breaks": [brk("b")]})),
+        ],
+    }))
+}
+
+#[test]
+fn a_break_inside_a_demand_slot_is_no_cover() {
+    // Both break at 11:00: the 11:00 slot has nobody.
+    let plan = plan(ward(|_| json!({"from": at(0, 11, 0), "to": at(0, 11, 30)})));
+    assert_eq!(score(&plan, "Required demand under-staffed"), medium(-2));
+    // Breaks after noon leave the ward covered.
+    let plan = crate::common::plan(ward(|_| json!({"from": at(0, 12, 0), "to": at(0, 12, 30)})));
+    assert_eq!(score(&plan, "Required demand under-staffed"), medium(0));
+}
+
+#[test]
+fn a_floating_break_is_placed_where_demand_misses_it_least() {
+    // Thirty minutes anywhere from 10:30 to 13:00: both go after noon.
+    let floating = |_: &str| json!({"from": at(0, 10, 30), "to": at(0, 13, 0), "minutes": 30});
+    let plan = plan(ward(floating));
+    assert_eq!(score(&plan, "Required demand under-staffed"), medium(0));
+    // A window inside the demand: one slot short per nurse, at best.
+    let inside = |_: &str| json!({"from": at(0, 10, 0), "to": at(0, 12, 0), "minutes": 30});
+    let plan = crate::common::plan(ward(inside));
+    assert_eq!(score(&plan, "Required demand under-staffed"), medium(-2));
+    // The floating break counts thirty minutes off the worked time either way.
+    assert!(issue_codes(ward(
+        |_| json!({"from": at(0, 10, 0), "to": at(0, 10, 20), "minutes": 30})
+    ))
+    .contains(&"bad_break_minutes"));
+}

@@ -1,7 +1,7 @@
 //! Demand coverage, alternative shifts, activation, fairness and disruption.
 
 use super::{Members, Roster};
-use crate::derived::{Derived, ShiftInfo};
+use crate::derived::{Derived, ShiftInfo, Slot};
 
 /// What to measure on demand slots.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -16,7 +16,8 @@ pub enum Coverage {
 }
 
 /// Coverage of the demand slots starting on `day`, for slots of the given
-/// level. A shift covers a slot when it spans all of it.
+/// level. A shift covers a slot when it spans all of it and none of its
+/// breaks falls inside it.
 pub fn demand(m: &Members, day: usize, coverage: Coverage, preferred: bool) -> i64 {
     let Some(d) = m.derived() else {
         return 0;
@@ -24,24 +25,13 @@ pub fn demand(m: &Members, day: usize, coverage: Coverage, preferred: bool) -> i
     let Some(slots) = d.slots_by_day.get(day) else {
         return 0;
     };
+    let slots: Vec<&Slot> = slots.iter().map(|&i| &d.slots[i as usize]).collect();
+    let staff = staff(d, m, &slots);
     let mut total = 0;
-    for &index in slots {
-        let slot = &d.slots[index as usize];
+    for (slot, staff) in slots.iter().zip(staff) {
         if coverage != Coverage::Surplus && slot.preferred != preferred {
             continue;
         }
-        let staff = m
-            .iter(d)
-            .filter(|(_, e, info)| {
-                info.start <= slot.start
-                    && info.end >= slot.end
-                    && slot.shifts.accepts(&info.tags)
-                    && slot
-                        .employees
-                        .as_ref()
-                        .is_none_or(|f| f.accepts(&d.employees[*e].tags))
-            })
-            .count() as i64;
         total += match coverage {
             Coverage::Under => slot.min.map_or(0, |min| (min - staff).max(0)),
             Coverage::Over => slot.max.map_or(0, |max| (staff - max).max(0)),
@@ -49,6 +39,85 @@ pub fn demand(m: &Members, day: usize, coverage: Coverage, preferred: bool) -> i
         };
     }
     total
+}
+
+/// Whether `info`, worked by employee `e`, spans `slot` and is staff it counts.
+fn spans(d: &Derived, slot: &Slot, e: usize, info: &ShiftInfo) -> bool {
+    info.start <= slot.start
+        && info.end >= slot.end
+        && slot.shifts.accepts(&info.tags)
+        && slot
+            .employees
+            .as_ref()
+            .is_none_or(|f| f.accepts(&d.employees[e].tags))
+}
+
+/// Staff each slot counts, with every break placed: fixed breaks where they
+/// are, floating ones where they leave the fewest slots short.
+fn staff(d: &Derived, m: &Members, slots: &[&Slot]) -> Vec<i64> {
+    let mut rows: Vec<(usize, usize, &ShiftInfo)> = m.iter(d).collect();
+    rows.sort_unstable_by_key(|row| row.0);
+    let mut staff = vec![0i64; slots.len()];
+    for &(_, e, info) in &rows {
+        for (j, slot) in slots.iter().enumerate() {
+            if spans(d, slot, e, info) {
+                staff[j] += 1;
+            }
+        }
+    }
+    let take = |staff: &mut Vec<i64>, e: usize, info: &ShiftInfo, start: i64, end: i64| {
+        for (j, slot) in slots.iter().enumerate() {
+            if start < slot.end && end > slot.start && spans(d, slot, e, info) {
+                staff[j] -= 1;
+            }
+        }
+    };
+    // Fixed breaks first, so floating ones see where staff is already short.
+    for &(_, e, info) in &rows {
+        for &(from, to, minutes) in &info.breaks {
+            if minutes >= to - from {
+                take(&mut staff, e, info, from, to);
+            }
+        }
+    }
+    for &(_, e, info) in &rows {
+        for (start, end) in floating_breaks(info, |start, end| {
+            // What a break over `start..end` costs: the required slots it
+            // leaves short first, then the preferred ones.
+            slots
+                .iter()
+                .zip(&staff)
+                .filter(|(slot, _)| start < slot.end && end > slot.start && spans(d, slot, e, info))
+                .map(|(slot, &count)| match slot.min {
+                    Some(min) if count <= min && !slot.preferred => 1_000,
+                    Some(min) if count <= min => 1,
+                    _ => 0,
+                })
+                .sum()
+        }) {
+            take(&mut staff, e, info, start, end);
+        }
+    }
+    staff
+}
+
+/// The floating breaks of `info` as `(start, end)`, each at the start, in
+/// 15-minute steps through its window, that `cost` finds cheapest, the
+/// earliest on ties.
+pub fn floating_breaks(info: &ShiftInfo, mut cost: impl FnMut(i64, i64) -> i64) -> Vec<(i64, i64)> {
+    info.breaks
+        .iter()
+        .filter(|&&(from, to, minutes)| minutes < to - from)
+        .map(|&(from, to, minutes)| {
+            let last = to - minutes;
+            let start = (from..last)
+                .step_by(15)
+                .chain(std::iter::once(last))
+                .min_by_key(|&start| (cost(start, start + minutes), start))
+                .unwrap_or(from);
+            (start, start + minutes)
+        })
+        .collect()
 }
 
 /// Assigned shifts of an alternatives group away from its count (beyond it

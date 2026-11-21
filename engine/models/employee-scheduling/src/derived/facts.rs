@@ -77,6 +77,9 @@ pub struct ShiftInfo {
     pub last_day: i64,
     /// Minutes worked: length minus breaks.
     pub minutes: i64,
+    /// Breaks as `(from, to, minutes)`: fixed when `minutes` fills
+    /// `from`..`to`, floating inside it otherwise.
+    pub breaks: Vec<(i64, i64, i64)>,
     /// Minutes logged for logged-time rules.
     pub logged: i64,
     /// Minutes worked on weekend days.

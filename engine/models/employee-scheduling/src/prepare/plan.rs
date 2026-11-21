@@ -411,6 +411,7 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
             shift.pinned = true;
         }
         let mut break_minutes = 0;
+        let mut breaks = Vec::new();
         for brk in &shift.breaks {
             let from = b.minutes(&brk.from, || format!("{what} break"));
             let to = b.minutes(&brk.to, || format!("{what} break"));
@@ -421,7 +422,20 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
                         format!("{what} has a break that is empty or outside the shift"),
                     );
                 }
-                break_minutes += overlap(from, to, start, end);
+                let window = overlap(from, to, start, end);
+                let length = match brk.minutes {
+                    Some(m) if m <= 0 || m > to - from => {
+                        b.error(
+                            "bad_break_minutes",
+                            format!("{what} has a break longer than its window or not above zero"),
+                        );
+                        window
+                    }
+                    Some(m) => m.min(window),
+                    None => window,
+                };
+                break_minutes += length;
+                breaks.push((from.max(start), to.min(end), length));
             }
         }
         let minutes = (end - start - break_minutes).max(0);
@@ -493,6 +507,7 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
             day,
             last_day,
             minutes,
+            breaks,
             logged: shift.logged_minutes.unwrap_or(minutes).max(0),
             weekend_minutes,
             tags,

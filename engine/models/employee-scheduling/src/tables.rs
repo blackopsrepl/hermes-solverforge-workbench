@@ -315,6 +315,9 @@ pub fn tables() -> Vec<Table> {
                     col("break", "Break", "object").fields(vec![
                         col("from", "From", "date_time"),
                         col("to", "Until", "date_time"),
+                        col("minutes", "Lasts (floats in the window)", "minutes")
+                            .unit("minutes")
+                            .optional(),
                     ]),
                 ),
                 col("requiredSkills", "Needs skills", "json").optional(),

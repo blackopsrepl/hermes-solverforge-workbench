@@ -289,9 +289,13 @@ pub struct LoggedMinutes {
     pub minutes: i64,
 }
 
-/// A break inside a shift; not worked time.
+/// A break inside a shift; not worked time, and no cover for demand. With
+/// `minutes` shorter than `from`..`to`, the break floats: it lasts `minutes`
+/// somewhere in that window, placed where demand misses the employee least.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Break {
     pub from: String,
     pub to: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub minutes: Option<i64>,
 }

@@ -251,7 +251,9 @@ fn shifts(first: i64, days: i64, rng: &mut Rng) -> Vec<Value> {
                     shift["requiredSkills"] = json!(["nurse", {"id": "senior", "level": 1}]);
                 }
                 shift["preferredSkills"] = json!(["wound-care"]);
-                shift["breaks"] = json!([{"from": at(day, 11 * 60), "to": at(day, 11 * 60 + 30)}]);
+                // Half an hour off somewhere from 10:30 to 13:30, placed where the
+                // ward misses the nurse least.
+                shift["breaks"] = json!([{"from": at(day, 10 * 60 + 30), "to": at(day, 13 * 60 + 30), "minutes": 30}]);
                 out.push(shift);
             }
             for slot in 0..lates {
