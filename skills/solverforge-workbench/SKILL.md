@@ -153,6 +153,12 @@ model and its data (it asks the user) and leaves the project's files.
   `produces` them when it ends; "Parts out of stock" costs an hour per unit
   a task finds missing. Quantities are whole units, never below zero; at most
   16 distinct parts per dataset.
+- Shared tools (field service): the plan's `tools` (`id`, `name`, `count`,
+  one unit when unset) are equipment technicians share, such as a lift or a
+  test rig; a visit's `requiredTools` names those it needs. A tool serves one
+  visit at a time and is carried from the site that used it last, so "Require
+  shared tools free" costs the seconds a visit starts before its tool is free
+  and brought over (the car's travel time between the sites).
 - The road cache belongs to the engine. Never write, copy, rename or delete
   files in it, never hand a dataset a network or a travel matrix made from a
   stock demo's roads, and never stand a demo in for a real area: a real
