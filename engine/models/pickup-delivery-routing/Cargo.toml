@@ -1,6 +1,6 @@
 [package]
 name = "solverforge-workbench-pickup-delivery-routing"
-version = "0.2.1"
+version = "0.3.0"
 description = "Pick-up and delivery routing stock model for the SolverForge Workbench engine"
 edition.workspace = true
 rust-version.workspace = true

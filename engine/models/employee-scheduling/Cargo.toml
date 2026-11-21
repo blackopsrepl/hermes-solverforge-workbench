@@ -1,6 +1,6 @@
 [package]
 name = "solverforge-workbench-employee-scheduling"
-version = "0.2.1"
+version = "0.3.0"
 description = "Employee scheduling stock model for the SolverForge Workbench engine"
 edition.workspace = true
 rust-version.workspace = true
