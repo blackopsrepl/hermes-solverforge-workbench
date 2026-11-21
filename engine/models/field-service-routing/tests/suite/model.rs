@@ -24,6 +24,29 @@ fn the_unscrambled_demo_scores_incrementally_like_in_full() {
     assert_incremental_matches_full(demo_plan(), 400, 5);
 }
 
+#[test]
+fn incremental_scoring_matches_full_scoring_with_shared_tools() {
+    let mut wire =
+        FieldServiceRouting::present(&FieldServiceRouting::demo("TURIN_TWO_DAYS").unwrap());
+    wire["tools"] = serde_json::json!([{"id": "lift", "count": 1}, {"id": "rig", "count": 2}]);
+    for (n, visit) in wire["visits"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .enumerate()
+    {
+        match n % 5 {
+            0 => visit["requiredTools"] = serde_json::json!(["lift"]),
+            1 => visit["requiredTools"] = serde_json::json!(["lift", "rig"]),
+            2 => visit["requiredTools"] = serde_json::json!(["rig"]),
+            _ => {}
+        }
+    }
+    let plan = prepared(wire);
+    assert!(plan.elements.iter().filter(|v| v.tools.is_some()).count() > 100);
+    assert_incremental_matches_full(plan, 400, 17);
+}
+
 /// Every route the views draw is drivable as drawn: each item starts no
 /// earlier than its arrival, and each arrival follows the departure before
 /// it by the leg's travel, waiting included.
@@ -142,15 +165,15 @@ fn a_dependency_delayed_to_the_next_working_day_waits_for_it() {
 #[test]
 fn the_catalog_names_every_constraint_the_engine_scores() {
     let catalog = FieldServiceRouting::catalog();
-    assert_eq!(catalog.len(), 65);
+    assert_eq!(catalog.len(), 66);
     let hard = catalog
         .iter()
         .filter(|c| matches!(c.level, solverforge_workbench_host::Level::Hard));
-    assert_eq!(hard.count(), 33);
+    assert_eq!(hard.count(), 34);
     let scored = scores(FieldServiceRouting::present(
         &FieldServiceRouting::demo("TURIN_TWO_DAYS").unwrap(),
     ));
-    assert_eq!(scored.len(), 65);
+    assert_eq!(scored.len(), 66);
     for info in &catalog {
         assert!(
             scored.contains_key(info.name),
@@ -264,8 +287,9 @@ fn a_scrambled_demo_breaks_most_rules() {
             Rule::Overnight.name(),
             Rule::Loops.name(),
             Rule::DependencyPooling.name(),
-            // The demo carries no parts.
+            // The demo carries no parts and shares no tools.
             Rule::PartsMissing.name(),
+            Rule::ToolBusy.name(),
         ])
         .collect();
     let missing: Vec<&str> = RULES
@@ -518,7 +542,7 @@ fn the_engine_describes_the_model() {
     assert_eq!(code, 0, "{model}");
     assert_eq!(model["view"], "routes");
     assert_eq!(model["demos"], json!(["TURIN_TWO_DAYS"]));
-    assert_eq!(model["constraints"].as_array().unwrap().len(), 65);
+    assert_eq!(model["constraints"].as_array().unwrap().len(), 66);
     assert_eq!(model["parameters"].as_array().unwrap().len(), 11);
     for p in model["parameters"].as_array().unwrap() {
         assert!(!p["label"].as_str().unwrap().is_empty(), "{p}");
@@ -709,6 +733,9 @@ fn the_data_tables_match_the_demo() {
         "slowdowns": [{"factor": 1.5, "roads": ["primary"],
                        "area": {"south": 45.0, "west": 7.6, "north": 45.1, "east": 7.7}}],
     }]);
+    // Nor shared tools: give it a lift one visit needs.
+    demo["tools"] = serde_json::json!([{"id": "lift", "name": "Scissor lift", "count": 1}]);
+    demo["visits"][0]["requiredTools"] = serde_json::json!(["lift"]);
     let tables = FieldServiceRouting::tables();
     let mut problems = solverforge_workbench_host::data::mismatches(&demo, &tables, &[]);
     problems.extend(solverforge_workbench_host::data::unread(

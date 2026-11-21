@@ -54,6 +54,7 @@ pub enum Rule {
     PartsMissing,
     // Scored on other rows.
     Exclusion,
+    ToolBusy,
     DependentUnplanned,
     Fairness,
     MovableBalance,
@@ -83,7 +84,7 @@ pub enum Rule {
 pub const VISIT_RULES: usize = Rule::Exclusion as usize;
 
 /// Every rule, in scoring order.
-pub const RULES: [Rule; 65] = {
+pub const RULES: [Rule; 66] = {
     use Rule::*;
     [
         DependencyDelay,
@@ -128,6 +129,7 @@ pub const RULES: [Rule; 65] = {
         ProhibitedVehicle,
         PartsMissing,
         Exclusion,
+        ToolBusy,
         DependentUnplanned,
         Fairness,
         MovableBalance,
@@ -242,6 +244,7 @@ impl Rule {
             ProhibitedVehicle => "Require visit vehicle not match prohibited vehicles",
             PartsMissing => "Require parts in stock",
             Exclusion => "Require no mutually exclusive visits assigned",
+            ToolBusy => "Require shared tools free",
             DependentUnplanned => "Require visit dependency dependent assigned",
             Fairness => "Balance time utilization",
             MovableBalance => "Balance movable and non-movable visits",
@@ -294,6 +297,7 @@ impl Rule {
             | ProhibitedVehicle
             | PartsMissing
             | Exclusion
+            | ToolBusy
             | DependentUnplanned
             | MovableBalance
             | Loops
@@ -368,7 +372,7 @@ impl Rule {
             Rating => RATING,
             PreferredWindow | WindowEnd | WindowStart => WINDOWS,
             PreferredVehicle | TagsMissing | NotRequiredVehicle | ProhibitedVehicle
-            | PartsMissing => REQUIREMENTS,
+            | PartsMissing | ToolBusy => REQUIREMENTS,
         }
     }
 
@@ -418,6 +422,7 @@ impl Rule {
             ProhibitedVehicle => "A visit is served by a vehicle it prohibits; costs one hour.",
             PartsMissing => "A visit needs parts its shift's stock no longer holds when it is served, its earlier visits having used them; costs one hour per unit short.",
             Exclusion => "Two visits that exclude each other are both planned; costs one hour per pair.",
+            ToolBusy => "A visit starts before a shared tool it needs is free and brought over from the visit that used it last; costs the seconds it waits.",
             DependentUnplanned => "A visit is planned while a visit that depends on it is not; costs the dependent's service seconds plus one hour.",
             Fairness => "Technicians' utilization (worked over available time, history included) differs; costs the squares of each technician's utilization in ten-thousandths, divided by ten thousand.",
             MovableBalance => "Movable visits take more of a shift's working time than its threshold allows; costs the seconds over.",

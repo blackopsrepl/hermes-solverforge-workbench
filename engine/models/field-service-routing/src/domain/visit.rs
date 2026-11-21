@@ -3,6 +3,8 @@ use solverforge::prelude::*;
 
 use crate::constraints::Rule;
 use crate::route::{At, Slot};
+use crate::tools::ToolUse;
+use std::sync::Arc;
 
 /// A visit or a break, with where and when it is planned.
 ///
@@ -31,6 +33,9 @@ pub struct Visit {
     /// What it costs while in no list, rule by rule.
     #[serde(skip)]
     pub missing: Vec<(Rule, i64)>,
+    /// The shared tools it needs, for visits that need any.
+    #[serde(skip)]
+    pub tools: Option<Arc<ToolUse>>,
 
     /// The shift holding this element (generated inverse shadow).
     pub shift: Option<usize>,
@@ -68,6 +73,7 @@ impl Visit {
             exclusion_set: index,
             dependency_set: index,
             missing: Vec::new(),
+            tools: None,
             shift: None,
             route_previous: None,
             route_next: None,

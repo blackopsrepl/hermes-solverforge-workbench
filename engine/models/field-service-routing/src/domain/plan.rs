@@ -7,7 +7,7 @@ use super::{Shift, Visit};
 use crate::derived::Facts;
 use crate::route::Slot;
 use crate::wire::{
-    Parameters, PlanningWindow, PriorityWeight, Traffic, TravelMatrix, Vehicle, VisitGroup,
+    Parameters, PlanningWindow, PriorityWeight, Tool, Traffic, TravelMatrix, Vehicle, VisitGroup,
 };
 
 /// A field service dataset and, once solved, its route plan.
@@ -52,6 +52,9 @@ pub struct Plan {
     pub skills: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
+    /// Equipment technicians share, one visit at a time.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tools: Vec<Tool>,
     pub vehicles: Vec<Vehicle>,
     #[serde(default)]
     pub visits: Vec<crate::wire::Visit>,

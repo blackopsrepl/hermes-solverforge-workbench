@@ -21,6 +21,7 @@ pub mod roads;
 pub mod route;
 mod tables;
 pub mod time;
+pub mod tools;
 mod view;
 pub mod wire;
 

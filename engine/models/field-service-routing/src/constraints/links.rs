@@ -1,13 +1,14 @@
 //! Rules over several rows together: visits that exclude each other, a
 //! planned visit whose dependent is not, multi-vehicle groups planned in
-//! part, linked shifts used with their components, and fairness between
-//! technicians.
+//! part, linked shifts used with their components, shared tools, and
+//! fairness between technicians.
 
 use solverforge::prelude::*;
 use solverforge::stream::joiner::equal_bi;
 
 use super::rules::*;
 use crate::domain::{Plan, Shift, Status, Visit};
+use crate::tools::{waiting, Used};
 
 pub type Score = HardMediumSoftScore;
 
@@ -128,9 +129,28 @@ fn fairness() -> impl IncrementalConstraint<Plan, Score> {
         .named(Rule::Fairness.name())
 }
 
+/// Visits that need shared tools, replayed tool by tool in start order.
+fn tools() -> impl IncrementalConstraint<Plan, Score> {
+    ConstraintFactory::<Plan, Score>::new()
+        .for_each(Plan::elements())
+        .filter(|v: &Visit| v.tools.is_some() && v.planned())
+        .group_by(
+            |_: &Visit| 0usize,
+            collect_vec(|v: &Visit| -> Used {
+                let at = v.at().copied().unwrap_or_default();
+                (at.start, at.end, v.tools.clone().expect("needs tools"))
+            }),
+        )
+        .penalize(hard_weight(|_: &usize, used: &CollectedVec<Used>| {
+            Score::of_hard(waiting(used.iter()))
+        }))
+        .named(Rule::ToolBusy.name())
+}
+
 pub fn constraints() -> impl ConstraintSet<Plan, Score> {
     (
         exclusions(),
+        tools(),
         dependent_unplanned(),
         groups(),
         excludes_shifts(),

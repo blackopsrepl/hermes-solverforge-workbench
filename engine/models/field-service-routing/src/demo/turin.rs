@@ -977,6 +977,7 @@ pub fn turin_two_days() -> Plan {
         }],
         priority: Some("opt-2".into()),
         exclusions: vec!["QUOTE-B".into()],
+        required_tools: Vec::new(),
         profit: Some(80.0),
         ..Visit::default()
     });
@@ -993,6 +994,7 @@ pub fn turin_two_days() -> Plan {
         }],
         priority: Some("opt-2".into()),
         exclusions: vec!["QUOTE-A".into()],
+        required_tools: Vec::new(),
         profit: Some(80.0),
         ..Visit::default()
     });
@@ -1112,6 +1114,7 @@ pub fn turin_two_days() -> Plan {
         traffic: Vec::new(),
         skills: Vec::new(),
         tags: Vec::new(),
+        tools: Vec::new(),
         vehicles,
         visits,
         visit_groups: groups,

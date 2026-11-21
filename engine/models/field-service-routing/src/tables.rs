@@ -293,6 +293,11 @@ fn visit() -> Vec<Column> {
             "Never planned with",
             col("visit", "Visit", "text").reference("visits"),
         ),
+        list(
+            "requiredTools",
+            "Needs tools",
+            col("tool", "Tool", "text").reference("tools"),
+        ),
         col("profit", "Earns", "number").optional(),
     ]
 }
@@ -437,5 +442,17 @@ pub fn tables() -> Vec<Table> {
             ],
         },
         solverforge_workbench_host::traffic::table(),
+        Table {
+            id: "tools",
+            label: "Shared tools",
+            one: "tool",
+            path: "tools",
+            parent: "",
+            title: "name",
+            columns: vec![
+                col("name", "Name", "text").optional(),
+                col("count", "Units", "integer").optional(),
+            ],
+        },
     ]
 }

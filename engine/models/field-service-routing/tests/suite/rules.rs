@@ -965,3 +965,53 @@ fn a_negative_part_quantity_is_refused() {
         issue_codes(plan(&["a"], json!({}), visits, json!({}))).contains(&"bad_parts".to_string())
     );
 }
+
+#[test]
+fn a_shared_tool_serves_one_visit_at_a_time_and_is_carried_between_sites() {
+    // Ann at the depot and Bob a kilometre away both start a one-hour visit
+    // needing the lift at 08:00; one lift, ten minutes' drive between them.
+    let two = |count: i64, bob_from: i64| {
+        let mut visits = vec![
+            visit("a", 60, json!({"requiredTools": ["lift"]})),
+            visit(
+                "b",
+                60,
+                json!({"location": AWAY, "requiredTools": ["lift"], "timeWindows": [{"minStartTime": at(0, bob_from / 60, bob_from % 60), "maxEndTime": at(0, 18, 0)}]}),
+            ),
+        ];
+        visits.push(visit("c", 30, json!({})));
+        let mut extra = matrix(false);
+        extra["tools"] = json!([{"id": "lift", "name": "Scissor lift", "count": count}]);
+        dataset(
+            vec![
+                vehicle("ann", shift("ann-mon", &["a"], json!({}))),
+                vehicle(
+                    "bob",
+                    shift("bob-mon", &["b"], json!({"startLocation": AWAY})),
+                ),
+            ],
+            visits,
+            extra,
+        )
+    };
+    // Bob starts at 08:00 while Ann holds the lift until 09:00, and it
+    // reaches him at 09:10: seventy minutes.
+    assert_eq!(rule(two(1, 480), Rule::ToolBusy), hard(70 * 60));
+    // From 09:10 on he finds it there.
+    assert_eq!(rule(two(1, 550), Rule::ToolBusy), ZERO);
+    // With two lifts nobody waits.
+    assert_eq!(rule(two(2, 480), Rule::ToolBusy), ZERO);
+}
+
+#[test]
+fn a_visit_needing_a_tool_the_plan_does_not_list_is_refused() {
+    let visits = vec![visit("a", 60, json!({"requiredTools": ["rig"]}))];
+    assert!(
+        issue_codes(plan(&["a"], json!({}), visits.clone(), json!({})))
+            .contains(&"unknown_tool".to_string())
+    );
+    let tools = json!({"tools": [{"id": "lift"}]});
+    assert!(
+        issue_codes(plan(&["a"], json!({}), visits, tools)).contains(&"unknown_tool".to_string())
+    );
+}

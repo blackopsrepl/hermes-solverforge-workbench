@@ -361,6 +361,9 @@ pub struct Visit {
     /// Visits that may not be planned together with this one.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub exclusions: Vec<String>,
+    /// Shared tools the visit needs on site, by id.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub required_tools: Vec<String>,
     /// Earned when the visit is planned.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profit: Option<f64>,
@@ -518,6 +521,19 @@ pub enum Assignment {
     #[default]
     Mandatory,
     Optional,
+}
+
+/// Equipment technicians share, such as a lift or a test rig: it serves one
+/// visit at a time and is carried from site to site.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Tool {
+    pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    /// Units the plan owns; one when unset.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<usize>,
 }
 
 /// The period the plan is for: `[startDate, endDate)`.

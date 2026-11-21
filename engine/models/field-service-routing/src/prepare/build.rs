@@ -1,7 +1,9 @@
 //! Derives the facts, the elements and the shifts from the wire records.
 
 use std::collections::HashMap;
+use std::sync::Arc;
 
+use crate::tools::{ToolUse, Tools};
 use solverforge_workbench_host::roads::TravelMode;
 use solverforge_workbench_host::stock::PartNames;
 use solverforge_workbench_host::traffic;
@@ -1231,6 +1233,73 @@ pub fn build(plan: &Plan, issues: &mut Vec<Issue>) -> Option<Built> {
         .unwrap_or(first);
     let days = (first.div_euclid(DAY) - 1, last.div_euclid(DAY) + 1);
     let travel = travel(plan, places.points, days, issues)?;
+    // Shared tools: which visits need which, and the drive between sites.
+    if !plan.tools.is_empty() {
+        let mut tool_ids: HashMap<&str, usize> = HashMap::new();
+        for (t, tool) in plan.tools.iter().enumerate() {
+            if tool.count == Some(0) {
+                issues.push(Issue::error(
+                    "bad_tool",
+                    format!("tool {:?} has a count of zero", tool.id),
+                ));
+            }
+            if tool_ids.insert(tool.id.as_str(), t).is_some() {
+                issues.push(Issue::error(
+                    "duplicate_id",
+                    format!("tool id {:?} is used twice", tool.id),
+                ));
+            }
+        }
+        let places = travel.places.len();
+        let shared = Arc::new(Tools {
+            counts: plan.tools.iter().map(|t| t.count.unwrap_or(1)).collect(),
+            places,
+            seconds: (0..places * places)
+                .map(|i| travel.leg(i / places, i % places).map_or(0, |l| l.0))
+                .collect(),
+        });
+        let wire_visits: HashMap<&str, &crate::wire::Visit> = plan
+            .visits
+            .iter()
+            .chain(plan.visit_groups.iter().flat_map(|g| g.visits.iter()))
+            .map(|v| (v.id.as_str(), v))
+            .collect();
+        for (v, fact) in visit_facts.iter().enumerate() {
+            let Some(visit) = wire_visits.get(fact.id.as_str()) else {
+                continue;
+            };
+            let mut tools = Vec::new();
+            for id in &visit.required_tools {
+                match tool_ids.get(id.as_str()) {
+                    Some(&t) => tools.push(t),
+                    None => issues.push(Issue::error(
+                        "unknown_tool",
+                        format!(
+                            "visit {:?} needs tool {id:?}, which the plan does not list",
+                            visit.id
+                        ),
+                    )),
+                }
+            }
+            if let (false, Some(place)) = (tools.is_empty(), fact.location) {
+                statics[v].tools = Some(Arc::new(ToolUse {
+                    tools,
+                    place,
+                    shared: Arc::clone(&shared),
+                }));
+            }
+        }
+    } else if plan
+        .visits
+        .iter()
+        .chain(plan.visit_groups.iter().flat_map(|g| g.visits.iter()))
+        .any(|v| !v.required_tools.is_empty())
+    {
+        issues.push(Issue::error(
+            "unknown_tool",
+            "visits need tools, but the plan lists none",
+        ));
+    }
 
     // How each visit fits each shift.
     let mut fits = vec![Fit::default(); first_break * shift_facts.len()];
