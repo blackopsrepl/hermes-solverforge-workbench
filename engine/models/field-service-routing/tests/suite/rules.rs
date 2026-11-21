@@ -715,16 +715,55 @@ fn movable_work_over_its_share_of_a_shift_costs_hard() {
 }
 
 #[test]
-fn a_movable_visit_served_a_day_late_costs_a_thousand() {
+fn a_movable_visit_served_a_day_after_a_shift_could_serve_it_costs_a_thousand() {
     let wire = dataset(
-        vec![vehicle(
-            "ann",
+        vec![json!({"id": "ann", "shifts": [
+            shift("ann-mon", &[], json!({})),
             shift("ann-tue", &["m"], json!({"minStartTime": at(1, 8, 0)})),
-        )],
+        ]})],
         vec![movable()],
         json!({}),
     );
     assert_eq!(rule(wire, Rule::EarliestDay), soft(1000));
+}
+
+#[test]
+fn a_movable_visit_counts_its_days_from_the_first_shift_that_may_serve_it() {
+    let tuesday = || shift("ann-tue", &["m"], json!({"minStartTime": at(1, 8, 0)}));
+    // No shift works Monday: Tuesday is the earliest day it can be served.
+    let only_tuesday = dataset(vec![vehicle("ann", tuesday())], vec![movable()], json!({}));
+    assert_eq!(rule(only_tuesday, Rule::EarliestDay), ZERO);
+    // Bob works Monday, but the visit may not go to him.
+    let mut barred = movable();
+    barred["prohibitedVehicles"] = json!(["bob"]);
+    let bob_barred = dataset(
+        vec![
+            vehicle("bob", shift("bob-mon", &[], json!({}))),
+            vehicle("ann", tuesday()),
+        ],
+        vec![barred],
+        json!({}),
+    );
+    assert_eq!(rule(bob_barred, Rule::EarliestDay), ZERO);
+    // Bob works Monday without the skill it needs.
+    let mut skilled = movable();
+    skilled["requiredSkills"] = json!([{"name": "hvac"}]);
+    let bob_unskilled = dataset(
+        vec![
+            vehicle("bob", shift("bob-mon", &[], json!({}))),
+            vehicle(
+                "ann",
+                shift(
+                    "ann-tue",
+                    &["m"],
+                    json!({"minStartTime": at(1, 8, 0), "skills": [{"name": "hvac"}]}),
+                ),
+            ),
+        ],
+        vec![skilled],
+        json!({}),
+    );
+    assert_eq!(rule(bob_unskilled, Rule::EarliestDay), ZERO);
 }
 
 #[test]

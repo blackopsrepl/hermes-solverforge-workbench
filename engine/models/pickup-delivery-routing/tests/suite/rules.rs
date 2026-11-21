@@ -399,6 +399,38 @@ fn a_movable_stop_served_a_day_late_costs_a_thousand() {
 }
 
 #[test]
+fn a_movable_stop_counts_its_days_from_the_first_shift_that_may_serve_it() {
+    let windows = json!({"timeWindows": [
+        {"minStartTime": at(0, 8, 0), "maxEndTime": at(0, 9, 0)},
+        {"minStartTime": at(1, 8, 0), "maxEndTime": at(1, 17, 0)}]});
+    let tuesday = || shift("ann-tue", &["a"], json!({"minStartTime": at(1, 8, 0)}));
+    // No shift works Monday: Tuesday is the earliest day it can be served.
+    let only_tuesday = dataset(
+        vec![driver("ann", tuesday())],
+        vec![job("J", vec![stop("a", 10, windows.clone())], json!({}))],
+        json!({}),
+    );
+    assert_eq!(
+        score(only_tuesday, "Stop later than its earliest day"),
+        ZERO
+    );
+    // Bob works Monday, but the job may not go to him.
+    let bob_barred = dataset(
+        vec![
+            driver("bob", shift("bob-mon", &[], json!({}))),
+            driver("ann", tuesday()),
+        ],
+        vec![job(
+            "J",
+            vec![stop("a", 10, windows)],
+            json!({"prohibitedDrivers": ["bob"]}),
+        )],
+        json!({}),
+    );
+    assert_eq!(score(bob_barred, "Stop later than its earliest day"), ZERO);
+}
+
+#[test]
 fn an_optional_job_left_unplanned_costs_soft() {
     let jobs = vec![pair("J", json!({"priority": "opt-6"}))];
     let all = scores(plan(&[], json!({}), jobs, json!({})));
