@@ -159,6 +159,11 @@ model and its data (it asks the user) and leaves the project's files.
   visit at a time and is carried from the site that used it last, so "Require
   shared tools free" costs the seconds a visit starts before its tool is free
   and brought over (the car's travel time between the sites).
+- Driving rests (routing shifts): `drivingRest` (`afterMinutes`, `minutes`)
+  on a technician's or driver's shift makes them rest `minutes` each time
+  they pass `afterMinutes` at the wheel since their last rest; the rest delays
+  arrival but is no travel. A break, or a wait at a visit or stop, at least
+  that long counts as the rest.
 - The road cache belongs to the engine. Never write, copy, rename or delete
   files in it, never hand a dataset a network or a travel matrix made from a
   stock demo's roads, and never stand a demo in for a real area: a real
