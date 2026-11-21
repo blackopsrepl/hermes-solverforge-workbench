@@ -1,6 +1,11 @@
 use serde::{Deserialize, Serialize};
 use solverforge::prelude::*;
 
+use std::sync::Arc;
+
+use solverforge_workbench_host::stock::Part;
+
+use crate::materials::MaterialUse;
 use crate::schedule::Slot;
 use crate::wire::{Dependency, DurationOn};
 
@@ -30,6 +35,12 @@ pub struct Task {
     pub required_resources: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dependencies: Vec<Dependency>,
+    /// Parts the task takes from stock when it starts.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub consumes: Vec<Part>,
+    /// Parts the task adds to stock when it ends.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub produces: Vec<Part>,
     /// Earliest start (material arrives, upstream hand-off).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub min_start: Option<String>,
@@ -75,6 +86,10 @@ pub struct Task {
     /// broken-link penalty.
     #[serde(skip)]
     pub link_cost: i64,
+    /// The parts it uses up and makes, with the plan's stock; set by
+    /// `prepare` on tasks that use or make parts.
+    #[serde(skip)]
+    pub materials: Option<Arc<MaterialUse>>,
 
     /// The lane holding the task (list shadow).
     #[serde(skip)]

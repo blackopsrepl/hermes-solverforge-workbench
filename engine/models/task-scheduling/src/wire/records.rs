@@ -2,6 +2,17 @@
 
 use serde::{Deserialize, Serialize};
 
+/// Units of a part that are in stock from the start, or arrive at `at`.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct StockArrival {
+    pub part: String,
+    pub quantity: i64,
+    /// When it arrives; on hand from the start when unset.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub at: Option<String>,
+}
+
 /// A capability a resource carries and a task can require: a machine
 /// capability (`CNC 5-axis`) or an employee skill (`Welding`).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]

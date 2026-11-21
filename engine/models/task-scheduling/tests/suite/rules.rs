@@ -2,7 +2,7 @@
 
 use serde_json::json;
 
-use crate::common::{at, dataset, employee, machine, score, task};
+use crate::common::{at, dataset, employee, issue_codes, machine, score, task};
 
 const ZERO: &str = "0hard/0medium/0soft";
 
@@ -354,4 +354,62 @@ fn idle_time_is_off_unless_weighted() {
         "resources": [machine("M1", &["A"], json!({}))],
     }));
     assert_eq!(score(plan, "Machine idle time"), ZERO);
+}
+
+#[test]
+fn a_task_starting_while_its_parts_are_out_of_stock_costs_an_hour_per_unit() {
+    // M1 makes four frames 08:00-09:00; M2 welds them, taking three; M3
+    // paints, taking two frames and one tin. Two frames and one tin are on
+    // hand, and five tins arrive at 10:00.
+    let plan = |weld_after: bool, tins_at: String| {
+        let weld = if weld_after {
+            json!({"minStart": at(9, 0), "consumes": [{"part": "frame", "quantity": 3}]})
+        } else {
+            json!({"consumes": [{"part": "frame", "quantity": 3}]})
+        };
+        dataset(json!({
+            "stock": [
+                {"part": "frame", "quantity": 2},
+                {"part": "tin", "quantity": 5, "at": tins_at},
+            ],
+            "tasks": [
+                task("make", 60, json!({"produces": [{"part": "frame", "quantity": 4}]})),
+                task("weld", 30, weld),
+                task("paint", 30, json!({"minStart": at(10, 0), "consumes": [{"part": "frame", "quantity": 2}, {"part": "tin", "quantity": 1}]})),
+            ],
+            "resources": [
+                machine("M1", &["make"], json!({})),
+                machine("M2", &["weld"], json!({})),
+                machine("M3", &["paint"], json!({})),
+            ],
+        }))
+    };
+    // Welding at 09:00 finds six frames; painting at 10:00 finds three and its tin.
+    assert_eq!(score(plan(true, at(10, 0)), "Parts out of stock"), ZERO);
+    // Welding at 08:00 finds two of three frames: one short.
+    assert_eq!(
+        score(plan(false, at(10, 0)), "Parts out of stock"),
+        "-60hard/0medium/0soft"
+    );
+    // Tins arriving at 11:00 leave painting one tin short.
+    assert_eq!(
+        score(plan(true, at(11, 0)), "Parts out of stock"),
+        "-60hard/0medium/0soft"
+    );
+}
+
+#[test]
+fn unassigned_tasks_use_no_parts_and_bad_quantities_are_refused() {
+    let plan = |placed: &[&str], quantity: i64| {
+        dataset(json!({
+            "tasks": [task("A", 30, json!({"consumes": [{"part": "bolt", "quantity": quantity}]}))],
+            "resources": [machine("M1", placed, json!({}))],
+        }))
+    };
+    assert_eq!(
+        score(plan(&["A"], 2), "Parts out of stock"),
+        "-120hard/0medium/0soft"
+    );
+    assert_eq!(score(plan(&[], 2), "Parts out of stock"), ZERO);
+    assert!(issue_codes(plan(&["A"], -1)).contains(&"bad_parts".to_string()));
 }

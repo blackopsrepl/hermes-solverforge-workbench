@@ -6,7 +6,7 @@ use solverforge::prelude::*;
 use super::{Resource, Task};
 use crate::derived::Facts;
 use crate::schedule::Slot;
-use crate::wire::{Changeover, Parameters, ResourceTransition, TagDef, TypeDef};
+use crate::wire::{Changeover, Parameters, ResourceTransition, StockArrival, TagDef, TypeDef};
 
 /// A task scheduling dataset and, once solved, its schedule.
 ///
@@ -44,6 +44,9 @@ pub struct Plan {
     pub resource_transitions: Vec<ResourceTransition>,
     #[serde(default)]
     pub parameters: Parameters,
+    /// Parts on hand from the start or arriving later.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub stock: Vec<StockArrival>,
     #[problem_fact_collection]
     pub tasks: Vec<Task>,
     /// Machines and employees, then the unscheduled queue and the frozen

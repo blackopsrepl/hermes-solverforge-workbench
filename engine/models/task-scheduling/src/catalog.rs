@@ -11,6 +11,7 @@ const HAND_OVERS: &str = "Resource hand-overs";
 const THROUGHPUT: &str = "Throughput";
 const DUE_DATES: &str = "Due dates";
 const CHANGEOVERS: &str = "Changeovers";
+const PARTS: &str = "Parts";
 
 /// The group and one-sentence description of a rule.
 fn describe(rule: Rule) -> (&'static str, &'static str) {
@@ -50,6 +51,10 @@ fn describe(rule: Rule) -> (&'static str, &'static str) {
         Rule::ForbiddenHandOver => (
             HAND_OVERS,
             "A task runs on a resource its preceding task may not hand over to from its own; costs the broken-link penalty.",
+        ),
+        Rule::PartsShort => (
+            PARTS,
+            "A task starts while the stock lacks parts it uses up: what was on hand or has arrived, plus what tasks that ended made, less what tasks that started took; costs one hour per unit short.",
         ),
         Rule::Unassigned => (
             THROUGHPUT,

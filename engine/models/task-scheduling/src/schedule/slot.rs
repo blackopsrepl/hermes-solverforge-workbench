@@ -8,7 +8,7 @@
 //! a long enough gap when the task must not be interrupted. A frozen task
 //! keeps the start it was pinned at.
 
-use crate::constraints::Rule;
+use crate::constraints::{Rule, RULES};
 use crate::derived::{Facts, ResourceFacts, TaskFacts};
 use crate::domain::Plan;
 use crate::time::overlap;
@@ -40,13 +40,13 @@ pub struct Slot {
     /// Minutes from the resource's first availability to the task's end.
     pub span: i64,
     /// Positive amount per rule, by [`Rule::index`].
-    pub amounts: [i64; 17],
+    pub amounts: [i64; RULES.len()],
 }
 
 impl Slot {
     /// A task waiting in the unscheduled queue.
     fn queued(priority: i64) -> Self {
-        let mut amounts = [0; 17];
+        let mut amounts = [0; RULES.len()];
         amounts[Rule::Unassigned.index()] = priority;
         Self {
             resource: None,
@@ -211,7 +211,7 @@ pub fn compute(plan: &Plan, t: usize) -> Option<Slot> {
         changeover,
         idle,
         span: end - rf.start,
-        amounts: [0; 17],
+        amounts: [0; RULES.len()],
     };
     score(plan, t, &mut slot);
     Some(slot)

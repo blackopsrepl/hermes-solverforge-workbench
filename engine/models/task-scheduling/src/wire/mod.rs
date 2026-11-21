@@ -6,5 +6,5 @@ mod records;
 pub use parameters::Parameters;
 pub use records::{
     Anchor, Assignment, Changeover, Dependency, DurationOn, ResourceKind, ResourceTransition, Span,
-    TagDef, TagRef, TypeDef,
+    StockArrival, TagDef, TagRef, TypeDef,
 };

@@ -1,4 +1,4 @@
-//! The seventeen rules: names, levels and whether they reward.
+//! The eighteen rules: names, levels and whether they reward.
 
 use solverforge_workbench_host::Level;
 
@@ -14,6 +14,7 @@ pub enum Rule {
     TagMissing,
     ResourceNotAllowed,
     ForbiddenHandOver,
+    PartsShort,
     Unassigned,
     Makespan,
     IdealEnd,
@@ -25,7 +26,7 @@ pub enum Rule {
 }
 
 /// Every rule, in scoring order.
-pub const RULES: [Rule; 17] = [
+pub const RULES: [Rule; 18] = [
     Rule::EarliestStart,
     Rule::Deadline,
     Rule::DependencyUnassigned,
@@ -35,6 +36,7 @@ pub const RULES: [Rule; 17] = [
     Rule::TagMissing,
     Rule::ResourceNotAllowed,
     Rule::ForbiddenHandOver,
+    Rule::PartsShort,
     Rule::Unassigned,
     Rule::Makespan,
     Rule::IdealEnd,
@@ -58,6 +60,7 @@ impl Rule {
             Rule::TagMissing => "Required tag missing",
             Rule::ResourceNotAllowed => "Resource not allowed",
             Rule::ForbiddenHandOver => "Forbidden resource hand-over",
+            Rule::PartsShort => "Parts out of stock",
             Rule::Unassigned => "Task left unassigned",
             Rule::Makespan => "Makespan",
             Rule::IdealEnd => "Distance from ideal end",

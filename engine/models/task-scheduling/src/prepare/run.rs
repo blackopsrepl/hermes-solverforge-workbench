@@ -5,12 +5,14 @@ use std::sync::Arc;
 use solverforge::PlanningSolution;
 use solverforge_workbench_host::{Issue, Severity};
 
-use super::facts::{derive, Index};
+use super::facts::{derive, time, Index};
 use super::place::place;
 use crate::constraints::Rule;
 use crate::derived::Facts;
 use crate::domain::{Lane, Plan, Resource};
+use crate::materials::{MaterialUse, Stock};
 use crate::schedule::{begin, frozen_end, run};
+use solverforge_workbench_host::stock::{Part, PartNames};
 
 /// Checks `plan`, derives its facts and places its tasks. On any error the
 /// plan is left without facts and must not be scored.
@@ -38,6 +40,7 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
         let placed = place(plan, &index, &mut issues);
         (facts, placed)
     };
+    let materials = materials(plan, &mut issues);
     if issues.iter().any(|issue| issue.severity == Severity::Error) {
         return issues;
     }
@@ -67,6 +70,9 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
         task.open_cost = tf.priority;
         task.link_cost = facts.broken_link;
     }
+    for (task, materials) in plan.tasks.iter_mut().zip(materials) {
+        task.materials = materials;
+    }
     let queue = plan.resources.len();
     // Open tasks start on no list at all, so construction places every one
     // of them where it scores best: on a resource or in the queue.
@@ -88,6 +94,68 @@ pub fn prepare(plan: &mut Plan) -> Vec<Issue> {
     plan.score = None;
     plan.update_all_shadows();
     issues
+}
+
+/// Per task, the parts it uses up and makes with the plan's stock; `None`
+/// for tasks that neither use nor make parts.
+fn materials(plan: &Plan, issues: &mut Vec<Issue>) -> Vec<Option<Arc<MaterialUse>>> {
+    let mut names = PartNames::default();
+    let mut read = |parts: &[Part], what: String, issues: &mut Vec<Issue>| {
+        names.read(parts, &what).unwrap_or_else(|message| {
+            issues.push(Issue::error("bad_parts", message));
+            Vec::new()
+        })
+    };
+    let uses: Vec<_> = plan
+        .tasks
+        .iter()
+        .map(|task| {
+            let who = format!("task {:?}", task.id);
+            (
+                read(&task.consumes, who.clone(), issues),
+                read(&task.produces, who, issues),
+            )
+        })
+        .collect();
+    let mut arrivals: Vec<(usize, i64, i64)> = Vec::new();
+    for arrival in &plan.stock {
+        let what = format!("stock of {:?}", arrival.part);
+        let part = Part {
+            part: arrival.part.clone(),
+            quantity: arrival.quantity,
+        };
+        let Some(&(index, quantity)) =
+            read(std::slice::from_ref(&part), what.clone(), issues).first()
+        else {
+            continue;
+        };
+        let at = match &arrival.at {
+            Some(text) => match time(Some(text), &format!("the arrival of {what}"), issues) {
+                Some(at) => at,
+                None => continue,
+            },
+            None => i64::MIN,
+        };
+        arrivals.push((index, at, quantity));
+    }
+    let mut stock = Stock {
+        arrivals: vec![Vec::new(); names.names.len()],
+    };
+    for (part, at, quantity) in arrivals {
+        stock.arrivals[part].push((at, quantity));
+    }
+    let stock = Arc::new(stock);
+    uses.into_iter()
+        .map(|(consumes, produces)| {
+            (!consumes.is_empty() || !produces.is_empty()).then(|| {
+                Arc::new(MaterialUse {
+                    consumes,
+                    produces,
+                    stock: Arc::clone(&stock),
+                })
+            })
+        })
+        .collect()
 }
 
 /// A frozen task the dataset gives no start starts as early as its

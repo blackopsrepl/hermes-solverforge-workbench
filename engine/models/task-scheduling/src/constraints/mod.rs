@@ -1,4 +1,4 @@
-//! The model's constraints: seventeen rules, each an incremental stream
+//! The model's constraints: eighteen rules, each an incremental stream
 //! over the tasks and the slots SolverForge keeps current.
 
 mod define;

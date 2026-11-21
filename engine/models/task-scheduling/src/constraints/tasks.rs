@@ -1,19 +1,24 @@
-//! The seventeen rules as incremental streams over tasks.
+//! The eighteen rules as incremental streams over tasks.
 //!
 //! Every per-task rule reads the task's slot, so a move rescores exactly
 //! the tasks whose slots it changed. Two cases have no slot: a task in no
 //! list costs its priority as unassigned, and a task on a resource that
 //! cannot be timed (it waits on a task queued after it, or follows one that
 //! does) costs a broken link. Makespan is the longest span among each
-//! resource's last planned task and last frozen task.
+//! resource's last planned task and last frozen task. Parts out of stock
+//! replays the stock over every placed task that uses or makes parts.
 
 use solverforge::prelude::*;
 
 use super::Rule;
 use crate::domain::{Plan, Task};
+use crate::materials::{shortage, Placed};
 use crate::schedule::Slot;
 
 pub type Score = HardMediumSoftScore;
+
+/// What one unit a task finds out of stock costs: an hour, in minutes.
+const PART_SHORT_COST: i64 = 60;
 
 /// What task `task` costs under per-task rule `rule`.
 fn amount(task: &Task, rule: Rule) -> i64 {
@@ -75,6 +80,26 @@ pub fn constraints() -> impl ConstraintSet<Plan, Score> {
             hard(Rule::ResourceNotAllowed),
             hard(Rule::ForbiddenHandOver),
         ),
+        ConstraintFactory::<Plan, Score>::new()
+            .for_each(Plan::tasks())
+            .filter(|task: &Task| {
+                task.materials.is_some() && task.slot.as_ref().is_some_and(Slot::placed)
+            })
+            .group_by(
+                |_: &Task| 0usize,
+                collect_vec(|task: &Task| -> Placed {
+                    let slot = task.slot.as_ref().expect("placed");
+                    (
+                        slot.start,
+                        slot.end,
+                        task.materials.clone().expect("uses parts"),
+                    )
+                }),
+            )
+            .penalize(hard_weight(|_: &usize, placed: &CollectedVec<Placed>| {
+                Score::of_hard(shortage(placed.iter()) * PART_SHORT_COST)
+            }))
+            .named(Rule::PartsShort.name()),
         medium(Rule::Unassigned),
         ConstraintFactory::<Plan, Score>::new()
             .for_each(Plan::tasks())

@@ -22,15 +22,15 @@ fn every_demo_reads_back_as_it_was_written() {
 }
 
 #[test]
-fn the_catalog_lists_every_rule_once_with_nine_hard_one_medium_and_seven_soft() {
+fn the_catalog_lists_every_rule_once_with_ten_hard_one_medium_and_seven_soft() {
     let catalog = TaskScheduling::catalog();
     let names: HashSet<&str> = catalog.iter().map(|c| c.name).collect();
-    assert_eq!(names.len(), 17);
+    assert_eq!(names.len(), 18);
     let count = |level| catalog.iter().filter(|c| c.level == level).count();
     use solverforge_workbench_host::Level;
     assert_eq!(
         (count(Level::Hard), count(Level::Medium), count(Level::Soft)),
-        (9, 1, 7)
+        (10, 1, 7)
     );
     assert!(catalog
         .iter()

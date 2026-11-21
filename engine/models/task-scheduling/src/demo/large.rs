@@ -1,13 +1,16 @@
 //! FACTORY: a sheet-metal and machining plant over one working week. Sixteen
 //! machines in two shifts and eight people on day shift run seventy-six orders
 //! of up to seven operations each: cut, bend or turn, mill (sometimes in two
-//! setups on one machine), weld, paint and inspect.
+//! setups on one machine), weld, paint and inspect. Each coat uses a box of
+//! its colour's powder from stock.
 
 use super::build::{
     after, at, holds, holds_between, off, on, outside_hours, placed, task, Builder,
 };
 use super::rng::Rng;
 use crate::domain::Plan;
+use crate::wire::StockArrival;
+use solverforge_workbench_host::stock::Part;
 
 const ORDERS: usize = 76;
 const DAYS: i64 = 5;
@@ -343,6 +346,10 @@ pub fn factory() -> Plan {
             t.task_type = Some(colour.into());
             t.required_resources = vec!["PAINT-1".into(), "PAINT-2".into()];
             t.no_interruptions = Some(true);
+            t.consumes = vec![Part {
+                part: format!("{colour} powder"),
+                quantity: 1,
+            }];
             cure = Some(step(&mut b, "paint", t));
         }
 
@@ -384,6 +391,27 @@ pub fn factory() -> Plan {
     }
 
     let mut plan = b.finish();
+    // Powder for every coat but two of each colour is in stock; the other
+    // boxes come in on Tuesday's first delivery.
+    for colour in COLOURS {
+        let part = format!("{colour} powder");
+        let coats = plan
+            .tasks
+            .iter()
+            .flat_map(|t| &t.consumes)
+            .filter(|c| c.part == part)
+            .count() as i64;
+        plan.stock.push(StockArrival {
+            part: part.clone(),
+            quantity: (coats - 2).max(0),
+            at: None,
+        });
+        plan.stock.push(StockArrival {
+            part,
+            quantity: coats.min(2),
+            at: Some(at(1, 6, 0)),
+        });
+    }
     // Monday's first laser job has been running since the shift started.
     let running = plan
         .tasks

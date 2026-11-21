@@ -11,6 +11,7 @@ mod edits;
 mod fill;
 mod freeze;
 mod kpis;
+pub mod materials;
 mod model;
 mod names;
 mod parameters;
