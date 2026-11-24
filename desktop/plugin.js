@@ -1627,6 +1627,12 @@ export function stagedOperations(staged) {
     .map(c => (c.value === undefined ? { op: 'remove', path: c.path } : { op: c.had ? 'replace' : 'add', path: c.path, value: c.value }))
 }
 
+/** Keep model fields separate from the table's row identity and display columns. */
+export function editorTableRow(path, title, parent, cells) {
+  return { key: path, _title: title, _parent: parent,
+    ...Object.fromEntries(Object.entries(cells).map(([name, value]) => [`field:${name}`, value])) }
+}
+
 export function DataEditor({ model, dataset }) {
   const { go } = useNav()
   const query = useRead('dataset', { dataset: dataset.id, include_plan: true })
@@ -1701,15 +1707,13 @@ export function DataEditor({ model, dataset }) {
       })(),
       single ? null : e(Table, {
         empty: e('div', { style: faint }, `No ${current.label.toLowerCase()}.`),
-        columns: [{ id: '_title', label: current.title ? (current.columns.find(c => c.name === current.title) || {}).label || 'Name' : 'Id' }, ...(current.parent ? [{ id: '_parent', label: 'Of' }] : []), ...shown.map(c => ({ id: c.name, label: c.label }))],
-        rows: found.slice(0, 200).map(({ item: { row, at, parent, n }, hits }) => ({
-          key: at, at,
-          _title: e('span', { style: { fontWeight: open === at ? 600 : 400 } }, e(Highlight, { text: String(titleOf(current, row, n)), hits }),
+        columns: [{ id: '_title', label: current.title ? (current.columns.find(c => c.name === current.title) || {}).label || 'Name' : 'Id' }, ...(current.parent ? [{ id: '_parent', label: 'Of' }] : []), ...shown.map(c => ({ id: `field:${c.name}`, label: c.label }))],
+        rows: found.slice(0, 200).map(({ item: { row, at, parent, n }, hits }) => editorTableRow(at,
+          e('span', { style: { fontWeight: open === at ? 600 : 400 } }, e(Highlight, { text: String(titleOf(current, row, n)), hits }),
             Object.keys(staged).some(p => p.startsWith(`${at}/`)) ? e('span', { style: { color: 'var(--ui-accent)' } }, ' •') : null),
-          _parent: parent ? e('span', { style: faint }, (() => { const t = tables.find(x => x.id === current.parent); return t ? titleOf(t, parent) : parent.id })()) : null,
-          ...Object.fromEntries(shown.map(c => [c.name, e('span', { style: muted }, cellText(c, valueOf(at, row, c)))]))
-        })),
-        onRow: r => setOpen(open === r.at ? null : r.at)
+          parent ? e('span', { style: faint }, (() => { const t = tables.find(x => x.id === current.parent); return t ? titleOf(t, parent) : parent.id })()) : null,
+          Object.fromEntries(shown.map(c => [c.name, e('span', { style: muted }, cellText(c, valueOf(at, row, c)))])))),
+        onRow: r => setOpen(open === r.key ? null : r.key)
       }),
       found.length > 200 ? e('div', { style: faint }, `Showing the first 200 of ${fmt(found.length)}; search to narrow them.`) : null,
       changes.length

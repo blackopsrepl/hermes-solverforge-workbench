@@ -18,7 +18,7 @@ const {
   default: plugin, Workbench, ScoreChart, StatusChip, FillPanel, TrendLine, parseScore, openBeside, openPage,
   parseAt, placeOf, hrefOf, runName, ago, duration, count, amount, errorText, refusal, madeFrom, CheckResult, BuildProgress, parseTags, profileLabel, ImportDataset,
   ReplanForm, scoreDelta, verdictText, editArgs, ParamCell, paramText, profileChanges,
-  DataEditor, tableRows, inferTables, cellText, stagedOperations
+  DataEditor, tableRows, inferTables, cellText, stagedOperations, editorTableRow
 } = await import('./.build/plugin.mjs')
 
 // React reports misuse (lost keys, bad props) through console.error; any of it fails the run.
@@ -610,6 +610,19 @@ test('a list column edits item by item, an optional choice can be unset, and sol
   assert.match(floating, /Done by/)
   assert.doesNotMatch(floating, /Starts/)
   assert.match(text(render(h(ParamCell, { param: breakItem, value: { type: 'FIXED' }, onChange: () => {} }))), /Starts/)
+})
+
+test('data fields cannot replace the row identity or the editor display columns', () => {
+  const [stock] = tableRows({ stock: [{ part: 'red powder', at: '2027-03-04T08:00' }] }, 'stock')
+  const cells = { at: stock.row.at, key: 'model key', _title: 'model title', _parent: 'model parent' }
+  const row = editorTableRow(stock.at, 'Stock arrival 1', null, cells)
+  assert.equal(row.key, '/stock/0')
+  assert.equal(typeof row.key, 'string')
+  assert.equal(row._title, 'Stock arrival 1')
+  assert.equal(row._parent, null)
+  for (const [name, value] of Object.entries(cells)) assert.equal(row[`field:${name}`], value)
+  const opened = tableRows({ stock: [stock.row] }, 'stock').find(hit => hit.at === row.key)
+  assert.equal(opened.row.at, '2027-03-04T08:00')
 })
 
 test('staged edits become id-addressed patch operations: replace, add, remove', () => {
