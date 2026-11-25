@@ -16,7 +16,7 @@ const box = name => ({ children, title, description, variant }) =>
 
 export const Badge = ({ children, variant }) => h('span', { 'data-c': 'Badge', 'data-variant': variant }, children)
 export const EmptyState = box('EmptyState')
-export const SandboxedFrame = ({ src, title }) => h('iframe', { title, 'data-length': src.length })
+export const SandboxedFrame = ({ src, title, ref, style, onLoad }) => h('iframe', { title, 'data-length': src.length, 'data-src': src.slice(-24), ref, style, onLoad })
 export const Button = ({ children, disabled }) => h('button', { disabled }, children)
 export const ErrorState = box('ErrorState')
 export const Skeleton = () => h('div', { 'data-c': 'Skeleton' })

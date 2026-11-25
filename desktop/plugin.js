@@ -635,21 +635,50 @@ export function viewName(kind) {
   return kind === 'routes' ? 'Routes' : kind === 'assignments' ? 'Assignments' : 'Schedule'
 }
 
-/** The height a drawn page reports for itself (it posts {source, height}), or null until it
- *  does: its frame then fits the plan instead of guessing from the number of lanes. */
-export function useFittedHeight(frame) {
-  const [height, setHeight] = useState(null)
+/** A sandboxed frame that keeps its last drawing on screen while the next one loads.
+ *  Replacing a frame's document blanks it until the new page is drawn, so a plan that
+ *  follows a live solve would flash an empty box on every update. The next document
+ *  loads hidden behind the shown one and takes its place once it has loaded.
+ *  `onHeight` gets the height the shown page reports for itself (it posts
+ *  {source, height}), so its frame can fit the plan. */
+export function SteadyFrame({ src, title, frameRef, style, onHeight }) {
+  const [front, setFront] = useState(() => ({ n: 0, src }))
+  const [back, setBack] = useState(null)
+  const next = useRef(1)
+  const shown = useRef(null)
+  const heights = useRef(new WeakMap())
+  useEffect(() => {
+    if (src === front.src) setBack(null)
+    else if (!back || back.src !== src) setBack({ n: next.current++, src })
+  }, [src, front.src, back])
   useEffect(() => {
     if (typeof window === 'undefined') return undefined
     const listen = event => {
       const data = event.data
-      if (frame.current && event.source === frame.current.contentWindow && data && data.source === ID
-          && typeof data.height === 'number' && data.height > 0) setHeight(Math.ceil(data.height))
+      if (!event.source || !data || data.source !== ID || typeof data.height !== 'number' || data.height <= 0) return
+      heights.current.set(event.source, Math.ceil(data.height))
+      if (onHeight && shown.current && event.source === shown.current.contentWindow) onHeight(Math.ceil(data.height))
     }
     window.addEventListener('message', listen)
     return () => window.removeEventListener('message', listen)
-  }, [frame])
-  return height
+  }, [onHeight])
+  // The page that just took its place reported its height while it was hidden.
+  useEffect(() => {
+    const height = shown.current && shown.current.contentWindow && heights.current.get(shown.current.contentWindow)
+    if (onHeight && height) onHeight(height)
+  }, [front.n, onHeight])
+  const attach = node => {
+    shown.current = node
+    if (frameRef) frameRef.current = node
+  }
+  const fill = { width: '100%', height: '100%', border: 0, display: 'block', background: '#fff' }
+  return e('div', { style: { position: 'relative', overflow: 'hidden', ...style } },
+    [front, back].filter(Boolean).map(page => page === front
+      ? e(SandboxedFrame, { key: page.n, ref: attach, src: page.src, sandbox: 'allow-scripts', title, style: fill })
+      : e(SandboxedFrame, {
+          key: page.n, src: page.src, sandbox: 'allow-scripts', title, style: { ...fill, position: 'absolute', inset: 0, visibility: 'hidden' },
+          onLoad: () => { setFront(page); setBack(null) }
+        })))
 }
 
 /** The plan as its model draws it (solverforge-ui's timeline, routes on a map, or boards)
@@ -664,7 +693,7 @@ export function PlanView({ run, dataset, version, kind = 'timeline', onItem }) {
     if (version !== asked && !query.isFetching) setAsked(version)
   }, [version, asked, query.isFetching])
   const frame = useRef(null)
-  const fitted = useFittedHeight(frame)
+  const [fitted, setFitted] = useState(null)
   // A click on an open item inside the frame (it posts {source, item}) asks for its places.
   useEffect(() => {
     if (!onItem || typeof window === 'undefined') return undefined
@@ -683,13 +712,13 @@ export function PlanView({ run, dataset, version, kind = 'timeline', onItem }) {
   if (!data || data.ok === false) return e('div', { style: faint }, errorText(data, `The ${what} could not be drawn.`))
   // A backend from before the split answers a routes view as one page: draw that.
   if (data.kind === 'routes' && Array.isArray(data.routes)) return e(RoutesPlan, { data, frame, onItem })
-  return e(SandboxedFrame, {
-    ref: frame,
+  return e(SteadyFrame, {
+    frameRef: frame,
     src: 'data:text/html;charset=utf-8,' + encodeURIComponent(data.document),
-    sandbox: 'allow-scripts',
     title: viewName(kind),
+    onHeight: setFitted,
     // A schedule or a board fits its plan, up to most of the page (the plan scrolls inside beyond that).
-    style: { width: '100%', height: kind === 'routes' ? 'min(78vh, 1040px)' : fitted ? `min(${fitted}px, 80vh)` : 560, border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, display: 'block', background: '#fff' }
+    style: { width: '100%', height: kind === 'routes' ? 'min(78vh, 1040px)' : fitted ? `min(${fitted}px, 80vh)` : 560, border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, background: '#fff' }
   })
 }
 
@@ -708,8 +737,7 @@ function RoutesPlan({ data, frame, onItem }) {
     return () => watch.disconnect()
   }, [])
   const docked = dockedPane || (width > 0 && width < 860)
-  const days = useRef(null)
-  const fitted = useFittedHeight(days)
+  const [fitted, setFitted] = useState(null)
   const [focus, setFocus] = useState(null)
   const [search, setSearch] = useState('')
   const show = id => {
@@ -751,24 +779,22 @@ function RoutesPlan({ data, frame, onItem }) {
   return e('div', { ref: root, style: stack(12) },
     data.subtitle ? e('div', { style: muted }, data.subtitle) : null,
     e('div', { style: { display: 'grid', gridTemplateColumns: docked ? '1fr' : 'minmax(0, 1fr) 320px', gap: 12, height: docked ? 'auto' : height } },
-      e(SandboxedFrame, {
-        ref: frame,
+      e(SteadyFrame, {
+        frameRef: frame,
         src: 'data:text/html;charset=utf-8,' + encodeURIComponent(data.map),
-        sandbox: 'allow-scripts',
         title: 'Routes',
-        style: { width: '100%', height, border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, display: 'block', background: '#fff' }
+        style: { width: '100%', height, border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, background: '#fff' }
       }),
       list),
     data.timeline
       ? e('div', { style: stack(6) },
           e(Label, null, 'Day by day'),
-          e(SandboxedFrame, {
-            ref: days,
+          e(SteadyFrame, {
             src: 'data:text/html;charset=utf-8,' + encodeURIComponent(data.timeline),
-            sandbox: 'allow-scripts',
             title: 'Routes day by day',
+            onHeight: setFitted,
             // The lanes are a first guess; the page reports its real height once drawn.
-            style: { width: '100%', height: fitted || 120 + 34 * Math.max(1, data.lanes), border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, display: 'block', background: '#fff' }
+            style: { width: '100%', height: fitted || 120 + 34 * Math.max(1, data.lanes), border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, background: '#fff' }
           }))
       : null)
 }
