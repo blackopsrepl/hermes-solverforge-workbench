@@ -642,7 +642,7 @@ export function viewName(kind) {
  *  `onHeight` gets the height the shown page reports for itself (it posts
  *  {source, height}), so its frame can fit the plan. */
 export function SteadyFrame({ src, title, frameRef, style, onHeight }) {
-  const [front, setFront] = useState(() => ({ n: 0, src }))
+  const [front, setFront] = useState(() => ({ n: 0, src, loaded: false }))
   const [back, setBack] = useState(null)
   const next = useRef(1)
   const shown = useRef(null)
@@ -672,12 +672,14 @@ export function SteadyFrame({ src, title, frameRef, style, onHeight }) {
     if (frameRef) frameRef.current = node
   }
   const fill = { width: '100%', height: '100%', border: 0, display: 'block', background: '#fff' }
+  const behind = { ...fill, position: 'absolute', inset: 0, visibility: 'hidden' }
+  // The first drawing loads hidden too: until it has loaded the frame shows the page behind it.
   return e('div', { style: { position: 'relative', overflow: 'hidden', ...style } },
-    [front, back].filter(Boolean).map(page => page === front
+    [front, back].filter(Boolean).map(page => page === front && page.loaded
       ? e(SandboxedFrame, { key: page.n, ref: attach, src: page.src, sandbox: 'allow-scripts', title, style: fill })
       : e(SandboxedFrame, {
-          key: page.n, src: page.src, sandbox: 'allow-scripts', title, style: { ...fill, position: 'absolute', inset: 0, visibility: 'hidden' },
-          onLoad: () => { setFront(page); setBack(null) }
+          key: page.n, ref: page === front ? attach : undefined, src: page.src, sandbox: 'allow-scripts', title, style: behind,
+          onLoad: () => { setFront({ ...page, loaded: true }); setBack(null) }
         })))
 }
 
@@ -718,7 +720,7 @@ export function PlanView({ run, dataset, version, kind = 'timeline', onItem }) {
     title: viewName(kind),
     onHeight: setFitted,
     // A schedule or a board fits its plan, up to most of the page (the plan scrolls inside beyond that).
-    style: { width: '100%', height: kind === 'routes' ? 'min(78vh, 1040px)' : fitted ? `min(${fitted}px, 80vh)` : 560, border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, background: '#fff' }
+    style: { width: '100%', height: kind === 'routes' ? 'min(78vh, 1040px)' : fitted ? `min(${fitted}px, 80vh)` : 560, border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10 }
   })
 }
 
@@ -783,7 +785,7 @@ function RoutesPlan({ data, frame, onItem }) {
         frameRef: frame,
         src: 'data:text/html;charset=utf-8,' + encodeURIComponent(data.map),
         title: 'Routes',
-        style: { width: '100%', height, border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, background: '#fff' }
+        style: { width: '100%', height, border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10 }
       }),
       list),
     data.timeline
@@ -794,7 +796,7 @@ function RoutesPlan({ data, frame, onItem }) {
             title: 'Routes day by day',
             onHeight: setFitted,
             // The lanes are a first guess; the page reports its real height once drawn.
-            style: { width: '100%', height: fitted || 120 + 34 * Math.max(1, data.lanes), border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10, background: '#fff' }
+            style: { width: '100%', height: fitted || 120 + 34 * Math.max(1, data.lanes), border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10 }
           }))
       : null)
 }

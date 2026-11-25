@@ -32,6 +32,9 @@ test('the next plan loads hidden behind the shown one and replaces it once loade
   await draw(page('first'))
   assert.equal(frames().length, 1)
   const first = frames()[0]
+  assert.ok(hidden(first), 'nothing white shows before the first plan is drawn')
+  await act(() => first.dispatchEvent(new window.Event('load')))
+  assert.deepEqual(frames(), [first])
   assert.ok(!hidden(first))
 
   await draw(page('second'))
